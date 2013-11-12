@@ -1,0 +1,33 @@
+Minor patches to Baker 1.3 to add two features:
+    * Support dashes in option names to subcommands
+    * Report "No such command" separately from "No command specified"
+--- a/baker.py  2013-11-09 06:15:15.000000000 +0000
++++ b/baker.py  2013-11-09 06:32:19.518192955 +0000
+@@ -501,7 +501,7 @@
+         """
+         Returns the heading of the given command.
+         """
+-        head = " --" + keyname
++        head = " --" + keyname.replace('_', '-')
+         if keyname in cmd.shortopts:
+             head = " -" + cmd.shortopts[keyname] + head
+         head += "  "
+@@ -796,6 +796,8 @@
+             self.global_options = self.apply(scriptname, self.globalcommand,
+                                              args, kwargs)
+             cmd = self.commands[argv[i]]
++        elif argv_len > 1 and argv[1] not in self.commands:
++            raise CommandError("%s: No such command %s" % (scriptname, argv[1]), scriptname, cmd=argv[1])
+         else:
+             raise CommandError("No command specified", scriptname)
+ 
+@@ -817,7 +819,8 @@
+ 
+         # Rearrange the arguments into the order Python expects
+         newargs = []
+-        newkwargs = kwargs.copy()
++        newkwargs = dict((key.replace('-', '_'), value)
++                         for key, value in kwargs.items())
+         for name in cmd.argnames:
+             if name in cmd.keywords:
+                 if not args:
