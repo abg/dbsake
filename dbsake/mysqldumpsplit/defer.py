@@ -2,6 +2,7 @@
 
 import csv
 import io
+import logging
 import re
 
 def extract_create_table(table_structure):
@@ -72,6 +73,7 @@ def format_create_table(table_ddl, indexes):
     for line in table_ddl.splitlines(True):
         if line not in deferred_lines:
             result.append(line)
+    result[-2] = re.sub(r',($)', r'\1', result[-2])
     return ''.join(result)
 
 def split_indexes(table_ddl, defer_constraints=False):
@@ -95,8 +97,8 @@ def split_indexes(table_ddl, defer_constraints=False):
                     break
 
         for name, columns, line, constraint in preserved_indexes:
-            print "Not deferring index `%s` - used by constraint `%s`" % (name,
-                    constraint)
+            logging.warn("Not deferring index `%s` - used by constraint `%s`",
+                         name, constraint)
             indexes.remove((name, columns, line))
     else:
         indexes += constraints
