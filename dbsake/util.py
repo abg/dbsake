@@ -6,8 +6,10 @@ Utility methods
 
 """
 
-import os
+import contextlib
 import errno
+import os
+import subprocess
 
 def mkdir_safe(path):
     """mkdir, ignoring errors from existing dirs
@@ -50,4 +52,15 @@ def relpath(path, start=os.curdir):
         return curdir
     return join(*rel_list)
 
-
+@contextlib.contextmanager
+def stream_command(cmd, stdout):
+    process = subprocess.Popen(cmd,
+                               stdin=subprocess.PIPE,
+                               stdout=stdout,
+                               shell=True,
+                               close_fds=True)
+    yield process
+    process.stdin.close()
+    process.wait()
+    if process.returncode != 0:
+        raise subprocess.CalledProcessError(cmd, returncode)
