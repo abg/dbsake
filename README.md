@@ -9,7 +9,7 @@ Example:
 
 This currently consists of three tools:
 
-* mysqldumpsplit [--defer-indexes] [--defer-constraints] [--no-data] [files...]
+* split-mysqldump [--target|-t <mysql-version>] [--directory|-C <output_directory>] [--filter-command <cmd>] < input
     Splits a mysqldump file into multiple separate files by table/views/routines/etc.
 
 * upgrade-mycnf [--config path] [--target 5.1|5.5|5.6|5.7] [--patch]
