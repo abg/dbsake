@@ -40,6 +40,10 @@ def upgrade_mycnf(config='/etc/my.cnf',
         print("Invalid target version '%s'" % target, file=sys.stderr)
         return 1
 
+    if not os.path.exists(config):
+        print("No config file found: %s" % config, file=sys.stderr)
+        return 1
+
     for path, orig, modified in parser.upgrade_config(config, rewriter):
         if patch:
             # make patch file names pretty
