@@ -27,6 +27,9 @@ def mkdir_safe(path):
     except OSError, exc:
         if exc.errno != errno.EEXIST:
             raise
+        return False
+    else:
+        return True
 
 # backport from py2.7.  patched to support paths relative to /
 def relpath(path, start=os.curdir):
