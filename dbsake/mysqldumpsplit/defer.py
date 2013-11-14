@@ -63,7 +63,7 @@ def format_alter_table(table_ddl, indexes):
     lines = [line.strip() for _, _, line in indexes]
     if not lines: return ""
 
-    ddl = "ALTER TABLE `{0}` ADD ".format(table) + " ADD ".join(lines)
+    ddl = "ALTER TABLE `{0}`\n    ADD ".format(table) + "\n    ADD ".join(lines)
     return ddl.rstrip(',') + ';'
 
 def format_create_table(table_ddl, indexes):
