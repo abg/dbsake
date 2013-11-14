@@ -13,7 +13,17 @@ from dbsake import baker
 from dbsake.util import relpath
 from dbsake.upgrademycnf import parser
 
-@baker.command(name='upgrade-mycnf')
+@baker.command(name='upgrade-mycnf',
+               shortopts=dict(config="c",
+                              target="t",
+                              patch="p"),
+               params=dict(config="my.cnf file to parse "
+                                  "(default: /etc/my.cnf)",
+                           target="MySQL version to target the option file "
+                                  "(default 5.5)",
+                           patch="Output unified diff rather than full config "
+                                 "(default off)",
+                           ))
 def upgrade_mycnf(config='/etc/my.cnf',
                   target='5.5',
                   patch=False):
