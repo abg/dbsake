@@ -42,7 +42,10 @@ def output(cmd, path, iterable):
                            directory="Directory to output to (default .)",
                            filter_command="Command to filter output through"
                                           "(default gzip -1)"))
-def split_mysqldump(target='5.5', directory='.', filter_command='gzip -1'):
+def split_mysqldump(target='5.5',
+                    directory='.',
+                    filter_command='gzip -1',
+                    regex='.*'):
     defer_indexes = False
     defer_constraints = False
     cmd = filter_command
@@ -64,10 +67,13 @@ def split_mysqldump(target='5.5', directory='.', filter_command='gzip -1'):
     table_count = 0
     database_count = 0
     view_count = 0
+    filter_cre = re.compile(regex)
+    logging.debug("Compiled regex %s", regex)
     for section_type, iterator in parser.sections:
         if section_type == 'replication_info':
-            output(cmd, 'replication_info.sql',
-                   itertools.chain([header], iterator))
+            path = os.path.join(directory, 'replication_info.sql')
+            data = itertools.chain([header], iterator)
+            output(cmd, path, data)
         elif section_type == 'schema':
             lines = list(iterator)
             name = extract_identifier(lines[1])
@@ -101,7 +107,11 @@ def split_mysqldump(target='5.5', directory='.', filter_command='gzip -1'):
                     table_definition_data = table_definition_data.replace(table_ddl, create_table)
                     post_data = alter_table
             data = itertools.chain([header], table_definition_data)
-            output(cmd, path, data)
+            if filter_cre.search(path):
+                output(cmd, path, data)
+            else:
+                logging.debug("No regex match on '%s'", path)
+                for line in data: pass
             table_count += 1
         elif section_type == 'table_data':
             comments = [next(iterator) for _ in xrange(3)]
@@ -121,7 +131,12 @@ def split_mysqldump(target='5.5', directory='.', filter_command='gzip -1'):
                 logging.info("Injecting deferred index creation %s", path)
                 logging.debug("%s", "\n".join([post_data_header, post_data]))
                 post_data = None
-            output(cmd, path, data)
+            if filter_cre.search(path):
+                output(cmd, path, data)
+            else:
+                logging.debug("No regex match on '%s'", path)
+                for line in data:
+                    pass
         elif section_type == 'header':
             header = ''.join(list(iterator))
             match = re.search('Database: (?P<schema>.*)$', header, re.M)
@@ -131,7 +146,12 @@ def split_mysqldump(target='5.5', directory='.', filter_command='gzip -1'):
         elif section_type in ('view_temporary_definition',
                               'view_definition'):
             path = os.path.join(directory, name, 'views.sql')
-            output(cmd, path, iterator)
+            if filter_cre.search(path):
+                output(cmd, path, iterator)
+            else:
+                logging.debug("No regex match on '%s'", path)
+                for line in iterator:
+                    pass
             view_count += 1
         else:
             logging.debug("Skipping section type: %s", section_type)
