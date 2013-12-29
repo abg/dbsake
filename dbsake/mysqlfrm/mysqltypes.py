@@ -559,17 +559,12 @@ def unpack_type_set(defaults, context):
 ##  values in any current MySQL version.
 ## included here for documentation purposes
 ## MySQL BLOB/TEXT types
-def unpack_type_tiny_blob(defaults, context):
-    raise NotImplementedError
-
-def unpack_type_medium_blob(defaults, context):
-    raise NotImplementedError
-
 def unpack_type_long_blob(defaults, context):
-    raise NotImplementedError
-
-def unpack_type_blob(defaults, context):
-    raise NotImplementedError
+    print "Weird - no NO_DEFAULT flag for blob (name=%r flags=%r)" % (context.name, context.flags)
+    return None
+unpack_type_tiny_blob = unpack_type_long_blob
+unpack_type_medium_blob = unpack_type_long_blob
+unpack_type_blob = unpack_type_long_blob
 
 ## MySQL GEOMETRY type
 def unpack_type_geometry(defaults, context):
