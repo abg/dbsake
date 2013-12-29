@@ -75,7 +75,7 @@ class TableOptions(_TableOptions):
             # This was a fairly recent feature introduced into MySQL to tweak
             # PARTITION BY [LINEAR] KEY
             partitions = re.sub(r'([/][*]!\d+ ALGORITHM = \d+ [*][/])',
-                                r'*/ \1 /*', self.partitions)
+                                r'*/ \1 /*!50100', self.partitions)
             yield "\n/*!50100 {0} */".format(partitions)
 
 
@@ -278,7 +278,11 @@ def unpack_columns(packed_columns, table):
 def parse(path):
     with open(path, 'rb') as fileobj:
         data = util.ByteReader(fileobj.read())
-    
+ 
+
+    if data.read(2) != b'\xfe\x01':
+        raise IOError("'%s' isn't a binary .frm file" % path, -1)
+
     mysql_version = MySQLVersion.from_version_id(data.uint32_at(0x0033))
 
     # keyinfo section
