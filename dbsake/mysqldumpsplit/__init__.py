@@ -127,7 +127,7 @@ def split_mysqldump(target='5.5', directory='.', filter_command='gzip -1'):
             match = re.search('Database: (?P<schema>.*)$', header, re.M)
             if match and match.group('schema'):
                 name = match.group('schema')
-                mkdir_safe(name)
+                mkdir_safe(os.path.join(directory, name))
         elif section_type in ('view_temporary_definition',
                               'view_definition'):
             path = os.path.join(directory, name, 'views.sql')
