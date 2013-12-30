@@ -17,20 +17,19 @@ from . import parser
 
 @baker.command(name='frm-to-schema')
 def frm_to_schema(*paths):
+    failures = 0
     for name in paths:
         try:
             table = parser.parse(name)
-        except IOError as exc:
-            print("Could not parse '%s': [%d] %s" % (name, exc.errno, exc.strerror), file=sys.stderr)
-            return 1
-        except:
-            print("Failed at name=%r" % name)
+        except (KeyboardInterrupt, SystemExit):
             raise
+        except:
+            print("Could not parse '%s': [%s] %s" % (name, exc.errno, exc.strerror), file=sys.stderr)
+            failures += 1
+            continue
 
         stdout = codecs.getwriter('utf8')(sys.stdout)
-
         g = itertools.chain(table.columns, table.keys)
-
         print("--", file=stdout)
         print("-- Created with MySQL Version {0}".format(table.mysql_version), file=stdout)
         print("--", file=stdout)
@@ -39,4 +38,9 @@ def frm_to_schema(*paths):
         print(",\n".join("  %s" % str(name) for name in g), file=stdout)
         print(") {0};".format(table.options), file=stdout)
         print(file=stdout)
-    return 0
+    
+    if failures:
+        print("%d parsing failures" % failures)
+        return 1
+    else:
+        return 0
