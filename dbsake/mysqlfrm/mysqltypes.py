@@ -81,7 +81,12 @@ def _format_real(name, context):
     if context.flags.DECIMAL:
         precision = context.length
         scale = (int(context.flags) >> 8) & 31
-        value = '{0}({1},{2})'.format(name, precision, scale)
+        # if scale is way out of range, this probably means
+        # we shouldn't format the <type>(M,D) syntax 
+        if scale > 30:
+            value = name
+        else:
+            value = '{0}({1},{2})'.format(name, precision, scale)
     else:
         value = name + ' unsigned'
 
