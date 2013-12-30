@@ -415,6 +415,8 @@ def unpack_type_newdate(defaults, context):
     day = value & 31
     return "'{0:4}-{1:02}-{2:02}'".format(year, month, day)
 
+# XXX: Handle mariadb timestamp(N) columns
+#      stored as MYSQL_TYPE_TIMESTAMP values
 def unpack_type_timestamp(defaults, context):
     fmt = '%Y-%m-%d %H:%M:%S'
     epoch = defaults.sint32(endian="<")
@@ -445,12 +447,13 @@ def unpack_type_timestamp2(defaults, context):
             raise ValueError("Invalid scale for TIMESTAMP(%r)" % scale)
         value += '.' + str(fractional).zfill(scale)
 
+    scale_str = '(%d)' % scale if scale > 0 else ''
     if context.unireg_check.name == 'TIMESTAMP_DN_FIELD':
-        return 'CURRENT_TIMESTAMP'
+        return 'CURRENT_TIMESTAMP{0}'.format(scale_str)
     elif context.unireg_check.name == 'TIMESTAMP_UN_FIELD':
-        return "'{0}' ON UPDATE CURRENT_TIMESTAMP".format(value)
+        return "'{0}' ON UPDATE CURRENT_TIMESTAMP{1}".format(value, scale_str)
     elif context.unireg_check.name == 'TIMESTAMP_DNUN_FIELD':
-        return 'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        return 'CURRENT_TIMESTAMP{0} ON UPDATE CURRENT_TIMESTAMP{0}'.format(scale_str)
     else:
         return "'{0}'".format(value)
 
