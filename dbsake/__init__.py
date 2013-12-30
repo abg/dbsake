@@ -1,3 +1,4 @@
+import codecs
 import logging
 import os
 import pkgutil
@@ -20,6 +21,7 @@ def log_level(name):
         raise ValueError("Invalid logging level '%s'", name)
 
 def main():
+    sys.stdout = codecs.getwriter('utf8')(sys.stdout)
     parser = argparse.ArgumentParser()
     valid_log_levels = [name for name in logging._levelNames
                         if isinstance(name, int) and name != logging.NOTSET]
