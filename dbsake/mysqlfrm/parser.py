@@ -8,6 +8,7 @@ Core API for parsing MySQL .frm files
 
 import collections
 import datetime
+import errno
 import os
 import re
 
@@ -281,7 +282,7 @@ def parse(path):
  
 
     if data.read(2) != b'\xfe\x01':
-        raise IOError("'%s' isn't a binary .frm file" % path, -1)
+        raise IOError(errno.EINVAL, "'%s' isn't a binary .frm file" % path)
 
     mysql_version = MySQLVersion.from_version_id(data.uint32_at(0x0033))
 
