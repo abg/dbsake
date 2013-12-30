@@ -8,6 +8,7 @@ import zipfile
 
 def main():
     sink = io.BytesIO()
+    print("Generating executable archive", file=sys.stderr)
     print(b"#!/usr/bin/env python", file=sink)
     archive = zipfile.ZipFile(file=sink,
                               mode='w',
@@ -24,6 +25,7 @@ def main():
     with open('dbsake.zip', 'wb') as fileobj:
         os.fchmod(fileobj.fileno(), stat.S_IXUSR|stat.S_IRUSR|stat.S_IWUSR)
         fileobj.write(sink.getvalue())
+    print("Executable created at ./dbsake.zip", file=sys.stderr)
         
 if __name__ == '__main__':
     sys.exit(main())
