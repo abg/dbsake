@@ -16,3 +16,7 @@ This currently consists of two tools:
 * ```upgrade-mycnf [--config path] [--target 5.1|5.5|5.6|5.7] [--patch]```
 
     Input a current my.cnf and output a my.cnf suitable for the target MySQL version
+
+* ```frm-to-schema [path] [path...]```
+
+  Decode a binary .frm file and output the CREATE TABLE statement.
