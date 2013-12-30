@@ -14,6 +14,7 @@ import sys
 from dbsake import baker
 
 from . import parser
+from . import tablename
 
 @baker.command(name='frm-to-schema')
 def frm_to_schema(*paths):
@@ -45,3 +46,16 @@ def frm_to_schema(*paths):
         return 1
     else:
         return 0
+
+@baker.command(name='filename-to-tablename')
+def filename_to_tablename(*names):
+    """Convert a MySQL filename to a unicode tablename"""
+    for name in names:
+        print(tablename.filename_to_tablename(name))
+    return 0
+
+@baker.command(name='tablename-to-filename')
+def tablename_to_filename(*names):
+    for name in names:
+        print(tablename.tablename_to_filename(name))
+    return 0
