@@ -27,9 +27,9 @@ def cmd_to_ext(cmd):
     name = cmd.split()[0]
     return extensions.get(name, '')
 
-def output(cmd, path, iterable):
+def output(cmd, path, iterable, mode='wb'):
     ext = cmd_to_ext(cmd)
-    with open(path + ext, 'ab') as fileobj:
+    with open(path + ext, mode) as fileobj:
         with stream_command(cmd, stdout=fileobj) as process:
             for item in iterable:
                 process.stdin.write(item)
@@ -109,10 +109,10 @@ def split_mysqldump(target='5.5',
             data = itertools.chain([header], table_definition_data)
             if filter_cre.search(path):
                 output(cmd, path, data)
+                table_count += 1
             else:
                 logging.debug("No regex match on '%s'", path)
                 for line in data: pass
-            table_count += 1
         elif section_type == 'table_data':
             comments = [next(iterator) for _ in xrange(3)]
             table = extract_identifier(comments[1])
@@ -142,17 +142,23 @@ def split_mysqldump(target='5.5',
             match = re.search('Database: (?P<schema>.*)$', header, re.M)
             if match and match.group('schema'):
                 name = match.group('schema')
-                mkdir_safe(name)
+                mkdir_safe(os.path.join(directory, name))
+                database_count += 1
         elif section_type in ('view_temporary_definition',
                               'view_definition'):
             path = os.path.join(directory, name, 'views.sql')
+            
             if filter_cre.search(path):
-                output(cmd, path, iterator)
+                if view_count == 0:
+                    # no views have been written yet
+                    # truncate the file, if it necessary
+                    open(path, 'wb').close()
+                output(cmd, path, iterator, mode='ab')
+                view_count += 1
             else:
                 logging.debug("No regex match on '%s'", path)
                 for line in iterator:
                     pass
-            view_count += 1
         else:
             logging.debug("Skipping section type: %s", section_type)
             # drain iterator, so we can continue
@@ -161,5 +167,3 @@ def split_mysqldump(target='5.5',
     logging.info("Split input into %d database(s) %d table(s) and %d view(s)",
                  database_count, table_count, view_count)
     return 0
-
-
