@@ -24,7 +24,8 @@ def frm_to_schema(*paths):
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
-            print("Could not parse '%s': [%s] %s" % (name, exc.errno, exc.strerror), file=sys.stderr)
+            exc = sys.exc_info()[1]
+            print("Failed to parse '%s': %s" % (name, exc), file=sys.stderr)
             failures += 1
             continue
 
