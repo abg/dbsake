@@ -346,10 +346,10 @@ def unpack_type_longlong(defaults, context):
 
 ## Floating point types
 def unpack_type_float(defaults, context):
-    return defaults.float32()
+    return "'%s'" % str(defaults.float()).rstrip('0')
 
 def unpack_type_double(defaults, context):
-    return defaults.float64()
+    return "'%s'" % str(defaults.double()).rstrip('0')
 
 ## Null type
 def unpack_type_null(defaults, context):
