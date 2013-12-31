@@ -12,6 +12,7 @@ import sys
 
 from dbsake import baker
 
+from . import importfrm
 from . import parser
 from . import tablename
 
@@ -57,3 +58,13 @@ def tablename_to_filename(*names):
     for name in names:
         print(tablename.tablename_to_filename(name))
     return 0
+
+@baker.command(name='import-frm')
+def import_frm(source, destination):
+    try:
+        importfrm.import_frm(source, destination)
+    except IOError as exc:
+        print("Import failed: [%d] %s" % (exc.errno, exc.strerror), file=sys.stderr)
+        return 1
+    else:
+        return 0
