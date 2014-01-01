@@ -18,6 +18,7 @@ from . import tablename
 
 @baker.command(name='frm-to-schema')
 def frm_to_schema(*paths):
+    """Decode a binary MySQl .frm file to DDL"""
     failures = 0
     for name in paths:
         try:
@@ -48,19 +49,27 @@ def frm_to_schema(*paths):
 
 @baker.command(name='filename-to-tablename')
 def filename_to_tablename(*names):
-    """Convert a MySQL filename to a unicode tablename"""
+    """Decode a MySQL tablename as a unicode name
+
+    :param names: filenames to decode
+    """
     for name in names:
         print(tablename.filename_to_tablename(name))
     return 0
 
 @baker.command(name='tablename-to-filename')
 def tablename_to_filename(*names):
+    """Encode a unicode tablename as a MySQL filename
+
+    :param names: names to encode
+    """
     for name in names:
         print(tablename.tablename_to_filename(name))
     return 0
 
 @baker.command(name='import-frm')
 def import_frm(source, destination):
+    """Import a binary .frm as a MyISAM table"""
     try:
         importfrm.import_frm(source, destination)
     except IOError as exc:

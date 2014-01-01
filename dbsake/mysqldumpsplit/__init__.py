@@ -46,6 +46,7 @@ def split_mysqldump(target='5.5',
                     directory='.',
                     filter_command='gzip -1',
                     regex='.*'):
+    """Split mysqldump output into separate files"""
     defer_indexes = False
     defer_constraints = False
     cmd = filter_command

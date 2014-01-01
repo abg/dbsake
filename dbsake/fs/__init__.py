@@ -32,6 +32,13 @@ MAP_FAILED = -1
 
 @baker.command
 def fincore(verbose=False, *paths):
+    """Check if a file is cached by the OS
+
+    Outputs the cached vs. total pages with a percent.
+
+    :param verbose: itemize which pages are cached
+    :param paths: check if these paths are cached
+    """
     for path in paths:
         with open(path, 'rb') as fileobj:
             fd = fileobj.fileno()
@@ -65,7 +72,11 @@ def fincore(verbose=False, *paths):
     return 0
 
 @baker.command
-def uncache(verbose=False, *paths):
+def uncache(*paths):
+    """Uncache a file from the OS page cache
+
+    :param paths: uncache files for these paths
+    """
     # from /usr/include/linux/fadvise.h
     POSIX_FADV_DONTNEED = 4
     libc = ctypes.CDLL(ctypes.util.find_library("c"))
@@ -79,8 +90,7 @@ def uncache(verbose=False, *paths):
                 if ret != 0:
                     print("posix_fadvise(%s) failed (ret=%d)" % (path, ret), file=sys.stderr)
                     errors += 1
-                elif verbose:
-                    print("Uncached %s" % path)
+                print("Uncached %s" % path)
         except IOError as exc:
             print("Could not uncache '%s': [%d] %s" % (path, exc.errno, exc.strerror), file=sys.stderr)
             errors += 1
