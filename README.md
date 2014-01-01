@@ -43,3 +43,8 @@ This currently consists of two tools:
 * ```uncache [--verbose] [path] [path...]```
 
   Drop cached pages in a set of paths.
+
+* ```read-ib-binlog path```
+
+  Read binary log filename and position from the InnoDB shared tablespace 
+  system header page and format the information as a friendly CHANGE MASTER sql command.
