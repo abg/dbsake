@@ -4,6 +4,11 @@ import os
 import pkgutil
 import sys
 
+try:
+    _basestring = basestring
+except NameError:
+    _basestring = str
+
 from dbsake import argparse
 from dbsake import baker
 
@@ -23,8 +28,8 @@ def log_level(name):
 def main():
     sys.stdout = codecs.getwriter('utf8')(sys.stdout)
     parser = argparse.ArgumentParser()
-    valid_log_levels = [name for name in logging._levelNames
-                        if isinstance(name, int) and name != logging.NOTSET]
+    valid_log_levels = [name.lower() for name in logging._levelNames
+                        if isinstance(name, _basestring) and name is not 'NOTSET']
     parser.add_argument('-l', '--log-level',
                         choices=valid_log_levels,
                         type=log_level,
