@@ -39,6 +39,11 @@ def fincore(verbose=False, *paths):
     :param verbose: itemize which pages are cached
     :param paths: check if these paths are cached
     """
+
+    if not paths:
+        baker.usage('fincore')
+        return 1
+
     for path in paths:
         with open(path, 'rb') as fileobj:
             fd = fileobj.fileno()
@@ -82,6 +87,10 @@ def uncache(*paths):
     libc = ctypes.CDLL(ctypes.util.find_library("c"))
     posix_fadvise = libc.posix_fadvise
     errors = 0
+
+    if not paths:
+        baker.usage('uncache')
+        return 1
 
     for path in paths:
         try:
