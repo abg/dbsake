@@ -16,18 +16,16 @@ from dbsake.upgrademycnf import parser
 @baker.command(name='upgrade-mycnf',
                shortopts=dict(config="c",
                               target="t",
-                              patch="p"),
-               params=dict(config="my.cnf file to parse "
-                                  "(default: /etc/my.cnf)",
-                           target="MySQL version to target the option file "
-                                  "(default 5.5)",
-                           patch="Output unified diff rather than full config "
-                                 "(default off)",
-                           ))
+                              patch="p"))
 def upgrade_mycnf(config='/etc/my.cnf',
                   target='5.5',
                   patch=False):
+    """Patch a my.cnf to a new MySQL version
 
+    :param config: my.cnf file to parse (default: /etc/my.cnf)
+    :param target: MySQL version to target the option file (default: 5.5)
+    :param patch: Output unified diff rather than full config (default off)
+    """
     if target == '5.1':
         rewriter = parser.MySQL51OptionRewriter
     elif target == '5.5':

@@ -71,9 +71,15 @@ def format_create_table(table_ddl, indexes):
     result = []
     deferred_lines = set(line for _, _, line in indexes)
     for line in table_ddl.splitlines(True):
+        # this intends to strip trailing commas on lines
+        # just before the closing parentheses to ensure
+        # valid syntax even if we just dropped some 
+        # indexes or constraints
+        if line.startswith(')'):
+            eol = result[-1][-1]
+            result[-1] = result[-1].rstrip().rstrip(",") + eol
         if line not in deferred_lines:
             result.append(line)
-    result[-2] = re.sub(r',($)', r'\1', result[-2])
     return ''.join(result)
 
 def split_indexes(table_ddl, defer_constraints=False):

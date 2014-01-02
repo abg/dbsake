@@ -11,7 +11,7 @@ import sys
 
 from dbsake import baker
 
-@baker.command(name='import-ibd')
+#@baker.command(name='import-ibd')
 def importibd():
     print("Not implemented.", file=sys.stderr)
     return 1
