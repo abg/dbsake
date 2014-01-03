@@ -11,6 +11,7 @@ Source0:        dbsake-1.0.0.tar.gz
 
 BuildArch:      noarch
 BuildRequires:  python-devel
+BuildRequires:  python-setuptools
 
 %description
 dbsake is a collection of tools to aid in administrating MySQL databases
