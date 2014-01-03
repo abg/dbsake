@@ -32,13 +32,12 @@ def main():
                         if isinstance(name, _basestring) and name is not 'NOTSET']
     parser.add_argument('-l', '--log-level',
                         choices=valid_log_levels,
-                        type=log_level,
                         help="Choose a log level; default: info",
                         default='info')
     parser.add_argument("cmd", nargs="...")
     opts = parser.parse_args()
     logging.basicConfig(format="%(asctime)s %(message)s",
-                        level=opts.log_level)
+                        level=log_level(opts.log_level))
     discover_commands()
     try:
         logging.debug("argv: %r", opts.cmd)
