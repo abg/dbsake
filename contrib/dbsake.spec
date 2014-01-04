@@ -12,9 +12,11 @@ Source0:        dbsake-1.0.0.tar.gz
 BuildArch:      noarch
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
+Requires:       python-setuptools
 
 %description
-dbsake is a collection of tools to aid in administrating MySQL databases
+DBSake is a collection of command-line tools to perform various DBA related
+tasks for MySQL.
 
 
 %prep
