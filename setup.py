@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
-version = '1.0'
+from dbsake import __version__
 
 setup(
     name='dbsake',
-    version=version,
+    version=__version__,
     description="",
     long_description="",
     classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
