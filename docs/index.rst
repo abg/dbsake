@@ -22,7 +22,7 @@ tasks for MySQL.
    .. toctree::
       :maxdepth: 4
    
-      intro
+      getting_started
       subcommands
       developing
 
@@ -31,7 +31,7 @@ tasks for MySQL.
    .. toctree::
       :maxdepth: 4
    
-      intro
+      getting_started
       subcommands
 
 Indices and tables
