@@ -1,3 +1,5 @@
+.. _contributing:
+
 Contributing to dbsake
 ----------------------
 dbsake is maintained at https://github.com/abg/dbsake

@@ -182,6 +182,8 @@ directives.
    Specify the output should be a unified diff rather than a full my.cnf.
    Defaults to outputting a full my.cnf if this option is not specified.
 
+.. _frm-to-schema:
+
 frm-to-schema
 ~~~~~~~~~~~~~
 

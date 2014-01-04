@@ -46,7 +46,7 @@ make it executable and run it directly.
 
 With dbsake download you can run any of its subcommands.  For instance if you
 want to poke an frm and see its table structure you might use the
-`frm-to-schema`_ command::
+:ref:`frm-to-schema` command::
 
    $ sudo ./dbsake frm-to-schema /var/lib/mysql/mysql/plugin.frm
    --
@@ -62,7 +62,9 @@ want to poke an frm and see its table structure you might use the
 Reporting Bugs
 --------------
 
-If you find a bug in dbsake please report it
-`here <https://github.com/abg/dbsake/issues/new>`_
+If you find a bug in dbsake please report the issue on the dbsake
+issue on github `here <https://github.com/abg/dbsake/issues/new>`_
 
-
+If you know how to fix the problem feel free to fork dbsake
+and submit a pull request.  See :ref:`contributing` for more
+information.
