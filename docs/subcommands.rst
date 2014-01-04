@@ -11,6 +11,14 @@ pages.  Currently this done with a single mincore() call and requires 1-byte for
 each 4KiB page.  For very large files, this may require several MiBs or more of
 memory.  For a 1TB file this is 256MiB, for instance.
 
+.. code-block:: bash
+
+   $ dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=37376 cached=0 percent=0.00
+   $ cat /var/lib/mysql/ibdata1 > /dev/null
+   $ dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=37376 cached=37376 percent=100.00
+
 .. program:: fincore
 
 .. option:: --verbose
@@ -36,6 +44,15 @@ may be using innodb-flush-method=O_DIRECT, and once these pages are cached
 there can be a performance degradation.  uncache drops these cached pages
 from the OS so O_DIRECT can work better.
 
+.. code-block:: bash
+
+   $ dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=37376 cached=37376 percent=100.00
+   $ dbsake uncache /var/lib/mysql/ibdata1
+   Uncached /var/lib/mysql/ibdata1
+   $ dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=37376 cached=0 percent=0.00
+
 .. program:: uncache
 
 .. option:: path [path...]
@@ -52,52 +69,35 @@ dumpfile.   Files are created under a subdirectory which matches the database
 name.  An optional filtering command can be specified to compress these files,
 and split-mysqldump defaults to filtering through gzip --fast (gzip -1).
 
-For example with the standard "mysql" database you might end up with a
-set of files that look like the following:
-
 .. code-block:: bash
 
-    # tree mysql
-    mysql/
-        columns_priv.schema.sql.gz
-        create.sql.gz
-        db.schema.sql.gz
-        event.schema.sql.gz
-        func.schema.sql.gz
-        general_log.schema.sql.gz
-        help_category.schema.sql.gz
-        help_keyword.schema.sql.gz
-        help_relation.schema.sql.gz
-        help_topic.schema.sql.gz
-        host.schema.sql.gz
-        innodb_index_stats.schema.sql.gz
-        innodb_table_stats.schema.sql.gz
-        ndb_binlog_index.schema.sql.gz
-        plugin.schema.sql.gz
-        proc.schema.sql.gz
-        procs_priv.schema.sql.gz
-        proxies_priv.schema.sql.gz
-        servers.schema.sql.gz
-        slave_master_info.schema.sql.gz
-        slave_relay_log_info.schema.sql.gz
-        slave_worker_info.schema.sql.gz
-        slow_log.schema.sql.gz
-        tables_priv.schema.sql.gz
-        time_zone_leap_second.schema.sql.gz
-        time_zone_name.schema.sql.gz
-        time_zone.schema.sql.gz
-        time_zone_transition.schema.sql.gz
-        time_zone_transition_type.schema.sql.gz
-        user.schema.sql.gz
-
-
-.schema.sql* files include the table structure (CREATE TABLE)
-.data.sql* files include the table data (INSERT INTO <table>)
-create.sql* includes statements to recreate the database
-
-If processing mysqldump --events --routines split-mysqldump will
-additionally creates a routines.sql and events.sql files with the
-correct content as needed.
+   $ mysqldump sakila | dbsake split-mysqldump -C backups/
+   2014-01-04 05:34:01,181 Deferring indexes for sakila.actor (backups/sakila/actor.schema.sql)
+   2014-01-04 05:34:01,185 Injecting deferred index creation backups/sakila/actor.data.sql
+   2014-01-04 05:34:01,194 Not deferring index `idx_fk_city_id` - used by constraint `fk_address_city`
+   2014-01-04 05:34:01,211 Not deferring index `idx_fk_country_id` - used by constraint `fk_city_country`
+   2014-01-04 05:34:01,227 Not deferring index `idx_fk_address_id` - used by constraint `fk_customer_address`
+   2014-01-04 05:34:01,227 Not deferring index `idx_fk_store_id` - used by constraint `fk_customer_store`
+   2014-01-04 05:34:01,227 Deferring indexes for sakila.customer (backups/sakila/customer.schema.sql)
+   2014-01-04 05:34:01,231 Injecting deferred index creation backups/sakila/customer.data.sql
+   2014-01-04 05:34:01,240 Not deferring index `idx_fk_original_language_id` - used by constraint `fk_film_language_original`
+   2014-01-04 05:34:01,240 Not deferring index `idx_fk_language_id` - used by constraint `fk_film_language`
+   2014-01-04 05:34:01,240 Deferring indexes for sakila.film (backups/sakila/film.schema.sql)
+   2014-01-04 05:34:01,245 Injecting deferred index creation backups/sakila/film.data.sql
+   2014-01-04 05:34:01,258 Not deferring index `idx_fk_film_id` - used by constraint `fk_film_actor_film`
+   2014-01-04 05:34:01,275 Not deferring index `fk_film_category_category` - used by constraint `fk_film_category_category`
+   2014-01-04 05:34:01,300 Not deferring index `idx_fk_film_id` - used by constraint `fk_inventory_film`
+   2014-01-04 05:34:01,301 Not deferring index `idx_store_id_film_id` - used by constraint `fk_inventory_store`
+   2014-01-04 05:34:01,330 Not deferring index `idx_fk_customer_id` - used by constraint `fk_payment_customer`
+   2014-01-04 05:34:01,331 Not deferring index `idx_fk_staff_id` - used by constraint `fk_payment_staff`
+   2014-01-04 05:34:01,331 Not deferring index `fk_payment_rental` - used by constraint `fk_payment_rental`
+   2014-01-04 05:34:01,380 Not deferring index `idx_fk_staff_id` - used by constraint `fk_rental_staff`
+   2014-01-04 05:34:01,380 Not deferring index `idx_fk_customer_id` - used by constraint `fk_rental_customer`
+   2014-01-04 05:34:01,381 Not deferring index `idx_fk_inventory_id` - used by constraint `fk_rental_inventory`
+   2014-01-04 05:34:01,445 Not deferring index `idx_fk_address_id` - used by constraint `fk_staff_address`
+   2014-01-04 05:34:01,446 Not deferring index `idx_fk_store_id` - used by constraint `fk_staff_store`
+   2014-01-04 05:34:01,460 Not deferring index `idx_fk_address_id` - used by constraint `fk_store_address`
+   2014-01-04 05:34:01,493 Split input into 1 database(s) 16 table(s) and 14 view(s)
 
 .. program:: split-mysqldump
 
@@ -147,6 +147,22 @@ If -p, --patch is specified a unified diff is output on stdout rather than
 a full my.cnf.  --patch is required if a my.cnf includes any !include*
 directives.
 
+.. code-block:: bash
+
+   $ dbsake upgrade-mycnf -t 5.6 --patch /etc/my.cnf
+   2014-01-04 05:36:34,757 Removing option 'skip-external-locking'. Reason: Default behavior in MySQL 4.1+
+   --- a/etc/my.cnf
+   +++ b/etc/my.cnf
+   @@ -17,7 +17,6 @@
+    datadir                         = /var/lib/mysql
+    #tmpdir                         = /var/lib/mysqltmp
+    socket                          = /var/lib/mysql/mysql.sock
+   -skip-external-locking           = 1
+    open-files-limit                = 20000
+    #sql-mode                       = TRADITIONAL
+    #event-scheduler                = 1
+    
+
 .. program:: upgrade-mycnf
 
 .. option:: -c <config>, --config <config>
@@ -179,6 +195,20 @@ according to rules similar to the MySQL server.
    references are not preserved and AUTO_INCREMENT values are also not
    preserved as these are stored outside of the .frm.
 
+.. code-block:: bash
+
+   $ dbsake frm-to-schema /var/lib/mysql/mysql/plugin.frm
+   --
+   -- Created with MySQL Version 5.6.15
+   --
+   
+   CREATE TABLE `plugin` (
+     `name` varchar(64) NOT NULL /* MYSQL_TYPE_VARCHAR */ DEFAULT '',
+     `dl` varchar(128) NOT NULL /* MYSQL_TYPE_VARCHAR */ DEFAULT '',
+     PRIMARY KEY (`name`)
+   ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT 'MySQL plugins';
+
+
 .. program:: frm-to-schema
 
 .. option:: path [path...]
@@ -195,6 +225,11 @@ As of MySQL 5.1, tablenames with special characters are encoded with a custom
 "filename" encoding.  This command reverses that process to output the original
 tablename.
 
+.. code-block:: bash
+
+   $ dbsake filename-to-tablename $(basename /var/lib/mysql/test/foo@002ebar.frm .frm)
+   foo.bar
+
 .. program:: filename-to-tablename
 
 .. option:: path [path...]
@@ -208,6 +243,11 @@ Encode a MySQL tablename with the MySQL filename encoding
 
 This is the opposite of filename-to-tablename, where it takes a normal
 tablename and converts it using MySQL's filename encoding.
+
+.. code-block:: bash
+
+   $ dbsake tablename-to-filename foo.bar
+   foo@002ebar
 
 .. program:: tablename-to-filename
 
@@ -250,6 +290,12 @@ coordinates relative to InnoDB transactions.  This is stored in the system
 header page of the first InnoDB shared tablespace (e.g. /var/lib/mysql/ibdata1
 with a standard MySQL configuration).  This command reads the filename and
 position of the log coordinates and outputs a friendly CHANGE MASTER command.
+
+.. code-block:: bash
+
+   $ dbsake read-ib-binlog /var/lib/mysql/ibdata1
+   CHANGE MASTER TO MASTER_LOG_FILE='mysqld-bin.000003', MASTER_LOG_POS=644905653;
+
 
 .. program:: read-ib-binlog
 
