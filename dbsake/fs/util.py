@@ -121,10 +121,12 @@ def fincore(path, enumerate_pages=False):
         if pa == MAP_FAILED:
             raise ctypes_os_error("mmap('%s')" % path)
 
+        # round the filesize to the nearest page size
+        # note the use of integer division here
         total_pages = (st_size+PAGESIZE-1)//PAGESIZE
-        vec = (ctypes.c_uint8*total_pages)()
 
         try:
+            vec = (ctypes.c_uint8*total_pages)()
             ret = mincore(ctypes.c_void_p(pa), ctypes.c_size_t(st_size), vec)
             if ret != 0:
                 raise ctypes_os_error("mincore")
@@ -141,6 +143,11 @@ def fincore(path, enumerate_pages=False):
         return CacheStats(total_pages, cached_count, pages)
 
 def uncache(path):
+    """Uncache the file contents specified by ``path``
+
+    :param path: the path to uncache
+    :raises: OSError, IOError
+    """
     with open(path, 'rb') as fileobj:
         ret = posix_fadvise(fileobj.fileno(), 0, 0, POSIX_FADV_DONTNEED)
         if ret != 0:
