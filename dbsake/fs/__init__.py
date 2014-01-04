@@ -31,6 +31,9 @@ def fincore(verbose=False, *paths):
     errors = 0
 
     for path in paths:
+        if not os.path.isfile(path):
+            print("Skipping '%s'. Not a regular file" % path, file=sys.stderr)
+            continue
         try:
             stats = util.fincore(path, verbose)
             for page in stats.pages:
@@ -59,6 +62,9 @@ def uncache(*paths):
 
     errors = 0
     for path in paths:
+        if not os.path.isfile(path):
+            print("Skipping '%s'. Not a regular file" % path, file=sys.stderr)
+            continue
         try:
             util.uncache(path)
             print("Uncached %s" % path)
