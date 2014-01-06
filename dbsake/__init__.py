@@ -9,6 +9,8 @@ try:
 except NameError:
     _basestring = str
 
+__version__ = '1.0.1'
+
 from dbsake import argparse
 from dbsake import baker
 
@@ -30,15 +32,16 @@ def main():
     parser = argparse.ArgumentParser()
     valid_log_levels = [name.lower() for name in logging._levelNames
                         if isinstance(name, _basestring) and name is not 'NOTSET']
+    parser.add_argument('--version', '-V', action='version',
+                        version='%(prog)s ' + __version__)
     parser.add_argument('-l', '--log-level',
                         choices=valid_log_levels,
-                        type=log_level,
                         help="Choose a log level; default: info",
                         default='info')
     parser.add_argument("cmd", nargs="...")
     opts = parser.parse_args()
     logging.basicConfig(format="%(asctime)s %(message)s",
-                        level=opts.log_level)
+                        level=log_level(opts.log_level))
     discover_commands()
     try:
         logging.debug("argv: %r", opts.cmd)
