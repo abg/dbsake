@@ -1,0 +1,20 @@
+dbsake changelog
+================
+
+Version 1.0.1
+-------------
+
+- [dbsake] dbsake --log-level/-l now parses logging level names properly
+- [dbsake] dbsake now supports a --version/-V option
+
+- [dbsake.fs] fincore now handles zero-byte files correctly
+- [dbsake.fs] fincore now releases mmap file resources correctly
+- [dbsake.fs] fincore and uncache commands now skip paths that are not regular files
+
+- [dbsake/docs] sphinx documentation has been added under ./docs/
+- [dbsake/rpm] Add missing Requires/BuildRequires: python-setuptools to 
+               ./contrib/dbsake.spec
+
+Version 1.0.0
+-------------
+- First release of dbsake
