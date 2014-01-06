@@ -139,7 +139,7 @@ def fincore(path, enumerate_pages=False):
         cached_count = sum(1 for page in vec if page & 1)
         pages = ()
         if enumerate_pages:
-            pages = tuple(page for page in vec if page & 1)
+            pages = tuple(offset for offset, page in enumerate(vec) if page & 1)
         return CacheStats(total_pages, cached_count, pages)
 
 def uncache(path):
