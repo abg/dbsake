@@ -51,6 +51,33 @@ _Key = collections.namedtuple('Key',
                               'index_type is_unique parser comment')
 
 class Key(_Key):
+    maybe_prefix_types = set([
+        'VARCHAR',
+        'VAR_STRING',
+        'STRING',
+    ])
+
+    always_prefix_types = set([
+        'TINY_BLOB',
+        'MEDIUM_BLOB',
+        'LONG_BLOB',
+        'BLOB',
+        'GEOMETRY',
+    ])
+
+    def _format_key_part(self, part):
+        # format the basic column name being indexed
+        value = str(part)
+        if self.index_type in ('FULLTEXT', 'SPATIAL'):
+            # FULLTEXT / SPATIAL may never have an index prefix
+            return value
+        elif (part.column.type_code.name in self.maybe_prefix_types
+                and part.length != part.column.length) or \
+             (part.column.type_code.name in self.always_prefix_types):
+                prefix_length = part.length // part.column.charset.maxlen
+                value += '({0})'.format(prefix_length)
+        return value
+
     def __str__(self):
         components = []
         if self.name == 'PRIMARY':
@@ -67,7 +94,8 @@ class Key(_Key):
         if self.name and self.name != 'PRIMARY':
             components.append("`{0}`".format(self.name))
 
-        columns = '({0})'.format(','.join(str(part) for part in self.parts))
+        columns = '({0})'.format(','.join(self._format_key_part(part)
+                                          for part in self.parts))
         components.append(columns)
 
         if self.algorithm:
@@ -84,8 +112,8 @@ class Key(_Key):
 _KeyPart = collections.namedtuple('KeyPart', 'column length')
 
 class KeyPart(_KeyPart):
+    
     def __str__(self):
-        # XXX: handle prefix indexes with (length) modifiers
         return "`{0}`".format(self.column.name)
 
 
