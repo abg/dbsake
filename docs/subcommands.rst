@@ -200,14 +200,16 @@ according to rules similar to the MySQL server.
 
 .. code-block:: bash
 
+
    $ dbsake frm-to-schema /var/lib/mysql/mysql/plugin.frm
    --
+   -- Table structure for table `plugin`
    -- Created with MySQL Version 5.6.15
    --
    
    CREATE TABLE `plugin` (
-     `name` varchar(64) NOT NULL /* MYSQL_TYPE_VARCHAR */ DEFAULT '',
-     `dl` varchar(128) NOT NULL /* MYSQL_TYPE_VARCHAR */ DEFAULT '',
+     `name` varchar(64) NOT NULL DEFAULT '',
+     `dl` varchar(128) NOT NULL DEFAULT '',
      PRIMARY KEY (`name`)
    ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT 'MySQL plugins';
 
@@ -229,12 +231,27 @@ according to rules similar to the MySQL server.
    Output view as CREATE OR REPLACE so that running the DDL against MySQL will
    overwrite a view.
 
+.. option:: --raw-types
+
+   Add comment to base tables noting the underlying mysql type code
+   as MYSQL_TYPE_<name>.
+
 .. option:: path [path...]
 
    Specify the .frm files to generate a CREATE TABLE command from.
 
 .. versionchanged:: 1.0.2
    Views are parsed from .frm files rather than skipped.
+
+.. versionchanged:: 1.0.2
+   Raw MySQL types are no longer added as comments unless the --raw-types
+   option is specified.
+
+.. versionchanged:: 1.0.2
+   A -- Table structure for table \`<name>\` comment is added before each table
+
+.. versionadded:: 1.0.2
+   The :option:`frm-to-schema --raw-types` option
 
 .. versionadded:: 1.0.2
    The :option:`frm-to-schema --replace` option
