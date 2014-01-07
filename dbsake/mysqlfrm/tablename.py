@@ -1108,3 +1108,6 @@ def iter_tablename_to_filename(value):
             continue
 
         yield b'@{0:04x}'.format(ordinal)
+
+decode = filename_to_tablename
+encode = tablename_to_filename
