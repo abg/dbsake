@@ -14,15 +14,46 @@ from dbsake import baker
 
 from . import importfrm
 from . import parser
+from . import mysqlview
 from . import tablename
 
 @baker.command(name='frm-to-schema')
-def frm_to_schema(*paths):
-    """Decode a binary MySQl .frm file to DDL"""
+def frm_to_schema(replace=False, *paths):
+    """Decode a binary MySQl .frm file to DDL
+
+    :param replace: If a path references a view output CREATE OR REPLACE
+                    so a view definition can be replaced.
+    :param paths: paths to extract schema from
+    """
     failures = 0
     for name in paths:
         try:
-            table = parser.parse(name)
+            with open(name, 'rb') as fileobj:
+                header = fileobj.read(9)
+        except IOError as exc:
+            print("Unable to open '%s': [%d] %s" % (name, exc.errno, exc.strerror), file=sys.stderr)
+            failures += 1
+            continue
+
+        try:
+            if header[0:2] == b'\xfe\x01':
+                table = parser.parse(name)
+                g = itertools.chain(table.columns, table.keys)
+                print("--")
+                print("-- Created with MySQL Version {0}".format(table.mysql_version))
+                print("--")
+                print()
+                print("CREATE TABLE `%s` (" % table.name)
+                print(",\n".join("  %s" % str(name) for name in g))
+                print(") {0};".format(table.options))
+                print()
+            elif header == b'TYPE=VIEW':
+                view = mysqlview.parse(name)
+                table = str(view)
+                if replace:
+                    table = table.replace('CREATE', 'CREATE OR REPLACE', 1)
+                print(table)
+                print()
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
@@ -30,16 +61,6 @@ def frm_to_schema(*paths):
             print("Failed to parse '%s': %s" % (name, exc), file=sys.stderr)
             failures += 1
             continue
-
-        g = itertools.chain(table.columns, table.keys)
-        print("--")
-        print("-- Created with MySQL Version {0}".format(table.mysql_version))
-        print("--")
-        print()
-        print("CREATE TABLE `%s` (" % table.name)
-        print(",\n".join("  %s" % str(name) for name in g))
-        print(") {0};".format(table.options))
-        print()
     
     if failures:
         print("%d parsing failures" % failures)
