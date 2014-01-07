@@ -170,7 +170,6 @@ class Column(_Column):
         components = []
         components.append("`%s`" % self.name.replace('`', '``'))
         components.append(self.type_name)
-        components.append('/* MYSQL_TYPE_{0} */'.format(self.type_code.name))
         if self.default:
             components.append('DEFAULT %s' % self.default)
         if self.comment:
