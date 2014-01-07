@@ -4,6 +4,17 @@ dbsake changelog
 Version 1.0.2
 -------------
 
+- [dbsake.mysqlfrm] frm-to-schema now parses views from .frm files.
+- [dbsake.mysqlfrm] frm-to-schema --replace will output views with 
+                    CREATE OR REPLACE syntax
+- [dbsake.mysqlfrm] frm-to-schema now formats index components with a prefix
+                    length correctly
+- [dbsake.mysqlfrm] frm-to-schema no longer outputs the raw mysql type as a
+                    comment.  Use the --raw-types option for the old behavior.
+- [dbsake.mysqlfrm] frm-to-schema outputs an additional sql comment for
+                    base tables "-- Table structure for table `<name>`"
+                    similar to mysqldump
+
 Version 1.0.1
 -------------
 
