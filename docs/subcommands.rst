@@ -240,6 +240,9 @@ according to rules similar to the MySQL server.
 
    Specify the .frm files to generate a CREATE TABLE command from.
 
+.. versionadded:: 1.0.2
+   Support for indexes with a prefix length in binary .frm files; e.g. KEY (blob_value(255))
+
 .. versionchanged:: 1.0.2
    Views are parsed from .frm files rather than skipped.
 
