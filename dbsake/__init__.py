@@ -9,7 +9,7 @@ try:
 except NameError:
     _basestring = str
 
-__version__ = '1.0.2-dev'
+__version__ = '1.0.2'
 
 from dbsake import argparse
 from dbsake import baker
