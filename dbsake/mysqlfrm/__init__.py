@@ -18,13 +18,19 @@ from . import mysqlview
 from . import tablename
 
 @baker.command(name='frm-to-schema')
-def frm_to_schema(replace=False, *paths):
+def frm_to_schema(raw_types=False, replace=False, *paths):
     """Decode a binary MySQl .frm file to DDL
 
     :param replace: If a path references a view output CREATE OR REPLACE
                     so a view definition can be replaced.
     :param paths: paths to extract schema from
     """
+    def _fmt_column(column):
+        value = str(column)
+        if raw_types:
+            value += ' /* MYSQL_TYPE_%s */' % column.type_code.name
+        return value
+
     failures = 0
     for name in paths:
         try:
@@ -38,8 +44,10 @@ def frm_to_schema(replace=False, *paths):
         try:
             if header[0:2] == b'\xfe\x01':
                 table = parser.parse(name)
-                g = itertools.chain(table.columns, table.keys)
+                g = itertools.chain((_fmt_column(c) for c in table.columns),
+                                     table.keys)
                 print("--")
+                print("-- Table structure for table `%s`" % table.name)
                 print("-- Created with MySQL Version {0}".format(table.mysql_version))
                 print("--")
                 print()
