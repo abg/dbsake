@@ -1,33 +1,43 @@
 dbsake changelog
 ================
 
+Version 1.0.3
+-------------
+
 Version 1.0.2
 -------------
 
-- [dbsake.mysqlfrm] frm-to-schema now parses views from .frm files.
-- [dbsake.mysqlfrm] frm-to-schema --replace will output views with 
-                    CREATE OR REPLACE syntax
-- [dbsake.mysqlfrm] frm-to-schema now formats index components with a prefix
-                    length correctly
-- [dbsake.mysqlfrm] frm-to-schema no longer outputs the raw mysql type as a
-                    comment.  Use the --raw-types option for the old behavior.
-- [dbsake.mysqlfrm] frm-to-schema outputs an additional sql comment for
-                    base tables "-- Table structure for table `<name>`"
-                    similar to mysqldump
+[frm-to-schema]
+- Parse MySQL views from .frm
+- Add --replace option to support CREATE OR REPLACE VIEW syntax
+- Format indexes with a prefix length 
+- Add --raw-types option to output MYSQL_TYPE information
+- Do not output MYSQL_TYPE information by default for binary .frms
+- Add additional SQL comment for tables similar to mysqldump
+  "-- Table structure for table `<name>`"
 
 Version 1.0.1
 -------------
 
-- [dbsake] dbsake --log-level/-l now parses logging level names properly
-- [dbsake] dbsake now supports a --version/-V option
+[dbsake]
+- Fix bug with --log-level option that did not recognize log level names
+  correctly
+- Add --version/-V option to output dbsake version
 
-- [dbsake.fs] fincore now handles zero-byte files correctly
-- [dbsake.fs] fincore now releases mmap file resources correctly
-- [dbsake.fs] fincore and uncache commands now skip paths that are not regular files
+[fincore]
+- Handles zero-byte files
+- Fix bug in release mmap resources
+- Skip paths that are not regular files
 
-- [dbsake/docs] sphinx documentation has been added under ./docs/
-- [dbsake/rpm] Add missing Requires/BuildRequires: python-setuptools to 
-               ./contrib/dbsake.spec
+[uncache]
+- Skip paths that are not regular files
+
+[documentation]
+- Add initial Sphinx documentation
+
+[rpm]
+- Add missing Requires/BuildRequires: python-setuptools to 
+  contrib/dbsake.spec
 
 Version 1.0.0
 -------------
