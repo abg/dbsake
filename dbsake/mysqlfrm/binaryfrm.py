@@ -1,14 +1,15 @@
 """
-dbsake.mysqlfrm.parser
-~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysqlfrm.binaryfrm
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Core API for parsing MySQL .frm files
+Parse binary .frm files
 
 """
 
 import collections
 import datetime
 import errno
+import itertools
 import os
 import re
 
@@ -85,6 +86,10 @@ _Table = collections.namedtuple('Table',
                                 'columns keys')
 
 class Table(_Table):
+    @property
+    def type(self):
+        return 'TABLE'
+
     @classmethod
     def from_data(cls, data, context):
         extrainfo = context.extrainfo
@@ -157,9 +162,27 @@ class Table(_Table):
             keys=()
         )
             
-    def __str__(self):
-        return 'CREATE TABLE %s () %s' % (self.name, self.options)
+    def format(self, include_raw_types=False):
+        def _fmt_column(column):
+            value = str(column)
+            if include_raw_types:
+                value += ' /* MYSQL_TYPE_%s */' % column.type_code.name
+            return value
 
+        g = itertools.chain((_fmt_column(c) for c in self.columns), self.keys)
+        parts = [
+            u"--",
+            u"-- Table structure for table `%s`" % self.name,
+            u"-- Created with MySQL Version {0}".format(self.mysql_version),
+            u"--",
+            u"",
+            u"CREATE TABLE `%s` (" % self.name,
+            u",\n".join("  %s" % str(name) for name in g),
+            u") {0};".format(self.options),
+            u""
+        ]
+
+        return os.linesep.join(parts)
 
 _Column = collections.namedtuple('Column', 
                                 'name type_code type_name length attributes '
