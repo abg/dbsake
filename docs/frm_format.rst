@@ -1,5 +1,15 @@
+.. _frm_format:
+
+Description of the .frm format
+------------------------------
+
+dbsake parses some undocumented / poorly documented formats for MySQL
+which were decoded by inspecting the MySQL source code.  Here is a
+detailed document that attempts to describe the details of such
+formats for other who may hack on these parts of dbsake.
+
 .frm fileinfo section
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 The fileinfo section consists of 64 bytes that encode information about
 the rest of the .frm file and various table level options.
@@ -115,13 +125,13 @@ size noted in the Length column.
 +------+-----+                |                                              |
 | 0032 | 50  |                |                                              |
 +------+-----+----------------+----------------------------------------------+
-| 0033 | 51  | 4-bytes        | MYSQL_VERSION_ID                             |
-+------+-----+                |                                              |
-| 0034 | 52  |                |                                              |
-+------+-----+                |                                              |
-| 0035 | 53  |                |                                              |
-+------+-----+                |                                              |
-| 0036 | 54  |                |                                              |
+| 0033 | 51  | 4-bytes        | MySQL version encoded as a 4-byte integer in |
++------+-----+                | little endian format. This is the value      |
+| 0034 | 52  |                | MYSQL_VERSION_ID from include/mysql_version.h|
++------+-----+                | in the mysql source tree.                    |
+| 0035 | 53  |                | Example:                                     |
++------+-----+                | '\xb6\xc5\x00\x00'                           |
+| 0036 | 54  |                | 0x0000c5b6 => 50614 => MySQL v5.6.14         | 
 +------+-----+----------------+----------------------------------------------+
 | 0037 | 55  | 4-bytes        | Size in bytes of table "extra info"          |
 +------+-----+                |                                              |
@@ -163,7 +173,7 @@ size noted in the Length column.
        in sql/handler.h, similar to legacy_db_type
 
 Key info section
-----------------
+~~~~~~~~~~~~~~~~
 
 The key info section should always start at offset 0x1000 (4096); this is 
 obtained from the 2-byte integer in fileinfo header  at offset 6, but
@@ -181,8 +191,42 @@ total number of keys, total number of key components and the size of
 by a group for each index defined in the table and then the extra data -
 names for each index followed by an optional index comment strings.
 
-Each index group consists of the index metadata and then metadata for each 
-indexed column.  This has the format:
+The header is essentially three integers:
+
+[key_count][key_parts_count][length of extra data]
+
+Where key_count is the number of indexes this metdata describes,
+      key_parts_count is the number of components across all indexes
+      and the length of extra data indicates how many bytes the index
+      names and comments uses.
+
+key_count and key_parts_count may be either 1 or 2 bytes.  If the first
+byte is > 128 then key_count and key_parts_count use two bytes, otherwise
+they use one byte each.  The extra length is always a 2 byte integer.
+
+The logic in dbsake is:
+
+.. code-block:: python
+
+    key_count = keyinfo.uint8()
+    if key_count < 128:
+        key_parts_count = keyinfo.uint8()
+        keyinfo.skip(2)
+    else:
+        key_count = (key_count & 0x7f) | (keyinfo.uint8() << 7)
+        key_parts_count = keyinfo.uint16()
+    key_extra_length = keyinfo.uint16()
+
+Each key metadata consists of 8 bytes and each key part consists of 9 bytes.
+So the total length of the index metadata is calculated by the formula::
+
+  key_count * 8 + key_parts_count * 9
+
+And this is the offset, relative to the start of keyinfo section, where the
+index names and comments are found.
+
+Each index group consists of 8 bytes of key metadata followed by 9 bytes of 
+metadata for each indexed column. 
 
 +----------------------------------------------------------------------------+
 | Index metadata (8 bytes)                                                   |
@@ -205,7 +249,7 @@ Followed by 1 or more column index metadata:
 +==============+=========+===================================================+
 | field number | 2 bytes | Which column is indexed                           |
 +--------------+---------+---------------------------------------------------+
-| offset       | 2 bytes | ???                                               |
+| offset       | 2 bytes | Offset into a MySQL datastructure (internal use)  |
 +--------------+---------+---------------------------------------------------+
 | unused       | 1 byte  |                                                   |
 +--------------+---------+---------------------------------------------------+
@@ -214,42 +258,153 @@ Followed by 1 or more column index metadata:
 | length       | 2 bytes | length of this index component                    |
 +--------------+---------+---------------------------------------------------+
 
-After this metadata the index names follow.  This is a group of 0xff delimited
-strings.  
+The names and comments follow this data with names being separated by the byte
+value 255 ('\\xff') and the names and comments sections being separated by a
+null byte.  So this essentially looks like this sort of python bytestring:
 
-Example:
-    "\xffPRIMARY\xffidx_col1\xffidx_col2\xff"
+.. code-block:: python
+   
+   b'\xffPRIMARY\xffix_column1\xff\x00<index comments>'
 
-After the column names is a set of column comments.
+Index comments are length-prefixed strings.  So there is a 2 byte integer
+(little-endian) followed by the specified number of bytes for each comment.
+
+Index comments are not terribly common so this will often be empty.
 
 Defaults Section
-----------------
+~~~~~~~~~~~~~~~~
 
-This called the "record buffer" in MySQL
+Immediately after the keyinfo section there is a byte string that details
+the defaults for each column.  So this starts at IO_SIZE + key_length,
+which can be derived from the .frm header.
 
-This data has the default values for all columns where a default is defined.
+The format of this buffer is essentially::
 
-Effectively you can think of this data as "this is how you should instantiate
-the field instance".
+  [null_map][encoded column data]
 
-There are a leading series of 1 or more bytes that contains the "null map"
-with 1 bit for every column that is potentially nullable - and if set
-denotes the default value is NULL and there is no data for that column.
+Where the null_map is 1 or more bytes, with a bit per-column that can be
+nullable.  The total number of bytes will be::
 
-There is always at least 1 byte for the null map even if a table has no
-nullable columns.
+  (null_column_count + 7 ) // 8
 
-Otherwise the default data is encoded according to the data type and
-the location in the defaults buffer can be found from the column metadata
-"record_offset" attribute.
+The first bit is always set and column bits start a 1 offset in the null
+map.  If a bit is set for the current column then this indicates the the
+default is null (ie. DEFAULT NULL).
 
-Extra info section
-------------------
+If a column's default is not null, then its default data will be recorded
+at some offset noted in the Column metadata (described elsewhere in this
+document).  The actual data format depends on the column type.  This
+basically breaks down into the following cases:
+
+ * integer-types - little-endian integers of 1, 2, 3, 4 or 8 bytes
+ * float/double - little endian IEEE 745 values
+ * decimal - either ascii strings ("3.14") < MySQL 5.0, or a binary
+             encoding of 9 decimal digits per 4-byte big-endian
+             integer
+ * timestamp - little endian integer representing seconds relative to epoch (< 5.6)
+ * timestamp2 - big-endian integer representing seconds relative to epoch (5.6+);
+                additionally packed fractional digits, similar to the decimal format
+ * date/time - encodes the various components into various bits of a 3 - 8 byte integer
+ * char - just a string with ``length`` bytes (space padded)
+ * varchar - length-prefix string, with the prefix being a little endian integer of
+             1 to 2 bytes.
+
+See dbsake/mysqlfrm/mysqltypes.py unpack_type_<name> method for how each datatype
+is actually decoded.
+
+Extra data section
+~~~~~~~~~~~~~~~~~~
+
+The "extra" section encodes some basic table properties.  These include:
+
+ * CONNECTION=<name> string (used by FEDERATED)
+ * ENGINE=<name> strings
+ * PARTITION BY string
+ * "auto partitioned flag" (used by NDB, at least)
+ * WITH PARSER - fulltext parser plugin names
+ * Table COMMENT '...' - only if > 254 bytes
+
+Except for the fulltext parser plugin names (which are null terminated), all
+of these properties are length-prefix strings.  This essentially has the format:
+
+::
+
+ [2-byte length][<connection string>]
+ [2-byte length][<engine name string>]
+ [4-byte length][<partition by clause>][null byte]
+ [1-byte is_autopartitioned flag]
+ [parser name][null_byte] for each fulltext parser plugin used
+ [2-byte length][<table comment string>]
+
+These strings should be decoded per the table's default character set.
 
 FormInfo
---------
+~~~~~~~~
+
+The .frm form info is a section consisting of 288 bytes with integers
+noting the length or count of elements in the table.
+
+The start of this section can be found at offset 64 + names_len from the
+.frm header and the offset is a 4 byte integer.  In python this would
+be found via
+
+.. code-block:: python
+
+   >> f = open('/var/lib/mysql/mysql/user.frm', 'rb')
+   >> f.seek(0x0004) # "names_length" documented in the .frm fileinfo header
+   >> names_len, = struct.unpack("<H", f.read(2)) # always 3 in modern mysql
+   >> f.seek(64 + names_len)
+   >> forminfo_offset, = struct.unpack("<I", f.read(4))
+
+Here is a description of some of the more interesting fields available in
+the forminfo section.  This is not meant to be exhaustive but merely to
+document the fields necessary for interpreting pertinent column metadata.
+
+All offsets are relative to the start of the forminfo section
+
+column_count
+    2 byte integer at offset 258
+
+    The number of coumns defined on this table
+
+screens_length
+   2 byte integer at offset 260
+ 
+   How many bytes follow the forminfo section prior to the start of the
+   column metadata  
+
+null_columns
+    2 byte integer at offset 282
+
+    How many nullable columns are defined in this table
+
+names_length
+    2 byte integer at offset 268
+
+    Length in bytes (including delimiters) of column names
+
+interval_length
+    2 byte integer at offset 274
+
+    Length in bytes (including delimiters) of the set/enum labels
+
+comments_length
+    2 byte integer at offset 284
+
+    Length in bytes of the column comments
+
 
 Column Metadata
----------------
+~~~~~~~~~~~~~~~
 
+17 bytes per column
+
+Followed by \\xff separated column names
+
+Followed by a null byte
+
+Followed by null terminated interval groups with each interval group
+consisting of interval names \\xff separated.
+
+Followed by a single string of column comments.
 

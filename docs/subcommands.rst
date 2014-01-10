@@ -192,6 +192,8 @@ Decode a MySQL .frm file and output a CREATE VIEW or CREATE TABLE statement.
 This command does not require a MySQL server and interprets a .frm file
 according to rules similar to the MySQL server.
 
+For more information on how this command works see :ref:`frm_format`
+
 .. important::
    This program only decodes data strictly available in the .frm file.
    InnoDB foreign-key references are not preserved and AUTO_INCREMENT values
