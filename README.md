@@ -1,4 +1,7 @@
 ![dbsake](https://raw.github.com/abg/dbsake/master/sake-icon.png)
+
+## DBSake
+
 dbsake is a collection of tools to aid in administrating MySQL databases
 
 Example:
@@ -48,3 +51,11 @@ This currently consists of two tools:
 
   Read binary log filename and position from the InnoDB shared tablespace 
   system header page and format the information as a friendly CHANGE MASTER sql command.
+
+## License
+
+dbsake is licensed under GPLv2. 
+
+dbsake includes a backport of argparse from python2.7, under the PSF license
+
+dbsake includes python-baker, licensed under the ASF; See: https://bitbucket.org/mchaput/baker/wiki/Home 
