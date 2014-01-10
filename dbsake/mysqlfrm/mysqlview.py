@@ -51,7 +51,12 @@ class MySQLView(collections.namedtuple('MySQLView',
                                        'name body algorithm definer suid '
                                        'check_option '
                                        'timestamp stored_md5 computed_md5')):
-    def __str__(self):
+
+    @property
+    def type(self):
+        return 'VIEW'
+
+    def format(self, create_or_replace=False):
         header = "\n".join([
             '--',
             '-- View:         {0}'.format(self.name),
@@ -63,7 +68,10 @@ class MySQLView(collections.namedtuple('MySQLView',
             ''
         ])
         parts = []
-        parts.append('CREATE')
+        if create_or_replace:
+            parts.append('CREATE OR REPLACE')
+        else:
+            parts.append('CREATE')
         parts.append('ALGORITHM=' + self.algorithm.name)
         parts.append('DEFINER=' + str(self.definer))
         security = 'INVOKER' if self.suid.name == 'DEFAULT' else self.suid.name
@@ -74,8 +82,8 @@ class MySQLView(collections.namedtuple('MySQLView',
         parts.append(self.body)
         if self.check_option:
             parts.append('WITH ' + self.check_option.name + ' CHECK OPTION')
- 
         return header + ' '.join(parts) + ';'
+
 
 def parse(path):
     """Parse a MySQL .frm view definition
