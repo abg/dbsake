@@ -36,8 +36,8 @@ from urllib import quote as url_quote
 import os
 import tokenize
 from cStringIO import StringIO
-from tempita._looper import looper
-from tempita.compat3 import bytes, basestring_, next, is_unicode, coerce_text
+from ._looper import looper
+from .compat3 import bytes, basestring_, next, is_unicode, coerce_text
 
 __all__ = ['TemplateError', 'Template', 'sub', 'HTMLTemplate',
            'sub_html', 'html', 'bunch']
