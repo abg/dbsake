@@ -12,7 +12,6 @@ import sys
 
 from dbsake import baker
 
-from . import util
 
 @baker.command
 def fincore(verbose=False, *paths):
@@ -23,7 +22,7 @@ def fincore(verbose=False, *paths):
     :param verbose: itemize which pages are cached
     :param paths: check if these paths are cached
     """
-
+    from . import util
     if not paths:
         baker.usage('fincore')
         return 1
@@ -55,6 +54,8 @@ def uncache(*paths):
 
     :param paths: uncache files for these paths
     """
+    from . import util
+
     # from /usr/include/linux/fadvise.h
     if not paths:
         baker.usage('uncache')

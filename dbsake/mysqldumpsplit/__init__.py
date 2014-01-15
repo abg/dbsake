@@ -12,9 +12,6 @@ import re
 import sys
 
 from dbsake import baker
-from dbsake.util import mkdir_safe, stream_command
-from dbsake.mysqldumpsplit.parser import MySQLDumpParser, extract_identifier
-from dbsake.mysqldumpsplit.defer import extract_create_table, split_indexes
 
 def cmd_to_ext(cmd):
     extensions = dict(gzip='.gz',
@@ -28,6 +25,7 @@ def cmd_to_ext(cmd):
     return extensions.get(name, '')
 
 def output(cmd, path, iterable, mode='wb'):
+    from dbsake.util import mkdir_safe, stream_command
     ext = cmd_to_ext(cmd)
     with open(path + ext, mode) as fileobj:
         with stream_command(cmd, stdout=fileobj) as process:
@@ -47,6 +45,9 @@ def split_mysqldump(target='5.5',
                     filter_command='gzip -1',
                     regex='.*'):
     """Split mysqldump output into separate files"""
+    from dbsake.util import mkdir_safe, stream_command
+    from dbsake.mysqldumpsplit.parser import MySQLDumpParser, extract_identifier
+    from dbsake.mysqldumpsplit.defer import extract_create_table, split_indexes
     defer_indexes = False
     defer_constraints = False
     cmd = filter_command

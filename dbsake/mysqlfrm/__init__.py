@@ -11,13 +11,11 @@ import sys
 
 from dbsake import baker
 
-from . import importfrm
-from . import binaryfrm
-from . import mysqlview
-from . import tablename
 
 def parse(path):
     """Parse a .frm file"""
+    from . import binaryfrm
+    from . import mysqlview
     with open(path, 'rb') as fileobj:
         # read up to 9 bytes to detect a view
         magic = fileobj.read(9)
@@ -65,6 +63,7 @@ def filename_to_tablename(*names):
 
     :param names: filenames to decode
     """
+    from . import tablename
     for name in names:
         print(tablename.filename_to_tablename(name))
     return 0
@@ -75,6 +74,7 @@ def tablename_to_filename(*names):
 
     :param names: names to encode
     """
+    from . import tablename
     for name in names:
         print(tablename.tablename_to_filename(name))
     return 0
@@ -82,6 +82,7 @@ def tablename_to_filename(*names):
 @baker.command(name='import-frm')
 def import_frm(source, destination):
     """Import a binary .frm as a MyISAM table"""
+    from . import importfrm
     try:
         importfrm.import_frm(source, destination)
     except IOError as exc:

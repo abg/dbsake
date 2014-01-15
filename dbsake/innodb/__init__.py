@@ -9,11 +9,11 @@ from __future__ import print_function
 import sys
 
 from dbsake import baker
-from . import binlog
 
 @baker.command(name='read-ib-binlog')
 def read_innodb_binlog(path):
     """Extract binary log filename/position from ibdata"""
+    from . import binlog
     sys_header = binlog.trx_sysf_get(path)
     try:
         filename, position = binlog.trx_sys_get_mysql_binlog(sys_header)

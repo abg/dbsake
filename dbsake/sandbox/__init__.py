@@ -13,11 +13,11 @@ import time
 
 from dbsake import baker
 
-from . import util
 
 @baker.command(name='mysql-sandbox',
                shortopts=dict(sandbox_directory="d"))
 def mysql_sandbox(sandbox_directory=None):
+    from . import util
     mysqld_safe = util.which("mysqld_safe")
     mysql = util.which("mysql")
     mysqld_search_path = ['/usr/libexec', '/usr/sbin', os.environ['PATH'] ]
