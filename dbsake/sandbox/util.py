@@ -1,10 +1,11 @@
 import codecs
+import errno
 import os
 import pkgutil
 import random
-import stat
 import string
 import sys
+import tempfile
 
 from dbsake import tempita
 from dbsake import sarge
@@ -104,6 +105,7 @@ def generate_defaults(path, user, password):
 
     options_path = os.path.join(path, 'my.sandbox.cnf')
     with codecs.open(options_path, 'w', encoding='utf8') as fileobj:
+        os.fchmod(fileobj.fileno(), 0660)
         fileobj.write(content)
 
     return options_path
@@ -127,13 +129,16 @@ def bootstrap_mysqld(mysqld, defaults_file, logfile, content):
     cmd = sarge.shell_format("{0} --defaults-file={1} --bootstrap -vvvvv",
                              mysqld, defaults_file)
     with open(logfile, 'wb') as stderr:
-        pipeline = sarge.run(cmd,
-                             input=content,
-                             stdout=stderr,
-                             stderr=stderr)
-        if sum(pipeline.returncodes) != 0:
-            raise RuntimeError("Bootstrap process failed")
-        print "pipeline.returncodes: %r" % (pipeline.returncodes, )
+        with tempfile.TemporaryFile() as tmpfile:
+            tmpfile.write(content.encode('utf8'))
+            tmpfile.flush()
+            tmpfile.seek(0)
+            pipeline = sarge.run(cmd,
+                                 input=tmpfile.fileno(),
+                                 stdout=stderr,
+                                 stderr=stderr)
+    if sum(pipeline.returncodes) != 0:
+        raise IOError(errno.EIO, "Bootstrap process failed")
 
 def generate_initscript(sandbox_directory, **kwargs):
     content = render_template("sandbox.sh", 
@@ -143,6 +148,5 @@ def generate_initscript(sandbox_directory, **kwargs):
     sandbox_sh_path = os.path.join(sandbox_directory, 'sandbox.sh')
     with codecs.open(sandbox_sh_path, 'w', encoding='utf8') as fileobj:
         # ensure initscript is executable by current user + group
-        mode = stat.S_IRUSR|stat.S_IXUSR|stat.S_IRGRP|stat.S_IXGRP
-        os.fchmod(fileobj.fileno(), mode)
+        os.fchmod(fileobj.fileno(), 0550)
         fileobj.write(content)
