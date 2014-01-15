@@ -1,6 +1,71 @@
 Subcommands
 -----------
 
+mysql-sandbox
+~~~~~~~~~~~~~
+
+Setup a secondary MySQL instance easily.
+
+This setups a MySQL under ~/sandboxes/ (by default) with a
+randomly generated password for the root@localhost user
+and networking disabled.
+
+A simple shell script is provided to start, stop and connect
+to the MySQL instance.
+
+.. code-block:: bash
+
+   $ dbsake mysql-sandbox -d /opt/test_sandbox/
+   Created /opt/test_sandbox/
+   Created /opt/test_sandbox/data
+   Created /opt/test_sandbox/tmp
+   Generating random password for root@localhost...
+   Generating my.sandbox.cnf...
+   Bootstrapping new mysql instance (this may take a few seconds)...
+     Using mysqld=/usr/sbin/mysqld
+     For details see /opt/test_sandbox/bootstrap.log
+   Bootstrapping complete!
+   Generating init script /opt/test_sandbox/sandbox.sh...
+   Sandbox creation complete!
+   You may start your sandbox by running: /opt/test_sandbox/sandbox.sh start
+   You may login to your sandbox by running: /opt/test_sandbox/sandbox.sh shell
+      or by running: /usr/bin/mysql --socket=/opt/test_sandbox/data/mysql.sock
+   Credentials are stored in /opt/test_sandbox/my.sandbox.cnf
+
+   $ /opt/test_sandbox/sandbox.sh start
+   Starting sandbox: [OK]
+
+   $ /opt/test_sandbox/sandbox.sh shell
+   Welcome to the MySQL monitor.  Commands end with ; or \g.
+   Your MySQL connection id is 2
+   Server version: 5.6.15-log MySQL Community Server (GPL)
+   
+   Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+   
+   Oracle is a registered trademark of Oracle Corporation and/or its
+   affiliates. Other names may be trademarks of their respective
+   owners.
+   
+   Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+   
+   mysql[sandbox]> select @@datadir;
+   +--------------------------+
+   | @@datadir                |
+   +--------------------------+
+   | /opt/test_sandbox/data/ |
+   +--------------------------+
+   1 row in set (0.00 sec)
+   
+   mysql[sandbox]>
+
+.. program:: mysql-sandbox
+
+.. option:: -d, --sandbox-directory <path>
+
+   Specify the path under which to create the sandbox. This defaults
+   to ~/sandboxes/sandbox_$(date +%Y%m%d_%H%M%S)
+
+
 fincore
 ~~~~~~~
 
