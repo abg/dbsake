@@ -43,9 +43,11 @@ def mysql_sandbox(sandbox_directory=None):
     service:
 
         $ ln -s $PWD/sandbox.sh /etc/init.d/my-mysql-instance
+
         $ chkconfig --add my-mysql-instance
+
         $ /etc/init.d/my-mysql-instance start
-     
+
     :param sandbox_directory: install sandbox under this path
     """
 
