@@ -22,11 +22,12 @@ mysqld_safe={{mysqld_safe}}
 mysql={{mysql}}
 sandbox_root={{sandbox_root}}
 datadir=$sandbox_root/data
+defaults_file=$sandbox_root/my.sandbox.cnf
 
 [ -f /etc/sysconfig/${NAME} ] && . /etc/sysconfig/${NAME}
 
 mysqld_safe_args="
---defaults-file=$sandbox_root/my.sandbox.cnf
+--defaults-file=$defaults_file
 --datadir=$datadir
 --pid-file=$datadir/mysql.pid
 --socket=$datadir/mysql.sock
@@ -109,7 +110,8 @@ case $1 in
         exit 3
         ;;
     shell)
-        MYSQL_PS1="mysql[sandbox]> " $mysql --defaults-file=$sandbox_root/my.sandbox.cnf
+        shift
+        MYSQL_PS1="mysql[sandbox]> " $mysql --defaults-file=$defaults_file "$@"
         ;;
     *)
         echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
