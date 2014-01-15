@@ -17,6 +17,38 @@ from dbsake import baker
 @baker.command(name='mysql-sandbox',
                shortopts=dict(sandbox_directory="d"))
 def mysql_sandbox(sandbox_directory=None):
+    """Create a temporary MySQL instance
+
+    This command installs a new MySQL instance under the
+    specified sandbox directory, or under
+    ~/sandboxes/sandbox_<datetime> if none is specified.
+
+    The datadir is under ./data/ relative to the sandbox
+    directory.  This is configured by the option file in
+    ./my.sandbox.cnf.  The instance is controlled by an
+    init-script installed under ./sandbox.sh.
+
+    The new instance is not automatically started and
+    needs to be started via the sandbox.sh initscript.
+
+        $ ./sandbox.sh start
+
+    The sandbox.sh init-script has an additional command,
+    'shell' that can be used to connect directly to the
+    sandbox:
+
+        $ ./sandbox.sh shell -e 'select @@datadir'
+
+    The init-script should be suitable to adding as a sysv
+    service:
+
+        $ ln -s $PWD/sandbox.sh /etc/init.d/my-mysql-instance
+        $ chkconfig --add my-mysql-instance
+        $ /etc/init.d/my-mysql-instance start
+     
+    :param sandbox_directory: install sandbox under this path
+    """
+
     from . import util
     mysqld_safe = util.which("mysqld_safe")
     mysql = util.which("mysql")
