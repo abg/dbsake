@@ -9,16 +9,18 @@ import zipfile
 def main():
     sink = io.BytesIO()
     print("Generating executable archive", file=sys.stderr)
-    print(b"#!/usr/bin/env python", file=sink)
+    print(b"#!/usr/bin/env python     ", file=sink)
     archive = zipfile.ZipFile(file=sink,
                               mode='w',
                               compression=zipfile.ZIP_DEFLATED)
     archive.writestr("__main__.py", 
                      b"import sys\nsys.exit(__import__('dbsake').main())\n")
     
+    basename = os.path.basename
     for dirpath, dirnames, filenames in os.walk('dbsake'):
         for name in filenames:
-            if not name.endswith('.py'): continue
+            if not name.endswith('.py') and basename(dirpath) != 'templates':
+                 continue
             archive.write(os.path.join(dirpath, name))
     archive.close()
 

@@ -1,0 +1,97 @@
+[client]
+{{if user}}
+user                            = "{{user|escape}}"
+{{endif}}
+{{if password}}
+password                        = "{{password|escape}}"
+{{endif}}
+{{if socket}}
+socket                          = {{socket}}
+{{endif}}
+
+[mysqld]
+user                            = {{mysql_user}}
+datadir                         = {{datadir}}
+tmpdir                          = {{sandbox_root}}/tmp
+socket                          = {{datadir}}/mysql.sock
+skip-name-resolve
+sql-mode                        = NO_ENGINE_SUBSTITUTION
+#event-scheduler                = 1
+
+## Cache
+thread-cache-size               = 0
+table-open-cache                = 512
+table-definition-cache          = 512
+query-cache-size                = 0
+query-cache-type                = off
+
+## Per-thread Buffers
+#sort-buffer-size               = 2M
+
+## Temp Tables
+#tmp-table-size                 = 16M
+#max-heap-table-size            = 16M
+
+## Networking
+{{if not networking}}
+skip-networking
+{{else}}
+port                            = {{port}}
+bind-address                    = {{bind_address}}
+{{endif}}
+back-log                        = 50
+max-connections                 = 64
+max-connect-errors              = 10000
+max-allowed-packet              = 16M
+interactive-timeout             = 3600
+wait-timeout                    = 600
+
+### Storage Engines
+
+## MyISAM
+key-buffer-size                 = 8M
+myisam-sort-buffer-size         = 128M
+myisam-recover                  = DEFAULT
+
+## InnoDB
+innodb-buffer-pool-size         = 64M
+innodb-purge-threads            = 1
+innodb-old-blocks-time          = 1000
+innodb-old-blocks-pct           = 37
+innodb-log-file-size            = 32M
+innodb-log-buffer-size          = 8M
+innodb-file-per-table           = 1
+innodb-open-files               = 300
+
+## Replication
+server-id                       = 1
+#log-bin                        = /var/lib/mysqllogs/bin-log
+#relay-log                      = /var/lib/mysqllogs/relay-log
+relay-log-space-limit           = 16G
+expire-logs-days                = 7
+#read-only                      = 1
+#sync-binlog                    = 1
+#log-slave-updates              = 1
+#binlog-format                  = MIXED
+#auto-increment-offset          = 1
+#auto-increment-increment       = 2
+
+## Logging
+log-output                      = FILE
+slow-query-log                  = 1
+slow-query-log-file             = {{datadir}}/slow-log
+log-slow-slave-statements
+log-slow-admin-statements
+long-query-time                 = 2
+
+{{if additional_options}}
+
+## Additional options
+{{for option in additional_options}}
+{{option}}
+{{endfor}}
+{{endif}}
+
+[mysqld_safe]
+log-error                       = {{datadir}}/mysqld.log
+open-files-limit                = {{open_files_limit}}
