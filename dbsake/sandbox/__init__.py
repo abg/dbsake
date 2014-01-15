@@ -40,6 +40,8 @@ def mysql_sandbox(sandbox_directory=None):
     if not sandbox_directory:
         tag = time.strftime("%Y%m%d_%H%M%S", time.gmtime())
         sandbox_directory = os.path.expanduser('~/sandboxes/sandbox_' + tag)
+    else:
+        sandbox_directory = os.path.normpath(os.path.abspath(sandbox_directory))
 
     if os.path.isdir(sandbox_directory) and len(os.listdir(sandbox_directory)):
         print("[ERROR] %s exists and is not empty. Aborting." % sandbox_directory,
