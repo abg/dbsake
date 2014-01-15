@@ -39,7 +39,8 @@ sandbox_start() {
         return 0
     fi
     echo -n "Starting sandbox: "
-    nohup $mysqld_safe $mysqld_safe_args 0<&- &>>${datadir}/mysqld.log &
+    # close stdin (0) and redirect stdout/stderr to /dev/null
+    nohup $mysqld_safe $mysqld_safe_args 0<&- &>/dev/null &
     local start_timeout=${START_TIMEOUT}
     until [[ -S "${datadir}/mysql.sock" || $start_timeout -le 0 ]]
     do
@@ -108,7 +109,7 @@ case $1 in
         exit 3
         ;;
     shell)
-        $mysql --defaults-file=$sandbox_root/my.sandbox.cnf
+        MYSQL_PS1="mysql[sandbox]> " $mysql --defaults-file=$sandbox_root/my.sandbox.cnf
         ;;
     *)
         echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
