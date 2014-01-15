@@ -73,7 +73,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     return None
 
 def escape(value):
-    return value.replace('"', '\\"').replace("'", "\\'").replace("\\", "\\\\")
+    return value.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
 
 def load_template(name):
     pkg = __name__.rpartition('.')[0]
