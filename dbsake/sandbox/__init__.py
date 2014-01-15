@@ -60,7 +60,8 @@ def mysql_sandbox(sandbox_directory=None):
 
     print("Generating my.sandbox.cnf...")
     defaults = util.generate_defaults(sandbox_directory, user='root', password=password)
-    print("Bootstrapping new mysql instance (mysqld=%s datadir=%s)" % (mysqld, datadir))
+    print("Bootstrapping new mysql instance (this may take a few seconds)...")
+    print("  Using mysqld=%s" % mysqld)
     bootstrap_log = os.path.join(sandbox_directory, 'bootstrap.log')
     print("  For details see %s" % bootstrap_log)
     try:
