@@ -1,4 +1,5 @@
 import codecs
+import collections
 import errno
 import os
 import pkgutil
@@ -9,6 +10,39 @@ import tempfile
 
 from dbsake import tempita
 from dbsake import sarge
+
+def mkdir_p(path, *args):
+    try:
+        os.makedirs(path, *args)
+        return True
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
+    else:
+        return False
+
+def resolve_mountpoint(path):
+    path = os.path.realpath(path)
+
+    while path != os.path.sep:
+        if os.path.ismount(path):
+            return path
+        path = os.path.abspath(os.path.join(path, os.pardir))
+    return path
+
+_ntuple_diskusage = collections.namedtuple('usage', 'total used free')
+
+def disk_usage(path):
+    """Return disk usage statistics about the given path.
+
+    Return value is a named tuple with attributes 'total', 'used' and
+    'free', which are the amount of total, used and free space, in bytes.
+    """
+    stat = os.statvfs(resolve_mountpoint(path))
+    free = stat.f_bavail * stat.f_frsize
+    total = stat.f_blocks * stat.f_frsize
+    used = (stat.f_blocks - stat.f_bfree) * stat.f_frsize
+    return _ntuple_diskusage(total, used, free)
 
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
@@ -75,10 +109,11 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 def escape(value):
     return value.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
 
-def load_template(name):
+def load_template(name, **kwargs):
+    kwargs.update(escape=escape)
     pkg = __name__.rpartition('.')[0]
     data = pkgutil.get_data(pkg, '/'.join(['templates', name]))
-    return tempita.Template(data.decode("utf8"), namespace={'escape': escape})
+    return tempita.Template(data.decode("utf8"), namespace=kwargs)
  
 def render_template(name, **kwargs):
     return load_template(name).substitute(**kwargs)
@@ -87,12 +122,14 @@ def mkpassword(length=8):
     alphabet = string.letters + string.digits + string.punctuation
     return ''.join(random.sample(alphabet, length))
 
-def generate_defaults(path, user, password):
+def generate_defaults(path, user, password, metadata):
     # need to read a template to do this right
     template = load_template("my.sandbox.cnf")
 
     content = template.substitute(
+        mysql_version=metadata.version,
         sandbox_root=path,
+        basedir=metadata.basedir,
         mysql_user=os.environ['USER'],
         user=user,
         password=password,
