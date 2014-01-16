@@ -104,7 +104,6 @@ def format_paras(paras, width, indent=0, lstripline=None):
         if lines:
             for line in lines:
                 output.append((" " * indent) + line)
-            output.append("")
     for i in (lstripline or []):
         output[i] = output[i].lstrip()
     return output
