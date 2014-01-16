@@ -15,7 +15,8 @@ from dbsake import baker
 
 
 @baker.command(name='mysql-sandbox',
-               shortopts=dict(sandbox_directory="d"))
+               shortopts=dict(sandbox_directory='d',
+                              mysql_source='m'))
 def mysql_sandbox(sandbox_directory=None, mysql_source='system'):
     """Create a temporary MySQL instance
 
