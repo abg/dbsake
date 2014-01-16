@@ -6,7 +6,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python}%{?pyver} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name:           dbsake
-Version:        1.0.3
+Version:        1.0.4
 Release:        1%{?dist}
 Summary:        Database administration toolkit for MySQL
 Group:          Applications/Databases
