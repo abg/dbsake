@@ -46,3 +46,16 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Jan 16 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.3-1
+- Added %pyver and %pyvertag to allow building against EPEL5
+  where python2.6 is not the default python version
+- New release
+
+* Tue Jan 07 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.2-1
+- New release
+
+* Mon Jan 06 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.1-1
+- New release
+
+* Thu Jan 02 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.0-1
+- Initial spec from 1.0.0
