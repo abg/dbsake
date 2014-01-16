@@ -73,6 +73,9 @@ def main():
     except baker.CommandError as exc:
         logging.info("%s", exc)
         return os.EX_SOFTWARE
+    except KeyboardInterrupt:
+        logging.info("Interrupted")
+        return os.EX_SOFTWARE
     except:
         # uncaught exception
         logging.fatal("Uncaught exception.", exc_info=True)
