@@ -13,7 +13,7 @@ Group:          Applications/Databases
 
 License:        GPLv2
 URL:            https://github.com/abg/dbsake
-Source0:        dbsake-%{version}.tar.gz
+Source0:        https://github.com/abg/dbsake/archive/%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python%{?pyvertag}-devel
@@ -47,7 +47,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Thu Jan 16 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.3-1
-- Added %pyver and %pyvertag to allow building against EPEL5
+- Added %%pyver and %%pyvertag to allow building against EPEL5
   where python2.6 is not the default python version
 - New release
 
