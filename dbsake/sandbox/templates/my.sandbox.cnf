@@ -58,7 +58,11 @@ wait-timeout                    = 600
 ## MyISAM
 key-buffer-size                 = 8M
 myisam-sort-buffer-size         = 128M
+{{if mysql_version < (5,5,3)}}
 myisam-recover                  = DEFAULT
+{{else}}
+myisam-recover-options          = DEFAULT
+{{endif}}
 
 ## InnoDB
 innodb-buffer-pool-size         = 64M
