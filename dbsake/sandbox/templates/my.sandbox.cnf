@@ -10,6 +10,9 @@ socket                          = {{socket}}
 {{endif}}
 
 [mysqld]
+{{if basedir}}
+basedir                         = {{basedir}}
+{{endif}}
 user                            = {{mysql_user}}
 datadir                         = {{datadir}}
 tmpdir                          = {{sandbox_root}}/tmp
@@ -20,10 +23,14 @@ sql-mode                        = NO_ENGINE_SUBSTITUTION
 
 ## Cache
 thread-cache-size               = 0
+{{if mysql_version < (5,1)}}
+table-cache                     = 512
+{{else}}
 table-open-cache                = 512
 table-definition-cache          = 512
+{{endif}}
 query-cache-size                = 0
-query-cache-type                = off
+query-cache-type                = 0
 
 ## Per-thread Buffers
 #sort-buffer-size               = 2M
@@ -55,13 +62,14 @@ myisam-recover                  = DEFAULT
 
 ## InnoDB
 innodb-buffer-pool-size         = 64M
-innodb-purge-threads            = 1
-innodb-old-blocks-time          = 1000
-innodb-old-blocks-pct           = 37
 innodb-log-file-size            = 32M
 innodb-log-buffer-size          = 8M
 innodb-file-per-table           = 1
 innodb-open-files               = 300
+{{if (5,1,32) < mysql_version < (5, 5)}}
+ignore-builtin-innodb
+plugin-load                     = ha_innodb_plugin.so
+{{endif}}
 
 ## Replication
 server-id                       = 1
@@ -77,11 +85,15 @@ expire-logs-days                = 7
 #auto-increment-increment       = 2
 
 ## Logging
+{{if mysql_version < (5,1)}}
+log-slow-queries                = {{datadir}}/slow.log
+{{else}}
 log-output                      = FILE
 slow-query-log                  = 1
-slow-query-log-file             = {{datadir}}/slow-log
+slow-query-log-file             = {{datadir}}/slow.log
 log-slow-slave-statements
 log-slow-admin-statements
+{{endif}}
 long-query-time                 = 2
 
 {{if additional_options}}
