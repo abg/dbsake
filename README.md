@@ -12,6 +12,7 @@ Example:
 
 This currently consists of two tools:
 
+* ```mysql-sandbox [--sandbox-directory|-d <path>] [--mysql-source <"system"|version|./dist.tar.gz>]```
 * ```split-mysqldump [--target|-t <mysql-version>] [--directory|-C <output-directory>] [--filter-command <cmd>] < input```
 
     Splits a mysqldump file into multiple separate files by table/views/routines/etc.
@@ -55,7 +56,3 @@ This currently consists of two tools:
 ## License
 
 dbsake is licensed under GPLv2. 
-
-dbsake includes a backport of argparse from python2.7, under the PSF license
-
-dbsake includes python-baker, licensed under the ASF; See: https://bitbucket.org/mchaput/baker/wiki/Home 

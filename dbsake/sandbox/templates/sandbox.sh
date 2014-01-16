@@ -28,6 +28,7 @@ defaults_file=$sandbox_root/my.sandbox.cnf
 
 mysqld_safe_args="
 --defaults-file=$defaults_file
+--ledir=$sandbox_root/bin
 --datadir=$datadir
 --pid-file=$datadir/mysql.pid
 --socket=$datadir/mysql.sock

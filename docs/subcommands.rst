@@ -15,48 +15,33 @@ to the MySQL instance.
 
 .. code-block:: bash
 
-   $ dbsake mysql-sandbox -d /opt/test_sandbox/
-   Created /opt/test_sandbox/
-   Created /opt/test_sandbox/data
-   Created /opt/test_sandbox/tmp
+   $ time dbsake mysql-sandbox -d /opt/mysql-5.6.15 --mysql-source 5.6.15
+   Created /opt/mysql-5.6.15/data
+   Created /opt/mysql-5.6.15/tmp
+   2014-01-16 04:04:34,073 Streaming mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz from http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz
+   (100.00%)[########################################] 290.3 MiB/290.3 MiB
    Generating random password for root@localhost...
    Generating my.sandbox.cnf...
    Bootstrapping new mysql instance (this may take a few seconds)...
-     Using mysqld=/usr/sbin/mysqld
-     For details see /opt/test_sandbox/bootstrap.log
+     Using mysqld=/opt/mysql-5.6.15/bin/mysqld
+     For details see /opt/mysql-5.6.15/bootstrap.log
    Bootstrapping complete!
-   Generating init script /opt/test_sandbox/sandbox.sh...
+   Generating init script /opt/mysql-5.6.15/sandbox.sh...
    Sandbox creation complete!
-   You may start your sandbox by running: /opt/test_sandbox/sandbox.sh start
-   You may login to your sandbox by running: /opt/test_sandbox/sandbox.sh shell
-      or by running: /usr/bin/mysql --socket=/opt/test_sandbox/data/mysql.sock
-   Credentials are stored in /opt/test_sandbox/my.sandbox.cnf
+   You may start your sandbox by running: /opt/mysql-5.6.15/sandbox.sh start
+   You may login to your sandbox by running: /opt/mysql-5.6.15/sandbox.sh shell
+      or by running: mysql --socket=/opt/mysql-5.6.15/data/mysql.sock
+   Credentials are stored in /opt/mysql-5.6.15/my.sandbox.cnf
 
-   $ /opt/test_sandbox/sandbox.sh start
+   $ /opt/mysql-5.6.15/sandbox.sh start
    Starting sandbox: [OK]
 
-   $ /opt/test_sandbox/sandbox.sh shell
-   Welcome to the MySQL monitor.  Commands end with ; or \g.
-   Your MySQL connection id is 2
-   Server version: 5.6.15-log MySQL Community Server (GPL)
-   
-   Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
-   
-   Oracle is a registered trademark of Oracle Corporation and/or its
-   affiliates. Other names may be trademarks of their respective
-   owners.
-   
-   Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-   
-   mysql[sandbox]> select @@datadir;
-   +--------------------------+
-   | @@datadir                |
-   +--------------------------+
-   | /opt/test_sandbox/data/ |
-   +--------------------------+
-   1 row in set (0.00 sec)
-   
-   mysql[sandbox]>
+   $ /opt/mysql-5.6.15/sandbox.sh shell -e 'select @@datadir'
+   +-------------------------+
+   | @@datadir               |
+   +-------------------------+
+   | /opt/mysql-5.6.15/data/ |
+   +-------------------------+
 
 .. program:: mysql-sandbox
 
@@ -65,6 +50,20 @@ to the MySQL instance.
    Specify the path under which to create the sandbox. This defaults
    to ~/sandboxes/sandbox_$(date +%Y%m%d_%H%M%S)
 
+.. option:: -m, --mysql-source <source>
+
+   Specify the source for the mysql distribution.  This can be one of:
+
+        * 'system' - use the local mysqld binaries already installed on
+                     the system
+        * mysql*.tar.gz - use an already downloaded MySQL binary tarball
+        * <mysql-version> - if a mysql version is specified then an
+                            attempt is made to download a binary tarball
+                            from dev.mysql.com and otherwise is identical
+                            to installing from a local tarball
+
+   The default, if no option is specified, will be to use system which
+   copies the minimum binaries from system director to $sandbox_directory/bin/.
 
 fincore
 ~~~~~~~
