@@ -125,6 +125,11 @@ heuristics = {
         default='Downloads/MySQL-5.6/mysql-{version}-linux-glibc2.5-{arch}.tar.gz',
         archive='archives/mysql-5.6/mysql-{version}-linux-glibc2.5-{arch}.tar.gz'
     ),
+
+    '5.7' : dict(
+        default='Downloads/MySQL-5.7/mysql-{version}-linux-glibc2.5-{arch}.tar.gz',
+        archive='archives/get/file/mysql-{version}-linux-glibc2.5-{arch}.tar.gz',
+    )
 }
 
 def stream_tarball(url, destdir):
