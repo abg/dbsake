@@ -3,11 +3,33 @@ dbsake changelog
 
 Version 1.0.3
 -------------
+:released: Thursday, January 16th 2014
+
+[dbsake]
+- added third-party "sarge" package - a pure-python subprocess wrapper
+- added third-party "tempita" package - a pure-python template engine
+- most commands now lazy load their submodules to improve the startup
+  time of dbsake. dbsake also only loads top-level modules when 
+  discovering commands
+
+[dbsake/frm-to-schema]
+- add support for old MYSQL_TYPE_VAR_STRING type to support very old VARCHAR
+  types
+- some internal code cleanup was done to make parsing binary frms and 
+  plaintext VIEW frms more consistent.
+
+[dbsake/mysql-sandbox]
+- Added new dbsake command to construct standalone MySQL instances
+  See docs/subcommands.rst for details.
+
+[rpm]
+- add support for running contrib/dbsake.spec under rhel5
 
 Version 1.0.2
 -------------
+:released: Tueday, January 7th 2014
 
-[frm-to-schema]
+[dbsake/frm-to-schema]
 - Parse MySQL views from .frm
 - Add --replace option to support CREATE OR REPLACE VIEW syntax
 - Format indexes with a prefix length 
@@ -18,18 +40,19 @@ Version 1.0.2
 
 Version 1.0.1
 -------------
+:released: Monday, January 6th 2014
 
 [dbsake]
 - Fix bug with --log-level option that did not recognize log level names
   correctly
 - Add --version/-V option to output dbsake version
 
-[fincore]
+[dbsake/fincore]
 - Handles zero-byte files
 - Fix bug in release mmap resources
 - Skip paths that are not regular files
 
-[uncache]
+[dbsake/uncache]
 - Skip paths that are not regular files
 
 [documentation]
@@ -41,4 +64,7 @@ Version 1.0.1
 
 Version 1.0.0
 -------------
+:released: Thursday, January 2nd 2014
+
+[dbsake]
 - First release of dbsake
