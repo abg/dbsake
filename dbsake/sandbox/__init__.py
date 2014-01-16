@@ -82,7 +82,9 @@ def mysql_sandbox(sandbox_directory=None, mysql_source='system'):
 
     if mysql_source == 'system':
         meta = distribution.distribution_system(sandbox_directory)
-    else:
+    elif os.path.exists(mysql_source) and mysql_source.endswith('.tar.gz'):
+        meta = distribution.distribution_tarball(sandbox_directory, mysql_source)
+    else: # expect a version number
         meta = distribution.distribution_version(sandbox_directory, version=mysql_source)
 
     print("Generating random password for root@localhost...")

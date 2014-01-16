@@ -88,6 +88,23 @@ def distribution_system(sandbox_directory, **kwargs):
         plugindir=plugindir
     )
 
+def distribution_tarball(sandbox_directory, path):
+    from . import tarball
+    with open(path, 'rb') as fileobj:
+        tarball.deploy(fileobj, sandbox_directory)
+    bindir = os.path.join(sandbox_directory, 'bin')
+    version = mysqld_version(os.path.join(bindir, 'mysqld'))
+
+    return SandboxMeta(
+        version=version,
+        mysqld=os.path.join(bindir, 'mysqld'),
+        mysql=os.path.join(bindir, 'mysql'),
+        mysqld_safe=os.path.join(bindir, 'mysqld_safe'),
+        basedir=sandbox_directory,
+        pkgdatadir=os.path.join(sandbox_directory, 'share'),
+        libexecdir=bindir,
+        plugindir=os.path.join(sandbox_directory, 'lib', 'plugin')
+    )
 
 def distribution_version(sandbox_directory, version):
     from . import download
