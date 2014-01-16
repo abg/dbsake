@@ -1,5 +1,6 @@
 %if 0%{?rhel} == 5
-%global pyver 26
+%global pyvertag 26
+%global pyver 2.6
 %endif
 
 %{!?python_sitelib: %global python_sitelib %(%{__python}%{?pyver} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
@@ -12,12 +13,12 @@ Group:          Applications/Databases
 
 License:        GPLv2
 URL:            https://github.com/abg/dbsake
-Source0:        dbsake-%{version}-dev.tar.gz
+Source0:        dbsake-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
-BuildRequires:  python%{?pyver}-devel
-BuildRequires:  python%{?pyver}-setuptools
-Requires:       python%{?pyver}-setuptools
+BuildRequires:  python%{?pyvertag}-devel
+BuildRequires:  python%{?pyvertag}-setuptools
+Requires:       python%{?pyvertag}-setuptools
 
 %description
 DBSake is a collection of command-line tools to perform various DBA related
@@ -25,7 +26,7 @@ tasks for MySQL.
 
 
 %prep
-%setup -q -n %{name}-%{version}-dev
+%setup -q -n %{name}-%{version}
 
 
 %build
