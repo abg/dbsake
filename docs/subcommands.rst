@@ -45,6 +45,8 @@ to the MySQL instance.
 
 .. program:: mysql-sandbox
 
+.. versionadded:: 1.0.3
+
 .. option:: -d, --sandbox-directory <path>
 
    Specify the path under which to create the sandbox. This defaults
