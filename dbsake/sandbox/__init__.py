@@ -111,6 +111,6 @@ def mysql_sandbox(sandbox_directory=None, mysql_source='system'):
     print("Sandbox creation complete!")
     print("You may start your sandbox by running: %s start" % initscript)
     print("You may login to your sandbox by running: %s shell" % initscript)
-    print("   or by running: %s --socket=%s" % (meta.mysql, os.path.join(datadir, 'mysql.sock')))
+    print("   or by running: mysql --socket=%s" % (os.path.join(datadir, 'mysql.sock')))
     print("Credentials are stored in %s" % defaults)
     return 0
