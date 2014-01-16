@@ -62,6 +62,8 @@ def main():
     logging.basicConfig(format="%(asctime)s %(message)s",
                         level=log_level(opts.log_level))
     discover_commands()
+    # /home/abg/.virtualenv/.../bin/dbsake -> 'dbsake'
+    sys.argv[0] = os.path.basename(sys.argv[0])
     try:
         return baker.run(argv=['dbsake'] + args, main=False)
     except baker.TopHelp:
