@@ -6,6 +6,7 @@ Support for deploying from a binary tarball
 
 """
 
+import glob
 import logging
 import os
 import tarfile
@@ -55,3 +56,7 @@ def deploy(stream, destdir):
             tar.extract(tarinfo, destdir)
         # otherwise the archive member is skipped over if it's not
         # a part of one of the above whitelist rules
+    innodb_plugin = glob.glob(os.path.join(destdir, 'lib', 'plugin', 'ha_innodb_plugin.so*'))
+    if innodb_plugin and 'ha_innodb_plugin.so' not in innodb_plugin:
+        os.symlink(innodb_plugin[0],
+                   os.path.join(destdir, 'lib', 'plugin', 'ha_innodb_plugin.so'))
