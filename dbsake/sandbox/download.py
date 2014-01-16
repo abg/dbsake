@@ -4,12 +4,13 @@ dbsake.sandbox.download
 
 Support for downloading / deploying a binary tarball
 """
-from __future__ import print_function
+from __future__ import print_function, division
 
 import contextlib
 import hashlib
 import logging
 import os
+import sys
 import time
 import urllib2
 
@@ -18,6 +19,33 @@ from . import tarball
 info = logging.info
 warn = logging.warn
 debug = logging.debug
+
+BAR_TEMPLATE = '(%.2f%%)[%s%s] %s/%s\r'
+
+def format_filesize(value, binary=True):
+    bytes = float(value)
+    base = binary and 1024 or 1000
+    prefixes = [
+        (binary and 'KiB' or 'kB'),
+        (binary and 'MiB' or 'MB'),
+        (binary and 'GiB' or 'GB'),
+        (binary and 'TiB' or 'TB'),
+        (binary and 'PiB' or 'PB'),
+        (binary and 'EiB' or 'EB'),
+        (binary and 'ZiB' or 'ZB'),
+        (binary and 'YiB' or 'YB')
+    ]
+    if bytes == 1:
+        return '1B'
+    elif bytes < base:
+        return '%dB' % bytes
+    else:
+        for i, prefix in enumerate(prefixes):
+            unit = base ** (i + 2)
+            if bytes < unit:
+                return '%.1f %s' % ((base * bytes / unit), prefix)
+        return '%.1f%s' % ((base * bytes / unit), prefix)
+
 
 class ResourceProxy(object):
     """
@@ -35,22 +63,43 @@ class ResourceProxy(object):
     TODO: Implement transparent copying to also copy the underlying resource elsewhere
           e.g. something like curl url | tee mysql.tar.gz | tar xf - -C destdir
     """
-    def __init__(self, stream):
+    def __init__(self, stream, expected_length=0):
         self.stream = stream
         self.checksum = hashlib.md5()
         self.content_length = 0
+        self.expected_length = int(expected_length)
         self.last_update = time.time()
+        self._finished = False
 
     def seek(self, *args):
         raise IOError(0, "ResourceProxy does not support seeking")
+
+    def _update_progress(self):
+        if self._finished: return
+        width = 40
+        if (time.time() - self.last_update) > 1 or self.content_length == self.expected_length:
+            self.last_update = time.time()
+            x = int((self.content_length / self.expected_length)*width)
+            pct = (self.content_length / self.expected_length)*100
+            sys.stderr.write(
+                BAR_TEMPLATE % (pct,
+                                '#'*x,
+                                ' '*(width - x),
+                                format_filesize(self.content_length),
+                                format_filesize(self.expected_length)
+                                )
+            )
+            sys.stderr.flush()
+        if self.content_length == self.expected_length:
+            print(file=sys.stderr)
+            self._finished = True
 
     def read(self, *args):
         chunk = self.stream.read(*args)
         self.content_length += len(chunk)
         self.checksum.update(chunk)
-        if time.time() - self.last_update > 2:
-            self.last_update = time.time()
-            debug("%s bytes downloaded" % self.content_length)
+        if os.isatty(sys.stderr.fileno()):
+            self._update_progress()
         return chunk
 
     def __getattr__(self, name):
@@ -83,11 +132,12 @@ def stream_tarball(url, destdir):
     info("Streaming %s from %s", name, url)
     with contextlib.closing(urllib2.urlopen(url)) as request:
         debug("%s: [OK!]" % url)
-        stream = ResourceProxy(request)
         etag = request.info()['etag'][1:-1].rpartition(':')[0]
         debug("    etag: %r" % etag)
         content_length = int(request.info()['content-length'])
         debug("    Content-Length: %r" % content_length)
+        request.name = name
+        stream = ResourceProxy(request, content_length)
         stream.name = name
         tarball.deploy(stream, destdir)
     debug("Final proxy computed checksum: %s" % stream.checksum.hexdigest())
