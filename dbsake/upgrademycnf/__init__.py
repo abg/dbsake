@@ -10,8 +10,6 @@ import os
 import sys
 
 from dbsake import baker
-from dbsake.util import relpath
-from dbsake.upgrademycnf import parser
 
 @baker.command(name='upgrade-mycnf',
                shortopts=dict(config="c",
@@ -26,6 +24,9 @@ def upgrade_mycnf(config='/etc/my.cnf',
     :param target: MySQL version to target the option file (default: 5.5)
     :param patch: Output unified diff rather than full config (default off)
     """
+    from dbsake.util import relpath
+    from dbsake.upgrademycnf import parser
+
     if target == '5.1':
         rewriter = parser.MySQL51OptionRewriter
     elif target == '5.5':

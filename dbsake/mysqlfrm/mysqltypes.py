@@ -13,10 +13,11 @@ display in a show create table "DEFAULT ..." clause.
 """
 
 import datetime
+import sys
 
 # local imports
-import constants
-import charsets
+from . import constants
+from . import charsets
 
 ## Formatting of types
 def format_type(context):
@@ -117,6 +118,10 @@ def format_type_string(context):
 def format_type_varchar(context):
     value = 'varchar({0})'.format(context.length // context.charset.maxlen)
     return value + _format_charset(context)
+
+# var_string should be identical to varchar here
+# but is an older datatype from MySQL 4.1
+format_type_var_string = format_type_varchar
 
 ## Enum type
 def format_type_enum(context):
@@ -510,8 +515,17 @@ def unpack_type_varchar(defaults, context):
         length = defaults.uint16()
     return "%r" % defaults.read(length)
 
+# This is the 4.1 varchar type, but with trailing whitespace
+# that pads up to VARCHAR(N) bytes
+# e.g. VARCHAR(5) default 'a' -> 'a    ' in 4.1
+# so we use the same logic as unpack_type_varchar, but then
+# strip the trailing whitespace
 def unpack_type_var_string(defaults, context):
-    raise NotImplementedError
+    if context.length < 256:
+        length = defaults.uint8()
+    else:
+        length = defaults.uint16()
+    return "'%s'" % defaults.read(length).rstrip(' ').encode("string_escape")
 
 def unpack_type_string(defaults, context):
     """Unpack a CHAR(N) fixed length string"""

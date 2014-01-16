@@ -9,7 +9,7 @@ try:
 except NameError:
     _basestring = str
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 from dbsake import argparse
 from dbsake import baker
@@ -17,6 +17,9 @@ from dbsake import baker
 def discover_commands():
     walk_packages = pkgutil.walk_packages
     for importer, name, is_pkg in walk_packages(__path__, __name__ + '.'):
+        if not is_pkg: continue
+        # don't autoload third party packages
+        if 'sarge' in name or 'tempita' in name: continue
         logging.debug("Attempting to load module '%s'", name)
         loader = importer.find_module(name, None)
         loader.load_module(name)

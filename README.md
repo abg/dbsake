@@ -1,4 +1,7 @@
 ![dbsake](https://raw.github.com/abg/dbsake/master/sake-icon.png)
+
+## DBSake
+
 dbsake is a collection of tools to aid in administrating MySQL databases
 
 Example:
@@ -8,6 +11,10 @@ Example:
 ```
 
 This currently consists of two tools:
+
+* ```mysql-sandbox [--sandbox-directory|-d <path>] [--mysql-source <"system"|version|./dist.tar.gz>]```
+
+    Setup a new MySQL instance
 
 * ```split-mysqldump [--target|-t <mysql-version>] [--directory|-C <output-directory>] [--filter-command <cmd>] < input```
 
@@ -48,3 +55,7 @@ This currently consists of two tools:
 
   Read binary log filename and position from the InnoDB shared tablespace 
   system header page and format the information as a friendly CHANGE MASTER sql command.
+
+## License
+
+dbsake is licensed under GPLv2. 

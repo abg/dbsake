@@ -1,6 +1,70 @@
 Subcommands
 -----------
 
+mysql-sandbox
+~~~~~~~~~~~~~
+
+Setup a secondary MySQL instance easily.
+
+This setups a MySQL under ~/sandboxes/ (by default) with a
+randomly generated password for the root@localhost user
+and networking disabled.
+
+A simple shell script is provided to start, stop and connect
+to the MySQL instance.
+
+.. code-block:: bash
+
+   $ time dbsake mysql-sandbox -d /opt/mysql-5.6.15 --mysql-source 5.6.15
+   Created /opt/mysql-5.6.15/data
+   Created /opt/mysql-5.6.15/tmp
+   2014-01-16 04:04:34,073 Streaming mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz from http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz
+   (100.00%)[########################################] 290.3 MiB/290.3 MiB
+   Generating random password for root@localhost...
+   Generating my.sandbox.cnf...
+   Bootstrapping new mysql instance (this may take a few seconds)...
+     Using mysqld=/opt/mysql-5.6.15/bin/mysqld
+     For details see /opt/mysql-5.6.15/bootstrap.log
+   Bootstrapping complete!
+   Generating init script /opt/mysql-5.6.15/sandbox.sh...
+   Sandbox creation complete!
+   You may start your sandbox by running: /opt/mysql-5.6.15/sandbox.sh start
+   You may login to your sandbox by running: /opt/mysql-5.6.15/sandbox.sh shell
+      or by running: mysql --socket=/opt/mysql-5.6.15/data/mysql.sock
+   Credentials are stored in /opt/mysql-5.6.15/my.sandbox.cnf
+
+   $ /opt/mysql-5.6.15/sandbox.sh start
+   Starting sandbox: [OK]
+
+   $ /opt/mysql-5.6.15/sandbox.sh shell -e 'select @@datadir'
+   +-------------------------+
+   | @@datadir               |
+   +-------------------------+
+   | /opt/mysql-5.6.15/data/ |
+   +-------------------------+
+
+.. program:: mysql-sandbox
+
+.. option:: -d, --sandbox-directory <path>
+
+   Specify the path under which to create the sandbox. This defaults
+   to ~/sandboxes/sandbox_$(date +%Y%m%d_%H%M%S)
+
+.. option:: -m, --mysql-source <source>
+
+   Specify the source for the mysql distribution.  This can be one of:
+
+        * 'system' - use the local mysqld binaries already installed on
+                     the system
+        * mysql*.tar.gz - use an already downloaded MySQL binary tarball
+        * <mysql-version> - if a mysql version is specified then an
+                            attempt is made to download a binary tarball
+                            from dev.mysql.com and otherwise is identical
+                            to installing from a local tarball
+
+   The default, if no option is specified, will be to use system which
+   copies the minimum binaries from system director to $sandbox_directory/bin/.
+
 fincore
 ~~~~~~~
 
@@ -191,6 +255,8 @@ Decode a MySQL .frm file and output a CREATE VIEW or CREATE TABLE statement.
 
 This command does not require a MySQL server and interprets a .frm file
 according to rules similar to the MySQL server.
+
+For more information on how this command works see :ref:`frm_format`
 
 .. important::
    This program only decodes data strictly available in the .frm file.

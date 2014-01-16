@@ -7,15 +7,26 @@ MySQL .frm manipulation utilities
 """
 from __future__ import print_function
 
-import itertools
 import sys
 
 from dbsake import baker
 
-from . import importfrm
-from . import parser
-from . import mysqlview
-from . import tablename
+
+def parse(path):
+    """Parse a .frm file"""
+    from . import binaryfrm
+    from . import mysqlview
+    with open(path, 'rb') as fileobj:
+        # read up to 9 bytes to detect a view
+        magic = fileobj.read(9)
+        if magic.startswith(b'\xfe\x01'):
+            parse = binaryfrm.parse
+        elif magic == b'TYPE=VIEW':
+            parse = mysqlview.parse
+        else:
+            raise ValueError("Invalid .frm file '%s'" % path)
+    return parse(path)
+       
 
 @baker.command(name='frm-to-schema')
 def frm_to_schema(raw_types=False, replace=False, *paths):
@@ -25,51 +36,21 @@ def frm_to_schema(raw_types=False, replace=False, *paths):
                     so a view definition can be replaced.
     :param paths: paths to extract schema from
     """
-    def _fmt_column(column):
-        value = str(column)
-        if raw_types:
-            value += ' /* MYSQL_TYPE_%s */' % column.type_code.name
-        return value
-
     failures = 0
     for name in paths:
         try:
-            with open(name, 'rb') as fileobj:
-                header = fileobj.read(9)
-        except IOError as exc:
-            print("Unable to open '%s': [%d] %s" % (name, exc.errno, exc.strerror), file=sys.stderr)
-            failures += 1
+            table_or_view = parse(name)
+            options = {}
+            if table_or_view.type == 'VIEW':
+                options['create_or_replace'] = replace
+            elif table_or_view.type == 'TABLE':
+                options['include_raw_types'] = raw_types
+            print(table_or_view.format(**options), file=sys.stdout)
+        except (ValueError, IOError) as exc:
+            print("Failed to parse '%s': %s" % (name, exc), file=sys.stderr)
+            failures+= 1
             continue
 
-        try:
-            if header[0:2] == b'\xfe\x01':
-                table = parser.parse(name)
-                g = itertools.chain((_fmt_column(c) for c in table.columns),
-                                     table.keys)
-                print("--")
-                print("-- Table structure for table `%s`" % table.name)
-                print("-- Created with MySQL Version {0}".format(table.mysql_version))
-                print("--")
-                print()
-                print("CREATE TABLE `%s` (" % table.name)
-                print(",\n".join("  %s" % str(name) for name in g))
-                print(") {0};".format(table.options))
-                print()
-            elif header == b'TYPE=VIEW':
-                view = mysqlview.parse(name)
-                table = str(view)
-                if replace:
-                    table = table.replace('CREATE', 'CREATE OR REPLACE', 1)
-                print(table)
-                print()
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
-            exc = sys.exc_info()[1]
-            print("Failed to parse '%s': %s" % (name, exc), file=sys.stderr)
-            failures += 1
-            continue
-    
     if failures:
         print("%d parsing failures" % failures)
         return 1
@@ -82,6 +63,7 @@ def filename_to_tablename(*names):
 
     :param names: filenames to decode
     """
+    from . import tablename
     for name in names:
         print(tablename.filename_to_tablename(name))
     return 0
@@ -92,6 +74,7 @@ def tablename_to_filename(*names):
 
     :param names: names to encode
     """
+    from . import tablename
     for name in names:
         print(tablename.tablename_to_filename(name))
     return 0
@@ -99,6 +82,7 @@ def tablename_to_filename(*names):
 @baker.command(name='import-frm')
 def import_frm(source, destination):
     """Import a binary .frm as a MyISAM table"""
+    from . import importfrm
     try:
         importfrm.import_frm(source, destination)
     except IOError as exc:

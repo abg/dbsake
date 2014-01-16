@@ -25,6 +25,7 @@ tasks for MySQL.
       getting_started
       subcommands
       developing
+      frm_format
 
 .. only:: man
 
