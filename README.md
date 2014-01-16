@@ -13,6 +13,9 @@ Example:
 This currently consists of two tools:
 
 * ```mysql-sandbox [--sandbox-directory|-d <path>] [--mysql-source <"system"|version|./dist.tar.gz>]```
+
+    Setup a new MySQL instance
+
 * ```split-mysqldump [--target|-t <mysql-version>] [--directory|-C <output-directory>] [--filter-command <cmd>] < input```
 
     Splits a mysqldump file into multiple separate files by table/views/routines/etc.
