@@ -16,7 +16,7 @@ from dbsake import baker
 
 @baker.command(name='mysql-sandbox',
                shortopts=dict(sandbox_directory="d"))
-def mysql_sandbox(sandbox_directory=None):
+def mysql_sandbox(sandbox_directory=None, mysql_source='system'):
     """Create a temporary MySQL instance
 
     This command installs a new MySQL instance under the
@@ -49,28 +49,15 @@ def mysql_sandbox(sandbox_directory=None):
         $ /etc/init.d/my-mysql-instance start
 
     :param sandbox_directory: install sandbox under this path
+    :param mysql_source: how to find the mysql distribution.
+                         may be either 'system' or a mysql version string
+                         If a version string, this command will attempt to
+                         download a binary tarball from cdn.mysql.com.
     """
-
     from . import util
-    mysqld_safe = util.which("mysqld_safe")
-    mysql = util.which("mysql")
-    mysqld_search_path = ['/usr/libexec', '/usr/sbin', os.environ['PATH'] ]
-    mysqld = util.which("mysqld", path=os.pathsep.join(mysqld_search_path))
+    from . import distribution
 
-    if not mysqld:
-        print("[ERROR] Failed to find mysqld in environment PATH",
-              file=sys.stderr)
-        return 1
-
-    if not mysqld_safe:
-        print("[ERROR] Failed to find mysqld_safe in environment PATH",
-              file=sys.stderr)
-        return 1
-
-    if not mysql:
-        # /usr/bin/mysql missing is not fatal, but probably a serious issue
-        print("[WARNING] Failed to find mysql commandline client in path", file=sys.stderr)
-
+   
     if not sandbox_directory:
         tag = time.strftime("%Y%m%d_%H%M%S", time.gmtime())
         sandbox_directory = os.path.expanduser('~/sandboxes/sandbox_' + tag)
@@ -81,29 +68,36 @@ def mysql_sandbox(sandbox_directory=None):
               file=sys.stderr)
         return 2
 
-    os.makedirs(sandbox_directory)
-    print("Created %s" % sandbox_directory)
+    if util.disk_usage(sandbox_directory).free < 1024**3:
+        print("<1GiB free on %s. Aborting." % sandbox_directory)
+        return 5
+
+    for name in ('data', 'tmp'):
+        path = os.path.join(sandbox_directory, name)
+        if util.mkdir_p(path, 0o0770):
+            print("Created %s" % path)
+
     datadir = os.path.join(sandbox_directory, 'data')
-    os.makedirs(datadir, 0770)
-    print("Created %s" % datadir)
-    tmpdir = os.path.join(sandbox_directory, 'tmp')
-    os.makedirs(tmpdir, 0770)
-    print("Created %s" % tmpdir)
+
+    if mysql_source == 'system':
+        meta = distribution.distribution_system(sandbox_directory)
+    else:
+        meta = distribution.distribution_version(sandbox_directory, version=mysql_source)
 
     print("Generating random password for root@localhost...")
     password = util.mkpassword(length=17)
 
     print("Generating my.sandbox.cnf...")
-    defaults = util.generate_defaults(sandbox_directory, user='root', password=password)
+    defaults = util.generate_defaults(sandbox_directory, user='root', password=password, metadata=meta)
     print("Bootstrapping new mysql instance (this may take a few seconds)...")
-    print("  Using mysqld=%s" % mysqld)
+    print("  Using mysqld=%s" % meta.mysqld)
     bootstrap_log = os.path.join(sandbox_directory, 'bootstrap.log')
     print("  For details see %s" % bootstrap_log)
     try:
-        util.bootstrap_mysqld(mysqld=mysqld,
+        util.bootstrap_mysqld(mysqld=meta.mysqld,
                               defaults_file=defaults,
                               logfile=bootstrap_log,
-                              content=util.mysql_install_db(password))
+                              content=util.mysql_install_db(password, meta.pkgdatadir))
     except IOError:
         print("[ERROR] Bootstrap process failed.  See %s" % bootstrap_log)
         return 1
@@ -111,11 +105,11 @@ def mysql_sandbox(sandbox_directory=None):
 
     initscript = os.path.join(sandbox_directory, 'sandbox.sh')
     print("Generating init script %s..." % initscript)
-    util.generate_initscript(sandbox_directory, mysqld_safe=mysqld_safe, mysql=mysql)
+    util.generate_initscript(sandbox_directory, mysqld_safe=meta.mysqld_safe, mysql=meta.mysql)
 
     print("Sandbox creation complete!")
     print("You may start your sandbox by running: %s start" % initscript)
     print("You may login to your sandbox by running: %s shell" % initscript)
-    print("   or by running: %s --socket=%s" % (mysql, os.path.join(datadir, 'mysql.sock')))
+    print("   or by running: %s --socket=%s" % (meta.mysql, os.path.join(datadir, 'mysql.sock')))
     print("Credentials are stored in %s" % defaults)
     return 0
