@@ -1,5 +1,14 @@
+"""
+dbsake
+~~~~~~
+
+"""
+from __future__ import print_function
+
 import codecs
+import functools
 import logging
+import optparse
 import os
 import pkgutil
 import sys
@@ -11,7 +20,6 @@ except NameError:
 
 __version__ = '1.0.4-dev'
 
-from dbsake import argparse
 from dbsake import baker
 
 def discover_commands():
@@ -32,23 +40,30 @@ def log_level(name):
 
 def main():
     sys.stdout = codecs.getwriter('utf8')(sys.stdout)
-    parser = argparse.ArgumentParser()
+    parser = optparse.OptionParser(prog='dbsake')
     valid_log_levels = [name.lower() for name in logging._levelNames
-                        if isinstance(name, _basestring) and name is not 'NOTSET']
-    parser.add_argument('--version', '-V', action='version',
-                        version='%(prog)s ' + __version__)
-    parser.add_argument('-l', '--log-level',
-                        choices=valid_log_levels,
-                        help="Choose a log level; default: info",
-                        default='info')
-    parser.add_argument("cmd", nargs="...")
-    opts = parser.parse_args()
+                        if isinstance(name, _basestring) and 
+                           name is not 'NOTSET']
+    parser.add_option('-V', '--version',
+                      action='store_true',
+                      help="show dbsake version and exit")
+    parser.add_option('-l', '--log-level',
+                      choices=valid_log_levels,
+                      metavar='<log-level>',
+                      help="Choose a log level; default: info",
+                      default='info')
+    parser.disable_interspersed_args()
+    opts, args = parser.parse_args()
+
+    if opts.version:
+        print("dbsake v" + __version__)
+        return 0
+
     logging.basicConfig(format="%(asctime)s %(message)s",
                         level=log_level(opts.log_level))
     discover_commands()
     try:
-        logging.debug("argv: %r", opts.cmd)
-        return baker.run(argv=sys.argv[0:1] + opts.cmd, main=False)
+        return baker.run(argv=['dbsake'] + args, main=False)
     except baker.TopHelp:
         baker.usage()
         return os.EX_USAGE

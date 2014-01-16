@@ -8,8 +8,8 @@ import string
 import sys
 import tempfile
 
-from dbsake import tempita
-from dbsake import sarge
+from dbsake.thirdparty import tempita
+from dbsake.thirdparty import sarge
 
 def mkdir_p(path, *args):
     try:

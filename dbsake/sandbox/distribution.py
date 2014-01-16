@@ -25,7 +25,8 @@ import os
 import re
 import shutil
 
-from dbsake import sarge
+from dbsake.thirdparty import sarge
+
 from . import util
 
 # sandbox metadata
