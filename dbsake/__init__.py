@@ -59,7 +59,7 @@ def main():
         print("dbsake v" + __version__)
         return 0
 
-    logging.basicConfig(format="%(asctime)s %(message)s",
+    logging.basicConfig(format="[%(levelname)s]:%(message)s",
                         level=log_level(opts.log_level))
     discover_commands()
     # /home/abg/.virtualenv/.../bin/dbsake -> 'dbsake'
