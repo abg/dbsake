@@ -4,6 +4,8 @@ Subcommands
 mysql-sandbox
 ~~~~~~~~~~~~~
 
+.. versionadded:: 1.0.3
+
 Setup a secondary MySQL instance easily.
 
 This setups a MySQL under ~/sandboxes/ (by default) with a
@@ -45,8 +47,6 @@ to the MySQL instance.
 
 .. program:: mysql-sandbox
 
-.. versionadded:: 1.0.3
-
 .. option:: -d, --sandbox-directory <path>
 
    Specify the path under which to create the sandbox. This defaults
@@ -66,6 +66,24 @@ to the MySQL instance.
 
    The default, if no option is specified, will be to use system which
    copies the minimum binaries from system director to $sandbox_directory/bin/.
+
+.. option:: -D, --data <tarball>
+
+   Specify a tarball that will be extracted to the sandbox datadir prior
+   to the bootstrap process.  This can be used to populate the sandbox
+   with existing data prior to being brought online.
+
+.. versionadded:: 1.0.4
+
+.. option:: -t, --table <glob>
+
+   Specify a glob pattern to filter elements from the --data option. If --data
+   is not specified this option has no effect. <glob> should be of the form
+   database.table with optional glob special characters.  This use the python
+   fnmatch mechanism under the hood so is limited to only the \*, ?, [seq] and
+   [!seq] glob operations.
+
+.. versionadded:: 1.0.4
 
 fincore
 ~~~~~~~
