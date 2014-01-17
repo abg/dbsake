@@ -7,17 +7,28 @@ MySQL temporary instance  support
 """
 from __future__ import print_function
 
+import logging
 import os
 import sys
 import time
 
 from dbsake import baker
 
+debug = logging.debug
+info = logging.info
+error = logging.info
+fatal = logging.fatal
 
 @baker.command(name='mysql-sandbox',
+               multiopts=['table'],
                shortopts=dict(sandbox_directory='d',
+                              table='t',
+                              data='D',
                               mysql_source='m'))
-def mysql_sandbox(sandbox_directory=None, mysql_source='system'):
+def mysql_sandbox(sandbox_directory=None,
+                  mysql_source='system',
+                  data=None,
+                  table=()):
     """Create a temporary MySQL instance
 
     This command installs a new MySQL instance under the
@@ -54,29 +65,33 @@ def mysql_sandbox(sandbox_directory=None, mysql_source='system'):
                          may be either 'system' or a mysql version string
                          If a version string, this command will attempt to
                          download a binary tarball from cdn.mysql.com.
+    :param data: data source for the new sandbox
+                 If not specified, a new mysql instance is bootstrapped
+                 similar to running mysql_install_db
+    :param table: optional table pattern to extract from data
+                  Has no effect if data is not specified
     """
-    from . import util
     from . import distribution
+    from . import tarball
+    from . import util
 
-   
     if not sandbox_directory:
         tag = time.strftime("%Y%m%d_%H%M%S", time.gmtime())
         sandbox_directory = os.path.expanduser('~/sandboxes/sandbox_' + tag)
     sandbox_directory = os.path.normpath(os.path.abspath(sandbox_directory))
 
     if os.path.isdir(sandbox_directory) and len(os.listdir(sandbox_directory)):
-        print("[ERROR] %s exists and is not empty. Aborting." % sandbox_directory,
-              file=sys.stderr)
+        fatal("%s exists and is not empty. Aborting.", sandbox_directory)
         return 2
 
     if util.disk_usage(sandbox_directory).free < 1024**3:
-        print("<1GiB free on %s. Aborting." % sandbox_directory)
+        fatal("<1GiB free on %s. Aborting.", sandbox_directory)
         return 5
 
     for name in ('data', 'tmp'):
         path = os.path.join(sandbox_directory, name)
         if util.mkdir_p(path, 0o0770):
-            print("Created %s" % path)
+            info("Created %s", path)
 
     datadir = os.path.join(sandbox_directory, 'data')
 
@@ -87,32 +102,54 @@ def mysql_sandbox(sandbox_directory=None, mysql_source='system'):
     else: # expect a version number
         meta = distribution.distribution_version(sandbox_directory, version=mysql_source)
 
-    print("Generating random password for root@localhost...")
+    innodb_log_file_size = None
+    if data:
+        tarball.unpack_datadir(datadir, data, table)
+        ib_logfile0 = os.path.join(datadir, 'ib_logfile0')
+        try:
+            innodb_log_file_size = os.stat(ib_logfile0).st_size
+        except OSError:
+            debug("No ib_logfile0", excinfo=True)
+        # XXX: if there is no ib_logfile0 then this may be unapplied xtrabackup
+        #      data - at which point we must apply logs
+
+
+    # XXX: Resetting a password may be incorrect if data
+    #      was specified - it may make sense to register
+    #      a separate user
+    info("Generating random password for root@localhost...")
     password = util.mkpassword(length=17)
 
-    print("Generating my.sandbox.cnf...")
-    defaults = util.generate_defaults(sandbox_directory, user='root', password=password, metadata=meta)
-    print("Bootstrapping new mysql instance (this may take a few seconds)...")
-    print("  Using mysqld=%s" % meta.mysqld)
+    info("Generating my.sandbox.cnf...")
+    defaults = util.generate_defaults(sandbox_directory,
+                                      user='root',
+                                      password=password,
+                                      innodb_log_file_size=innodb_log_file_size,
+                                      metadata=meta)
+    info("Bootstrapping new mysql instance (this may take a few seconds)...")
+    info("  Using mysqld=%s", meta.mysqld)
     bootstrap_log = os.path.join(sandbox_directory, 'bootstrap.log')
-    print("  For details see %s" % bootstrap_log)
+    info("  For details see %s", bootstrap_log)
     try:
         util.bootstrap_mysqld(mysqld=meta.mysqld,
                               defaults_file=defaults,
                               logfile=bootstrap_log,
                               content=util.mysql_install_db(password, meta.pkgdatadir))
     except IOError:
-        print("[ERROR] Bootstrap process failed.  See %s" % bootstrap_log)
+        fatal("Bootstrap process failed.  See %s", bootstrap_log)
         return 1
-    print("Bootstrapping complete!")
+    info("Bootstrapping complete!")
 
     initscript = os.path.join(sandbox_directory, 'sandbox.sh')
-    print("Generating init script %s..." % initscript)
-    util.generate_initscript(sandbox_directory, mysqld_safe=meta.mysqld_safe, mysql=meta.mysql)
+    info("Generating init script %s...", initscript)
+    util.generate_initscript(sandbox_directory,
+                             mysqld_safe=meta.mysqld_safe,
+                             mysql=meta.mysql)
 
-    print("Sandbox creation complete!")
-    print("You may start your sandbox by running: %s start" % initscript)
-    print("You may login to your sandbox by running: %s shell" % initscript)
-    print("   or by running: mysql --socket=%s" % (os.path.join(datadir, 'mysql.sock')))
-    print("Credentials are stored in %s" % defaults)
+    info("Sandbox creation complete!")
+    info("You may start your sandbox by running: %s start", initscript)
+    info("You may login to your sandbox by running: %s shell", initscript)
+    info("   or by running: mysql --defaults-file=%s", defaults)
+    info("Sandbox datadir is located %s", datadir)
+    info("Credentials are stored in %s", defaults)
     return 0
