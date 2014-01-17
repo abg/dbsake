@@ -6,6 +6,7 @@ Support for deploying from a binary tarball
 
 """
 
+import fnmatch
 import glob
 import logging
 import os
@@ -60,3 +61,25 @@ def deploy(stream, destdir):
     if innodb_plugin and 'ha_innodb_plugin.so' not in innodb_plugin:
         os.symlink(innodb_plugin[0],
                    os.path.join(destdir, 'lib', 'plugin', 'ha_innodb_plugin.so'))
+
+def _should_extract(name, tables):
+    if not tables:
+        return True # no filtering
+    if name.startswith('ibdata') or name.startswith('ib_logfile'):
+        return True
+    for pattern in tables:
+        if fnmatch.fnmatch(name, pattern):
+            return True
+    else:
+        logging.info("Skipping %s", name)
+        return False
+
+def unpack_datadir(datadir, source, tables=()):
+    logging.info("Unpacking MySQL datadir from %s", source)
+    tables = set('/'.join(name.rsplit('.', 1)) + '.*' for name in tables)
+    with tarfile.open(source, 'r|*') as tar:
+        for tarinfo in tar:
+            if not tarinfo.isreg(): continue
+            name = os.path.normpath(tarinfo.name)
+            if _should_extract(name, tables):
+                tar.extract(tarinfo, datadir)
