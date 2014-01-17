@@ -38,7 +38,8 @@ if sys.version_info[:2] < (3, 0):  # pragma: no cover
 
 
 # Stores metadata about a command
-Cmd = namedtuple("Cmd", ["name", "fn", "argnames", "keywords", "shortopts",
+Cmd = namedtuple("Cmd", ["name", "fn", "argnames", "keywords",
+                         "shortopts", "multiopts",
                          "has_varargs", "has_kwargs", "docstring",
                          "varargs_name", "paramdocs", "is_method"])
 
@@ -221,7 +222,8 @@ class Baker(object):
         return self.global_options.get(key, default)
 
     def command(self, fn=None, name=None, default=False,
-                params=None, shortopts=None, global_command=False):
+                params=None, shortopts=None, multiopts=None,
+                global_command=False):
         """
         Registers a command with the bakery. This does not call the
         function, it simply adds it to the list of functions this Baker
@@ -256,6 +258,7 @@ class Baker(object):
                                            name=name,
                                            params=params,
                                            shortopts=shortopts,
+                                           multiopts=multiopts,
                                            global_command=global_command)
         else:
             name = name or fn.__name__
@@ -284,6 +287,8 @@ class Baker(object):
             # Automatically add single letter arguments as shortopts
             shortopts.update(((arg, arg) for arg in arglist if len(arg) == 1))
 
+            multiopts = set(multiopts or ())
+
             # Zip up the keyword argument names with their defaults
             if defaults:
                 keywords = dict(zip(arglist[0 - len(defaults):], defaults))
@@ -297,8 +302,9 @@ class Baker(object):
                 arglist.pop(0)
 
             # Create a Cmd object to represent this command and store it
-            cmd = Cmd(name, fn, arglist, keywords, shortopts, has_varargs,
-                      has_kwargs, docstring, varargs_name, params, is_method)
+            cmd = Cmd(name, fn, arglist, keywords, shortopts, multiopts,
+                      has_varargs, has_kwargs, docstring, varargs_name, params,
+                      is_method)
             # If global_command is True, set this as the global command
             if global_command:
                 if defaults is not None and len(defaults) != len(arglist):
@@ -600,6 +606,7 @@ class Baker(object):
         """
         keywords = cmd.keywords
         shortopts = cmd.shortopts
+        multiopts = cmd.multiopts
 
         def type_error(name, value, t):
             if not test:
@@ -679,7 +686,10 @@ class Baker(object):
                             type_error(name, value, type(default))
 
                 # Store this option
-                kwargs[name] = value
+                if name in cmd.multiopts:
+                    kwargs.setdefault(name, []).append(value)
+                else:
+                    kwargs[name] = value
 
             elif arg.startswith("-") and (cmd.shortopts or cmd.has_kwargs):
                 # Process short option(s)
@@ -720,9 +730,13 @@ class Baker(object):
                         value = value.lstrip("=").strip("'\"")
 
                         try:
-                            kwargs[name] = totype(value, default)
+                            value = totype(value, default)
                         except (TypeError, ValueError):
                             type_error(name, value, type(default))
+                        if name in cmd.multiopts:
+                            kwargs.setdefault(name, []).append(value)
+                        else:
+                            kwargs[name] = value
                         break
             else:
                 # This doesn't start with "-", so just add it to the list of
