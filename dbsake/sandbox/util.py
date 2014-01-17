@@ -122,7 +122,7 @@ def mkpassword(length=8):
     alphabet = string.letters + string.digits + string.punctuation
     return ''.join(random.sample(alphabet, length))
 
-def generate_defaults(path, user, password, metadata):
+def generate_defaults(path, metadata, **kwargs):
     # need to read a template to do this right
     template = load_template("my.sandbox.cnf")
 
@@ -131,13 +131,12 @@ def generate_defaults(path, user, password, metadata):
         sandbox_root=path,
         basedir=metadata.basedir,
         mysql_user=os.environ['USER'],
-        user=user,
-        password=password,
         datadir=os.path.join(path, 'data'),
         socket=os.path.join(path, 'data', 'mysql.sock'),
         networking=False,
         additional_options=(),
         open_files_limit=1024,
+        **kwargs
     )
 
     options_path = os.path.join(path, 'my.sandbox.cnf')
