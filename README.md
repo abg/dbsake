@@ -151,20 +151,34 @@ Run it with no arguments to see all possible commands:
 
 ### Extracting the schema from a binary .frm file
 
-    $ sudo ./dbsake frm-to-schema /var/lib/mysql/sakila/actor.frm
-    --
-    -- Table structure for table `actor`
-    -- Created with MySQL Version 5.5.34
-    --
+```
+$ sudo ./dbsake frm-to-schema /var/lib/mysql/sakila/actor.frm
+--
+-- Table structure for table `actor`
+-- Created with MySQL Version 5.5.34
+--
 
-    CREATE TABLE `actor` (
-      `actor_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
-      `first_name` varchar(45) NOT NULL,
-      `last_name` varchar(45) NOT NULL,
-      `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      PRIMARY KEY (`actor_id`),
-      KEY `idx_actor_last_name` (`last_name`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `actor` (
+  `actor_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `first_name` varchar(45) NOT NULL,
+  `last_name` varchar(45) NOT NULL,
+  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`actor_id`),
+  KEY `idx_actor_last_name` (`last_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+```
+You can also format VIEW .frm files directly as well:
+```
+$ sudo ./dbsake frm-to-schema /var/lib/mysql/sakila/actor_info.frm
+--
+-- View:         actor_info
+-- Timestamp:    2014-01-18 18:22:54
+-- Stored MD5:   402b8673b0c61034644b5b286519d3f1
+-- Computed MD5: 402b8673b0c61034644b5b286519d3f1
+--
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `actor_info` AS select `a`.`actor_id` AS `actor_id`,`a`.`first_name` AS `first_name`,`a`.`last_name` AS `last_name`,group_concat(distinct concat(`c`.`name`,': ',(select group_concat(`f`.`title` order by `f`.`title` ASC separator ', ') from ((`sakila`.`film` `f` join `sakila`.`film_category` `fc` on((`f`.`film_id` = `fc`.`film_id`))) join `sakila`.`film_actor` `fa` on((`f`.`film_id` = `fa`.`film_id`))) where ((`fc`.`category_id` = `c`.`category_id`) and (`fa`.`actor_id` = `a`.`actor_id`)))) order by `c`.`name` ASC separator '; ') AS `film_info` from (((`sakila`.`actor` `a` left join `sakila`.`film_actor` `fa` on((`a`.`actor_id` = `fa`.`actor_id`))) left join `sakila`.`film_category` `fc` on((`fa`.`film_id` = `fc`.`film_id`))) left join `sakila`.`category` `c` on((`fc`.`category_id` = `c`.`category_id`))) group by `a`.`actor_id`,`a`.`first_name`,`a`.`last_name`;
+```
 
 ## License
 
