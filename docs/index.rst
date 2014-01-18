@@ -11,7 +11,7 @@ tasks for MySQL.
 
 .. code-block:: bash
 
-   # wget www.maybesql.net/get/dbsake
+   # curl http://get.dbsake.net > dbsake
    # chmod u+x dbsake
    # mysqldump --all-databases | ./dbsake split-mysqldump -C /var/lib/backups/today/
    ...
