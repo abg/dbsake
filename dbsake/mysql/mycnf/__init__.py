@@ -1,6 +1,6 @@
 """
-dbsake.upgrademycnf
-~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.mycnf
+~~~~~~~~~~~~~~~~~~
 
 """
 from __future__ import print_function
@@ -24,8 +24,8 @@ def upgrade_mycnf(config='/etc/my.cnf',
     :param target: MySQL version to target the option file (default: 5.5)
     :param patch: Output unified diff rather than full config (default off)
     """
-    from dbsake.util import relpath
-    from dbsake.upgrademycnf import parser
+    from dbsake.util.path import relpath
+    from . import parser
 
     if target == '5.1':
         rewriter = parser.MySQL51OptionRewriter
