@@ -4,14 +4,14 @@
 
 dbsake - a (s)wiss-(a)rmy-(k)nif(e) for various dba tasks
 
-dbsake (pronounced "sah-kay") is a set of commands to assist with:
+dbsake (pronounced "dee-bee sah-kay") is a set of commands to assist with:
 
-  * [Parsing MySQL .frm files and output DDL][0]
-  * [Splitting mysqldump output into a file per object][1]
-  * [Patching a my.cnf to remove or convert deprecated options][2]
-  * [Deploying a new standalone MySQL "sandbox" instance][3]
-  * [Decoding/encoding MySQL filenames][4]
-  * [Managing OS caching for a set of files][5]
+  - [Parsing MySQL .frm files and output DDL][0]
+  - [Splitting mysqldump output into a file per object][1]
+  - [Patching a my.cnf to remove or convert deprecated options][2]
+  - [Deploying a new standalone MySQL "sandbox" instance][3]
+  - [Decoding/encoding MySQL filenames][4]
+  - [Managing OS caching for a set of files][5]
     
     
 [0]: http://docs.dbsake.net/subcommands.html#frm-to-schema
@@ -22,6 +22,10 @@ dbsake (pronounced "sah-kay") is a set of commands to assist with:
 [5]: http://docs.dbsake.net/subcommands.html#fincore
 
 Read the documentation at: http://docs.dbsake.net
+
+## Dependencies
+
+- Requires python v2.6+
 
 ## Quickstart
 
@@ -63,8 +67,8 @@ Run it with no arguments to see all possible commands:
     $ ./dbsake upgrade-mycnf --target=5.5 --config=my.cnf --patch
     [INFO]:Rewriting option 'log-slow-queries'. Reason: Logging options changed in MySQL 5.1
     [INFO]:Removing option 'skip-external-locking'. Reason: Default behavior in MySQL 4.1+
-    --- a/usr/share/doc/mysql-server-5.5/examples/my.cnf
-    +++ b/usr/share/doc/mysql-server-5.5/examples/my.cnf
+    --- a/my.cnf
+    +++ b/my.cnf
     @@ -26,7 +26,6 @@
      [mysqld]
      port		= 3306
@@ -87,7 +91,7 @@ Run it with no arguments to see all possible commands:
   
 ### Splitting up mysqldump output
 
-    $ mysqldump -A | dbsake split-mysqldump -t 5.6 -C mydata/
+    $ mysqldump -A | ./dbsake split-mysqldump -t 5.6 -C mydata/
     Deferring indexes and constraints for sakila.actor (mydata/sakila/actor.schema.sql)
     Injecting deferred index creation mydata/sakila/actor.data.sql
     Deferring indexes and constraints for sakila.address (mydata/sakila/address.schema.sql)
