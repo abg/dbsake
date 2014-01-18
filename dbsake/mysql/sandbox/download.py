@@ -1,6 +1,6 @@
 """
-dbsake.sandbox.download
-~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.sandbox.download
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Support for downloading / deploying a binary tarball
 """
