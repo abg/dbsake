@@ -13,7 +13,8 @@ import itertools
 import os
 import re
 
-# local imports
+from dbsake.util import Bunch
+
 from . import charsets
 from . import constants
 from . import keys
@@ -247,7 +248,7 @@ def unpack_columns(packed_columns, table):
     comments = util.ByteReader(packed_columns.comments)
 
     null_map = map(ord, defaults.read((packed_columns.null_count + 1 + 7) // 8))
-    context = util.Bunch(null_map=null_map, null_bit=1, table=table)
+    context = Bunch(null_map=null_map, null_bit=1, table=table)
 
     for fieldnr, name in enumerate(names):
         context.update(name=name,

@@ -4,8 +4,9 @@ dbsake.mysqlfrm.constants
 Constants used during .frm parsing
 
 """
+from dbsake.util import enum
+
 from . import util
-from . import enum
 
 #enum legacy_db_type
 #{

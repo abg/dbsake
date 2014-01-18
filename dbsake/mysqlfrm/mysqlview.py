@@ -15,7 +15,7 @@ import hashlib
 import io
 import os
 
-from . import enum
+from dbsake.util import enum
 from . import tablename
 
 # These constants are taken from sql/table.h

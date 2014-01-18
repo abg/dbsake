@@ -13,6 +13,7 @@ import sys
 import time
 
 from dbsake import baker
+from dbsake.util import path
 
 debug = logging.debug
 info = logging.info
@@ -84,14 +85,14 @@ def mysql_sandbox(sandbox_directory=None,
         fatal("%s exists and is not empty. Aborting.", sandbox_directory)
         return 2
 
-    if util.disk_usage(sandbox_directory).free < 1024**3:
+    if path.disk_usage(sandbox_directory).free < 1024**3:
         fatal("<1GiB free on %s. Aborting.", sandbox_directory)
         return 5
 
     for name in ('data', 'tmp'):
-        path = os.path.join(sandbox_directory, name)
-        if util.mkdir_p(path, 0o0770):
-            info("Created %s", path)
+        dirpath = os.path.join(sandbox_directory, name)
+        if path.makedirs(dirpath, 0o0770, exist_ok=True):
+            info("Created %s", dirpath)
 
     datadir = os.path.join(sandbox_directory, 'data')
 

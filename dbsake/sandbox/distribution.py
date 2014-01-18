@@ -26,8 +26,7 @@ import re
 import shutil
 
 from dbsake.thirdparty import sarge
-
-from . import util
+from dbsake.util import path
 
 # sandbox metadata
 # minimum information to setup the sandbox
@@ -51,18 +50,18 @@ def first_subdir(basedir, *paths):
     """Return the first path from ``paths`` that exists under basedir
 
     """
-    for path in paths:
-        cpath = os.path.normpath(os.path.join(basedir, path))
+    for name in paths:
+        cpath = os.path.normpath(os.path.join(basedir, name))
         if os.path.exists(cpath):
             return cpath
     return None
 
 def distribution_system(sandbox_directory, **kwargs):
-    path = os.pathsep.join(['/usr/libexec', '/usr/sbin', os.environ['PATH']])
+    envpath = os.pathsep.join(['/usr/libexec', '/usr/sbin', os.environ['PATH']])
     # XXX: abort if any of these weren't found
-    mysqld = util.which('mysqld', path=path)
-    mysql = util.which('mysql', path=path)
-    mysqld_safe = util.which('mysqld_safe', path=path)
+    mysqld = path.which('mysqld', path=envpath)
+    mysql = path.which('mysql', path=envpath)
+    mysqld_safe = path.which('mysqld_safe', path=envpath)
     version = mysqld_version(mysqld)
     # XXX: we might be able to look this up from mysqld --help --verbose,
     #      but I really want to avoid that.  This shold cover 99% of local
@@ -74,9 +73,9 @@ def distribution_system(sandbox_directory, **kwargs):
     # now copy mysqld, mysql, mysqld_safe to sandbox_dir/bin
     # then return an appropriate SandboxMeta instance
     bindir = os.path.join(sandbox_directory, 'bin')
-    util.mkdir_p(bindir, 0770)
-    for path in (mysqld, mysqld_safe, mysql):
-        shutil.copy2(path, bindir)
+    path.makedirs(bindir, 0770, exist_ok=True)
+    for name in (mysqld, mysqld_safe, mysql):
+        shutil.copy2(name, bindir)
 
     return SandboxMeta(
         version=version,
@@ -89,9 +88,9 @@ def distribution_system(sandbox_directory, **kwargs):
         plugindir=plugindir
     )
 
-def distribution_tarball(sandbox_directory, path):
+def distribution_tarball(sandbox_directory, name):
     from . import tarball
-    with open(path, 'rb') as fileobj:
+    with open(name, 'rb') as fileobj:
         tarball.deploy(fileobj, sandbox_directory)
     bindir = os.path.join(sandbox_directory, 'bin')
     version = mysqld_version(os.path.join(bindir, 'mysqld'))

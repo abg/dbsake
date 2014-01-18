@@ -186,29 +186,6 @@ class ByteReader(io.BytesIO):
         self.seek(n_bytes, os.SEEK_CUR)
 
 
-class Bunch(dict):
-    """Access dict elements as object attributes
-
-    >>> b = Bunc(foo='bar', bar='baz')
-    >>> b.foo
-    'bar'
-    >>> b.argh = 'castle'
-    >>> b['argh']
-    'castle'
-    >>> b.argh
-    'castle
-    """
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            # AttributeError: type object 'bunch' has no attribute 'baz'
-            raise AttributeError('type {0!r} has no attribute {1!r}'.format(
-                                    self.__class__.__name__, name))
-
-    def __setattr__(self, name, value):
-        self[name] = value
-
 # py2/py3 compatibility shim
 # Taken from https://bitbucket.org/gutworth/six
 def add_metaclass(metaclass):
