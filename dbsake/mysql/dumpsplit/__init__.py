@@ -1,6 +1,6 @@
 """
-dbsake.mysqldumpsplit
-~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.dumpsplit
+~~~~~~~~~~~~~~~~~~~~~~
 
 Command to split a mysqldump file into constituent parts
 
@@ -46,8 +46,9 @@ def split_mysqldump(target='5.5',
                     regex='.*'):
     """Split mysqldump output into separate files"""
     from dbsake.util import path, stream_command
-    from dbsake.mysqldumpsplit.parser import MySQLDumpParser, extract_identifier
-    from dbsake.mysqldumpsplit.defer import extract_create_table, split_indexes
+    from .parser import MySQLDumpParser, extract_identifier
+    from .defer import extract_create_table, split_indexes
+
     defer_indexes = False
     defer_constraints = False
     cmd = filter_command

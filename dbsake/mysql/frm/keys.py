@@ -1,6 +1,6 @@
 """
-dbsake.mysqlfrm.keys
-~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.frm.keys
+~~~~~~~~~~~~~~~~~~~~~
 
 Support for decoding index data from a .frm
 

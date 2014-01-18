@@ -1,6 +1,6 @@
 """
-dbsake.innodb.binlog
-~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.innodb.binlog
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Read innodb binlog information from a shared tablespace
 

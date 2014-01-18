@@ -1,5 +1,8 @@
 """
-Utility code
+dbsake.mysql.frm.util
+~~~~~~~~~~~~~~~~~~~~~
+
+Utility methods
 
 """
 

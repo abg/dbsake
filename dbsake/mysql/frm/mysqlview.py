@@ -1,6 +1,6 @@
 """
-dbsake.mysqlfrm.mysqlview
-~~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.frm.mysqlview
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Decode plaintext view .frm files
 

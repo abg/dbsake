@@ -1,6 +1,6 @@
 """
-dbsake.sandbox.tarball
-~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.sandbox.tarball
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Support for deploying from a binary tarball
 

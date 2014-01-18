@@ -1,3 +1,9 @@
+"""
+dbsake.mysql.sandbox.util
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sandbox utility helpers
+"""
 import codecs
 import collections
 import errno

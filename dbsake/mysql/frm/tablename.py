@@ -1,6 +1,6 @@
 """
-dbsake.mysqlfrm.tablename
-~~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.frm.tablename
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Convert between unicode and MySQL's filename encoding
 

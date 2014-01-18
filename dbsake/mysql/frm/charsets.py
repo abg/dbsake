@@ -1,9 +1,6 @@
-# ignore "too many lines" for this file
-# pylint: disable=C0302
-
 """
-dbsake.mysqlfrm.charsets
-~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.frm.charsets
+~~~~~~~~~~~~~~~~~~~~~~~~~
 MySQL character / collation lookup
 
 This module contains minimal information about character sets

@@ -1,5 +1,9 @@
-#!/usr/bin/env python2.6
+"""
+dbsake.mysql.dumpsplit.defer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Support for deferring indexes and constraints
+"""
 import csv
 import io
 import logging
@@ -111,22 +115,3 @@ def split_indexes(table_ddl, defer_constraints=False):
 
     return (format_alter_table(table_ddl, indexes),
             format_create_table(table_ddl, indexes))
-
-if __name__ == '__main__':
-    create_table = '''
-CREATE TABLE `child` (
-  `parent_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`parent_id`),
-  CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-'''
-
-    table_ddl = extract_create_table(create_table)
-    alter_table, table_ddl = split_indexes(table_ddl, defer_constraints=True)
-    print "ALTER"
-    print alter_table
-    print
-    print "CREATE"
-    print table_ddl
-    print
-

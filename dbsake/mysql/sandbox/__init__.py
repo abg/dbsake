@@ -1,6 +1,6 @@
 """
-dbsake.sandbox
-~~~~~~~~~~~~~~
+dbsake.mysql.sandbox
+~~~~~~~~~~~~~~~~~~~~
 
 MySQL temporary instance  support
 

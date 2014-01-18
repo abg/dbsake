@@ -1,6 +1,6 @@
 """
-dbsake.sandbox.distribution
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.sandbox.distribution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Logic for handling different MySQL distribution sources
 

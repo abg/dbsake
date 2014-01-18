@@ -1,6 +1,6 @@
 """
-dbsake.mysqlfrm
-~~~~~~~~~~~~~~~
+dbsake.mysql.frm
+~~~~~~~~~~~~~~~~
 
 MySQL .frm manipulation utilities
 

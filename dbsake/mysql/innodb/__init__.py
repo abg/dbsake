@@ -1,6 +1,6 @@
 """
-dbsake.innodb
-~~~~~~~~~~~~~
+dbsake.mysql.innodb
+~~~~~~~~~~~~~~~~~~~
 
 InnoDB related commands
 

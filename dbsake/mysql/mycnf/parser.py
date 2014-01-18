@@ -1,6 +1,6 @@
 """
-dbsake.upgrademycnf.parser
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.mycnf.parser
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 MySQL my.cnf parsing and rewriting support
 

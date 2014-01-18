@@ -1,6 +1,6 @@
 """
-dbsake.mysqldumpsplit.parser
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.dumpsplit.parser
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Parse mysqldump files
 

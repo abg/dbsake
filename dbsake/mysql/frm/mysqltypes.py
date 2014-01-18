@@ -1,6 +1,6 @@
 """
-dbsake.mysqlfrm.mysqltypes
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.frm.mysqltypes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Support for formatting and decoding MySQL types
 
