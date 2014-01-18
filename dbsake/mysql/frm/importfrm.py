@@ -1,6 +1,6 @@
 """
-dbsake.mysqlfrm.import
-~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.frm.import
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Import an .frm file as a MyISAM table
 

@@ -1,6 +1,6 @@
 """
-dbsake.mysqlfrm.binaryfrm
-~~~~~~~~~~~~~~~~~~~~~~~~~
+dbsake.mysql.frm.binaryfrm
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Parse binary .frm files
 
