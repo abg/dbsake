@@ -8,6 +8,8 @@ Utility methods used by dbsake
 import contextlib
 import subprocess
 
+from . import template
+
 @contextlib.contextmanager
 def stream_command(cmd, stdout):
     process = subprocess.Popen(cmd,
