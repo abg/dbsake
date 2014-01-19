@@ -13,6 +13,13 @@ import pkgutil
 
 from dbsake.thirdparty import tempita
 
+def escape(value):
+    """Escape a string value by backslash escaping quotes and backslashes
+
+    :returns: backslash escaped string
+    """
+    return value.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
+
 def loader(package, prefix):
     """Create a template loader
 
@@ -22,5 +29,6 @@ def loader(package, prefix):
     """
     def render(name, **kwargs):
         data = pkgutil.get_data(package, '/'.join([prefix, name]))
-        return tempita.Template(data.decode('utf8')).substitute(**kwargs)
+        return tempita.Template(data.decode('utf8')
+                                namespace=dict(escape=escape)).substitute(**kwargs)
     return render
