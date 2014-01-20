@@ -18,17 +18,16 @@ fi
 START_TIMEOUT=300
 STOP_TIMEOUT=300
 
-mysqld_safe={{mysqld_safe}}
-mysql={{mysql}}
-sandbox_root={{sandbox_root}}
-datadir=$sandbox_root/data
-defaults_file=$sandbox_root/my.sandbox.cnf
+mysqld_safe={{distribution.mysqld_safe}}
+mysql={{distribution.mysql}}
+datadir={{datadir}}
+defaults_file={{defaults_file}}
 
 [ -f /etc/sysconfig/${NAME} ] && . /etc/sysconfig/${NAME}
 
 mysqld_safe_args="
 --defaults-file=$defaults_file
---ledir=$sandbox_root/bin
+--ledir={{distribution.libexecdir}}
 --datadir=$datadir
 --pid-file=$datadir/mysql.pid
 --socket=$datadir/mysql.sock
@@ -42,7 +41,7 @@ sandbox_start() {
     fi
     echo -n "Starting sandbox: "
     # close stdin (0) and redirect stdout/stderr to /dev/null
-    nohup $mysqld_safe $mysqld_safe_args 0<&- &>/dev/null &
+    nohup $mysqld_safe $mysqld_safe_args "$@" 0<&- &>/dev/null &
     local start_timeout=${START_TIMEOUT}
     until [[ -S "${datadir}/mysql.sock" || $start_timeout -le 0 ]]
     do
@@ -95,7 +94,8 @@ sandbox_stop() {
 
 case $1 in
     start)
-        sandbox_start
+        shift
+        sandbox_start "$@"
         ;;
     status)
         sandbox_status
@@ -110,9 +110,13 @@ case $1 in
     reload)
         exit 3
         ;;
-    shell)
+    shell|mysql)
         shift
         MYSQL_PS1="mysql[sandbox]> " $mysql --defaults-file=$defaults_file "$@"
+        ;;
+    mysqldump)
+        shift
+        ${mysql}dump --defaults-file=$defaults_file "$@"
         ;;
     *)
         echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
