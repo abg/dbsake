@@ -2,98 +2,90 @@
 dbsake.mysql.sandbox.util
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sandbox utility helpers
+Sandbox utilities
 """
-import codecs
-import collections
-import errno
+from __future__ import print_function, division
+
+import contextlib
 import os
-import pkgutil
-import random
-import string
 import sys
-import tempfile
+import time
 
-from dbsake.thirdparty import tempita
-from dbsake.thirdparty import sarge
+from dbsake import util
 
-def escape(value):
-    return value.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
+class StreamProxy(object):
+    """Proxy over an underlying stream
 
-def load_template(name, **kwargs):
-    kwargs.update(escape=escape)
-    pkg = __name__.rpartition('.')[0]
-    data = pkgutil.get_data(pkg, '/'.join(['templates', name]))
-    return tempita.Template(data.decode("utf8"), namespace=kwargs)
- 
-def render_template(name, **kwargs):
-    return load_template(name).substitute(**kwargs)
-  
-def mkpassword(length=8):
-    alphabet = string.letters + string.digits + string.punctuation
-    return ''.join(random.sample(alphabet, length))
+    This class provides a proxy over some sort of streaming file-like object.
+    A list of listeners is maintained that are notified on every read() from
+    the underlying stream in order to allow multiple sources to do something
+    with the data as it is read.
+    """
+    def __init__(self, stream):
+        self.stream = stream
+        self._listeners = []
 
-def generate_defaults(path, metadata, **kwargs):
-    # need to read a template to do this right
-    template = load_template("my.sandbox.cnf")
+    def __enter__(self):
+        return self
 
-    content = template.substitute(
-        mysql_version=metadata.version,
-        sandbox_root=path,
-        basedir=metadata.basedir,
-        mysql_user=os.environ['USER'],
-        datadir=os.path.join(path, 'data'),
-        socket=os.path.join(path, 'data', 'mysql.sock'),
-        networking=False,
-        additional_options=(),
-        open_files_limit=1024,
-        **kwargs
-    )
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
 
-    options_path = os.path.join(path, 'my.sandbox.cnf')
-    with codecs.open(options_path, 'w', encoding='utf8') as fileobj:
-        os.fchmod(fileobj.fileno(), 0660)
-        fileobj.write(content)
+    # allow access to arbitrary attributes of underlying stream
+    # not otherwise overriden by this proxy
+    def __getattr__(self, key):
+        return getattr(self.stream, key)
 
-    return options_path
+    def add(self, listener):
+        """Add a listen to this proxy"""
+        self._listeners.append(listener)
 
-def cat(path):
-    with codecs.open(path, 'r', encoding='utf8') as fileobj:
-        return fileobj.read()
+    def read(self, *args, **kwargs):
+        """Proxy a read to the underlying stream
 
-def mysql_install_db(password, share_path='/usr/share/mysql'):
-    join = os.path.join
-    content = [
-        render_template("bootstrap_initialize.sql"),
-        cat(join(share_path, 'mysql_system_tables.sql')),
-        cat(join(share_path, 'mysql_system_tables_data.sql')),
-        cat(join(share_path, 'fill_help_tables.sql')),
-        render_template("secure_mysql_installation.sql", password=password),
-    ]
-    return os.linesep.join(content)
+        This proxies the read to the underlying stream
+        and then calls each listener with the chunk read
+        """
+        chunk = self.stream.read(*args, **kwargs)
+        for listener in self._listeners:
+            listener(chunk)
+        return chunk
 
-def bootstrap_mysqld(mysqld, defaults_file, logfile, content):
-    cmd = sarge.shell_format("{0} --defaults-file={1} --bootstrap -vvvvv",
-                             mysqld, defaults_file)
-    with open(logfile, 'wb') as stderr:
-        with tempfile.TemporaryFile() as tmpfile:
-            tmpfile.write(content.encode('utf8'))
-            tmpfile.flush()
-            tmpfile.seek(0)
-            pipeline = sarge.run(cmd,
-                                 input=tmpfile.fileno(),
-                                 stdout=stderr,
-                                 stderr=stderr)
-    if sum(pipeline.returncodes) != 0:
-        raise IOError(errno.EIO, "Bootstrap process failed")
 
-def generate_initscript(sandbox_directory, **kwargs):
-    content = render_template("sandbox.sh", 
-                              sandbox_root=sandbox_directory,
-                              **kwargs)
+def progressbar(max=0, width=40, interval=0.5):
+    template = '({pct:6.2%})[{fill:.<{width}}]{cur_size:^10}/{max_size:^10}'
+    params = dict(length=0, last_update=0)
+    max_size = util.format_filesize(max)
+    def _show_progress(data):
+        params['length'] += len(data)
+        if time.time() - params['last_update'] >= interval or not data:
+            params['last_update'] = time.time()
+            frac = params['length'] / max
+            units = int(frac*width)
+            cur_size = util.format_filesize(params['length'])
+            bar = template.format(pct=frac,
+                                  fill='='*units,
+                                  cur_size=cur_size,
+                                  max_size=max_size,
+                                  width=width)
+            print(bar, end="\r", file=sys.stderr)
+            sys.stderr.flush()
+        if not data:
+            print(file=sys.stderr)
+    return _show_progress
 
-    sandbox_sh_path = os.path.join(sandbox_directory, 'sandbox.sh')
-    with codecs.open(sandbox_sh_path, 'w', encoding='utf8') as fileobj:
-        # ensure initscript is executable by current user + group
-        os.fchmod(fileobj.fileno(), 0550)
-        fileobj.write(content)
+@contextlib.contextmanager
+def cache_url(url):
+    """Yield a file to cache content from a url
+    """
+    # XXX: this assumes we have no fragment / query portions
+    path = os.path.basename(url)
+    cachedir = os.environ.get('DBSAKE_CACHE_DIR',
+                              os.path.expanduser('~/.dbsake/cache'))
+    try:
+        os.makedirs(cachedir)
+    except OSError:
+        pass
+    path = os.path.join(cachedir, path)
+    with open(path, 'wb') as fileobj:
+        yield fileobj
