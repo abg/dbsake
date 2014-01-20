@@ -54,6 +54,7 @@ def preload(options):
         # So here we want to map database.table to database/table
         # filtering the database and tablename through the mysql
         # tablename encoders
+        info("  Preloading sandbox data from %s", options.datasource)
         deploy_tarball(options.datasource,
                        os.path.join(options.basedir, 'data'))
     elif _is_sqldump(sandbox_options.datasource):
