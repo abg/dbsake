@@ -1,3 +1,7 @@
+{{default networking = None}}
+{{default additional_options = ()}}
+{{default open_files_limit = 1024}}
+
 [client]
 {{if user}}
 user                            = "{{user|escape}}"
@@ -13,10 +17,10 @@ socket                          = {{socket}}
 {{if basedir}}
 basedir                         = {{basedir}}
 {{endif}}
-user                            = {{mysql_user}}
+user                            = {{system_user}}
 datadir                         = {{datadir}}
-tmpdir                          = {{sandbox_root}}/tmp
-socket                          = {{datadir}}/mysql.sock
+tmpdir                          = {{tmpdir}}
+socket                          = {{socket}}
 skip-name-resolve
 sql-mode                        = NO_ENGINE_SUBSTITUTION
 #event-scheduler                = 1
