@@ -29,6 +29,6 @@ def loader(package, prefix):
     """
     def render(name, **kwargs):
         data = pkgutil.get_data(package, '/'.join([prefix, name]))
-        return tempita.Template(data.decode('utf8')
+        return tempita.Template(data.decode('utf8'),
                                 namespace=dict(escape=escape)).substitute(**kwargs)
     return render
