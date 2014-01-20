@@ -11,7 +11,7 @@ import os
 import sys
 import time
 
-from dbsake import util
+import dbsake.util as util
 
 class StreamProxy(object):
     """Proxy over an underlying stream
