@@ -20,7 +20,8 @@ except NameError:
 
 __version__ = '1.0.4-dev'
 
-from dbsake import baker
+from . import baker
+from . import util
 
 def discover_commands():
     walk_packages = pkgutil.walk_packages
@@ -28,10 +29,20 @@ def discover_commands():
         if not is_pkg: continue
         # don't autoload third party packages
         if 'sarge' in name or 'tempita' in name: continue
-        logging.debug("Attempting to load module '%s'", name)
+        logging.debug("# Loading commands from '%s'", name)
         loader = importer.find_module(name, None)
         loader.load_module(name)
 
+def configure_logging(level):
+    logger = logging.getLogger()
+    handler = logging.StreamHandler(sys.stderr)
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(level)
+    # suppress sarge logging for now
+    logging.getLogger("sarge").setLevel(logging.FATAL)
+    
 def log_level(name):
     try:
         return logging._levelNames[name.upper()]
@@ -59,8 +70,7 @@ def main():
         print("dbsake v" + __version__)
         return 0
 
-    logging.basicConfig(format="[%(levelname)s]:%(message)s",
-                        level=log_level(opts.log_level))
+    configure_logging(log_level(opts.log_level))
     discover_commands()
     # /home/abg/.virtualenv/.../bin/dbsake -> 'dbsake'
     sys.argv[0] = os.path.basename(sys.argv[0])
@@ -83,6 +93,3 @@ def main():
         logging.fatal("Uncaught exception.", exc_info=True)
         logging.fatal("Please file a bug at github.com/abg/dbsake/issues")
         return os.EX_SOFTWARE
-
-if __name__ == '__main__':
-    sys.exit(main())
