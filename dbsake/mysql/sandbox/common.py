@@ -12,8 +12,10 @@ import os
 import random
 import re
 import string
+import tempfile
 import time
 
+from dbsake.thirdparty import sarge
 from dbsake.util import path
 from dbsake.util import template
 
@@ -70,9 +72,11 @@ def check_options(**kwargs):
 
 
 def prepare_sandbox_paths(sbopts):
+    start = time.time()
     for name in ('data', 'tmp'):
         if path.makedirs(os.path.join(sbopts.basedir, name)):
-            info("> Created %s/%s", sbopts.basedir, name)
+            info("    - Created %s/%s", sbopts.basedir, name)
+    info("    * Prepared sandbox in %.2f seconds", time.time() - start)
 
 # Template renderer that can load + render templates in the templates
 # directory located in this package
@@ -87,6 +91,7 @@ def mkpassword(length=8):
 
 def generate_initscript(sandbox_directory, **kwargs):
     """Generate an init script"""
+    start = time.time()
     content = render_template("sandbox.sh",
                               sandbox_root=sandbox_directory,
                               **kwargs)
@@ -96,10 +101,50 @@ def generate_initscript(sandbox_directory, **kwargs):
         # ensure initscript is executable by current user + group
         os.fchmod(fileobj.fileno(), 0550)
         fileobj.write(content)
+    info("    * Generated initscript in %.2f seconds", time.time() - start)
 
 def generate_defaults(defaults_file, **kwargs):
+    start = time.time()
     content = render_template('my.sandbox.cnf', **kwargs)
 
     with codecs.open(defaults_file, 'wb', encoding='utf8') as stream:
         os.fchmod(stream.fileno(), 0o0660)
         stream.write(content)
+    info("    * Generated %s in %.2f seconds", defaults_file, time.time() - start)
+
+def mysql_install_db(dist, password):
+    join = os.path.join
+    def cat(path):
+        with codecs.open(path, 'r', 'utf8') as fileobj:
+            return fileobj.read()
+
+    content = [
+        render_template("bootstrap_initialize.sql"),
+        cat(join(dist.sharedir, 'mysql_system_tables.sql')),
+        cat(join(dist.sharedir, 'mysql_system_tables_data.sql')),
+        cat(join(dist.sharedir, 'fill_help_tables.sql')),
+        render_template("secure_mysql_installation.sql", password=password),
+    ]
+    return os.linesep.join(content)
+
+def bootstrap(options, dist, password):
+    start = time.time()
+    defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
+    logfile = os.path.join(options.basedir, 'bootstrap.log')
+    info("    - Logging bootstrap output to %s", logfile)
+    cmd = sarge.shell_format("{0} --defaults-file={1} --bootstrap",
+                             dist.mysqld, defaults_file)
+    with open(logfile, 'wb') as stderr:
+        with tempfile.TemporaryFile() as tmpfile:
+            tmpfile.write(mysql_install_db(dist, password).encode('utf8'))
+            tmpfile.flush()
+            tmpfile.seek(0)
+            info("    - Generated bootstrap SQL")
+            info("    - Running %s", cmd)
+            pipeline = sarge.run(cmd,
+                                 input=tmpfile.fileno(),
+                                 stdout=stderr,
+                                 stderr=stderr)
+    if sum(pipeline.returncodes) != 0:
+        raise SandboxError("Bootstrap process failed")
+    info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
