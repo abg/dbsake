@@ -7,9 +7,13 @@ MySQL sandboxing support
 """
 from __future__ import print_function
 
+import logging
 import os
+import time
 
 from dbsake import baker
+
+info = logging.info
 
 @baker.command(name='mysql-sandbox',
                shortopts={ 'sandbox_directory'  : 'd',
@@ -45,26 +49,46 @@ def mysql_sandbox(sandbox_directory=None,
     from . import datasource
     from . import distribution
 
+    start = time.time()
     sbopts = common.check_options(**locals())
 
+    info("Preparing sandbox instance: %s", sbopts.basedir)
+    info("  Creating sandbox directories")
     common.prepare_sandbox_paths(sbopts)
     # Note here that loading from mysqldump sources cannot be done
     # until after the sandbox is bootstrapped
     # And generating defaults cannot be done until we have an innodb-log-file-size
     datasource.preload(sbopts)
+    info("  Deploying MySQL distribution")
     dist = distribution.deploy(sbopts)
+    info("  Generating my.sandbox.cnf")
+    password = common.mkpassword()
+    info("    - Generated random password for sandbox user root@localhost")
     common.generate_defaults(os.path.join(sbopts.basedir, 'my.sandbox.cnf'),
                              user='root',
-                             password=common.mkpassword(),
+                             password=password,
                              system_user=os.environ['USER'],
                              basedir=dist.basedir,
                              datadir=os.path.join(sbopts.basedir, 'data'),
-                             socket=os.path.join(sbopts.basedir, 'data'),
+                             socket=os.path.join(sbopts.basedir, 'data', 'mysql.sock'),
                              tmpdir=os.path.join(sbopts.basedir, 'tmp'),
                              mysql_version=dist.version,
                              innodb_log_file_size=None,
                             )
-    common.bootstrap(sbopts, dist)
-    #data = datasource.postload(sbopts)
+    info("  Bootstrapping sandbox instance")
+    common.bootstrap(sbopts, dist, password)
+    info("  Creating sandbox.sh initscript")
+    common.generate_initscript(sbopts.basedir,
+                               distribution=dist,
+                               datadir=os.path.join(sbopts.basedir, 'data'),
+                               defaults_file=os.path.join(sbopts.basedir, 'my.sandbox.cnf'))
 
+    info("Sandbox created in %.2f seconds", time.time() - start)
+    info("Here are some useful sandbox commands")
+
+    info("   Start sandbox: %s/sandbox.sh start", sbopts.basedir)
+    info("    Stop sandbox: %s/sandbox.sh stop", sbopts.basedir)
+    info("Login to sandbox: %s/sandbox.sh mysql <options>", sbopts.basedir)
+    #print("Export sandbox: $sandbox_basedir/sandbox.sh mysqldump <options>
+    #Install sandbox: $sandbox_basedir/sandbox.sh install-service
     return 0
