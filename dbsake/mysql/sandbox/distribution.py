@@ -148,7 +148,10 @@ def _fix_tarinfo_user_group(tarinfo):
 
 def unpack_tarball_distribution(stream, path):
     debug("    # unpacking tarball stream=%r destination=%r", stream, path)
-    with tarfile.open(None, 'r|*', fileobj=stream) as tar:
+    tar = tarfile.open(None, 'r|*', fileobj=stream)
+    # python 2.6's tarfile does not support the context manager protocol
+    # so try...finally is used here
+    try:
         for tarinfo in tar:
             if not tarinfo.isreg(): continue
             tarinfo.name = os.path.normpath(tarinfo.name)
@@ -167,6 +170,8 @@ def unpack_tarball_distribution(stream, path):
                 continue
             _fix_tarinfo_user_group(tarinfo)
             tar.extract(tarinfo, path)
+    finally:
+        tar.close()
 
 def distribution_from_tarball(options):
     """Deploy a MySQL distribution from a binary tarball
