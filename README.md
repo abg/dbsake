@@ -12,8 +12,8 @@ dbsake (pronounced "dee-bee sah-kay") is a set of commands to assist with:
   - [Deploying a new standalone MySQL "sandbox" instance][3]
   - [Decoding/encoding MySQL filenames][4]
   - [Managing OS caching for a set of files][5]
-    
-    
+
+
 [0]: http://docs.dbsake.net/subcommands.html#frm-to-schema
 [1]: http://docs.dbsake.net/subcommands.html#split-mysqldump
 [2]: http://docs.dbsake.net/subcommands.html#upgrade-mycnf
@@ -85,10 +85,10 @@ Run it with no arguments to see all possible commands:
     +slow-query-log = 1
     +slow-query-log-file = /var/lib/mysql/slow.log
     +log-slow-slave-statements
-     
+
      [mysqldump]
      quick
-  
+
 ### Splitting up mysqldump output
 
     $ mysqldump -A | ./dbsake split-mysqldump -t 5.6 -C mydata/
@@ -120,34 +120,69 @@ Run it with no arguments to see all possible commands:
 
 ### Deploying a MySQL sandbox instance
 
-    $ ./dbsake mysql-sandbox -m 5.7.3-m13
-    Created /home/localuser/sandboxes/sandbox_20140118_182754/data
-    Created /home/localuser/sandboxes/sandbox_20140118_182754/tmp
-    Streaming mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz from http://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz
-    (100.00%)[########################################] 322.9 MiB/322.9 MiB
-    Generating random password for root@localhost...
-    Generating my.sandbox.cnf...
-    Bootstrapping new mysql instance (this may take a few seconds)...
-      Using mysqld=/home/localuser/sandboxes/sandbox_20140118_182754/bin/mysqld
-      For details see /home/localuser/sandboxes/sandbox_20140118_182754/bootstrap.log
-    Bootstrapping complete!
-    Generating init script /home/localuser/sandboxes/sandbox_20140118_182754/sandbox.sh...
-    Sandbox creation complete!
-    You may start your sandbox by running: /home/localuser/sandboxes/sandbox_20140118_182754/sandbox.sh start
-    You may login to your sandbox by running: /home/localuser/sandboxes/sandbox_20140118_182754/sandbox.sh shell
-       or by running: mysql --defaults-file=/home/localuser/sandboxes/sandbox_20140118_182754/my.sandbox.cnf
-    Sandbox datadir is located /home/localuser/sandboxes/sandbox_20140118_182754/data
-    Credentials are stored in /home/localuser/sandboxes/sandbox_20140118_182754/my.sandbox.cnf
+```bash
+$ ./dbsake mysql-sandbox -m 5.7.3-m13
+Preparing sandbox instance: /home/localuser/sandboxes/sandbox_20140121_221858
+  Creating sandbox directories
+    - Created /home/localuser/sandboxes/sandbox_20140121_221858/data
+    - Created /home/localuser/sandboxes/sandbox_20140121_221858/tmp
+    * Prepared sandbox in 0.00 seconds
+  Deploying MySQL distribution
+    - Attempting to deploy distribution for MySQL 5.7.3-m13
+    - Downloading from http://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz
+    - Caching download: /home/localuser/.dbsake/cache/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz
+    - Unpacking tar stream. This may take some time
+(100.00%)[========================================] 322.9MiB / 322.9MiB
+    - Stored MD5 checksum for download: /home/localuser/.dbsake/cache/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz.md5
+    - Using mysqld (v5.7.3): /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysqld
+    - Using mysqld_safe: /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysqld_safe
+    - Using mysql: /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysql
+    - Using share directory: /home/localuser/sandboxes/sandbox_20140121_221858/share
+    - Using mysqld --basedir: /home/localuser/sandboxes/sandbox_20140121_221858
+    - Using MySQL plugin directory: /home/localuser/sandboxes/sandbox_20140121_221858/lib/plugin
+    * Deployed MySQL distribution to sandbox in 17.42 seconds
+  Generating my.sandbox.cnf
+    - Generated random password for sandbox user root@localhost
+    * Generated /home/localuser/sandboxes/sandbox_20140121_221858/my.sandbox.cnf in 0.00 seconds
+  Bootstrapping sandbox instance
+    - Logging bootstrap output to /home/localuser/sandboxes/sandbox_20140121_221858/bootstrap.log
+    - Generated bootstrap SQL
+    - Running /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysqld --defaults-file=/home/localuser/sandboxes/sandbox_20140121_221858/my.sandbox.cnf --bootstrap
+    * Bootstrapped sandbox in 3.56 seconds
+  Creating sandbox.sh initscript
+    * Generated initscript in 0.00 seconds
+Sandbox created in 20.98 seconds
+Here are some useful sandbox commands
+       Start sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh start
+        Stop sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh stop
+  Connect to sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh mysql <options>
+   mysqldump sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh mysqldump <options>
+Install SysV service: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh install-service
+```
 
-    $ /home/localuser/sandboxes/sandbox_20140118_182754/sandbox.sh start
-    Starting sandbox: [OK]
+```bash
+$ /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh start
+Starting sandbox: [OK]
+```
 
-    $ /home/localuser/sandboxes/sandbox_20140118_182754/sandbox.sh shell -e 'select @@datadir, @@version'
-    +---------------------------------------------------------+---------------+
-    | @@datadir                                               | @@version     |
-    +---------------------------------------------------------+---------------+
-    | /home/localuser/sandboxes/sandbox_20140118_182754/data/ | 5.7.3-m13-log |
-    +---------------------------------------------------------+---------------+
+The sandbox.sh script has some convenient commands for interacting with the sandbox too:
+
+```bash
+$ /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh mysql -e 'select @@datadir, @@version, @@version_comment\G'
+*************************** 1. row ***************************
+        @@datadir: /home/localuser/sandboxes/sandbox_20140121_221858/data/
+        @@version: 5.7.3-m13-log
+@@version_comment: MySQL Community Server (GPL)
+```
+
+The sandbox.sh script can also install itself, if you want to make the sandbox more persistent:
+
+```bash
+$ sudo /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh install-service
++ /bin/cp /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh /etc/init.d/mysql-5.7.3
++ /sbin/chkconfig --add mysql-5.7.3 && /sbin/chkconfig mysql-5.7.3 on
+Service installed in /etc/init.d/mysql-5.7.3 and added to default runlevels
+```
 
 ### Extracting the schema from a binary .frm file
 
