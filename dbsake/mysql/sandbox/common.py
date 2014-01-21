@@ -103,14 +103,46 @@ def generate_initscript(sandbox_directory, **kwargs):
         fileobj.write(content)
     info("    * Generated initscript in %.2f seconds", time.time() - start)
 
-def generate_defaults(defaults_file, **kwargs):
-    start = time.time()
-    content = render_template('my.sandbox.cnf', **kwargs)
+def _format_logsize(value):
+    if value % 1024**3 == 0:
+        return '%dG' % (value // 1024**3)
+    elif value % 1024**2 == 0:
+        return '%dM' % (value // 1024**2)
+    else:
+        return '%d' % value
 
+def generate_defaults(options, **kwargs):
+    """Generate a my.sandbox.cnf file
+
+    :param options: SandboxOptions instance
+    :param **kwargs: options to be passed directly to the my.sandbox.cnf
+                     template
+    """
+    start = time.time()
+    defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
+
+    # Check for innodb-log-file-size
+    try:
+        ib_logfile0 = os.path.join(options.basedir, 'data', 'ib_logfile0')
+        kwargs['innodb_log_file_size'] = _format_logsize(os.stat(ib_logfile0).st_size)
+    except OSError as exc:
+        # ignore errors here
+        pass
+
+    # Check for innodb_log_files_in_group
+    try:
+        datadir = os.path.join(options.basedir, 'data')
+        innodb_log_files_in_group = sum(1 for name in os.listdir(datadir) if name.startswith('ib_logfile'))
+        kwargs['innodb_log_files_in_group'] = innodb_log_files_in_group
+    except OSError as exc:
+        pass
+
+    content = render_template('my.sandbox.cnf', **kwargs)
     with codecs.open(defaults_file, 'wb', encoding='utf8') as stream:
         os.fchmod(stream.fileno(), 0o0660)
         stream.write(content)
     info("    * Generated %s in %.2f seconds", defaults_file, time.time() - start)
+    return defaults_file
 
 def mysql_install_db(dist, password):
     join = os.path.join
