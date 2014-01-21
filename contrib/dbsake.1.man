@@ -1,0 +1,951 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "DBSAKE" "1" "January 21, 2014" "1.0.4-dev" "dbsake"
+.SH NAME
+dbsake \- dbsake Documentation
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.sp
+dbsake is a collection of command\-line tools to perform various DBA related
+tasks for MySQL.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# curl http://get.dbsake.net > dbsake
+# chmod u+x dbsake
+# mysqldump \-\-all\-databases | ./dbsake split\-mysqldump \-C /var/lib/backups/today/
+\&...
+2014\-01\-03 21:01:15,228 Split input into 2 database(s) 35 table(s) and 0 view(s)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH GETTING STARTED
+.sp
+A quick way to get started is to fetch dbsake from \fI\%http://docs.dbsake.net/get/dbake\fP
+.sp
+This is an executable .zip file \- once downloaded you can run it via python or
+make it executable and run it directly.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ wget http://docs.dbsake.net/get/dbsake
+$ python dbsake \-\-help
+usage: dbsake [\-h] [\-\-version] [\-l {warn,error,debug,info,warning,critical}]
+              ...
+
+positional arguments:
+  cmd
+
+optional arguments:
+  \-h, \-\-help            show this help message and exit
+  \-\-version, \-V         show program\(aqs version number and exit
+  \-l {warn,error,debug,info,warning,critical}, \-\-log\-level {warn,error,debug,info,warning,critical}
+                        Choose a log level; default: info
+
+$ chmod u+x dbsake
+$ ./dbsake
+Usage: ./dbsake COMMAND <options>
+
+Available commands:
+ filename\-to\-tablename  Decode a MySQL tablename as a unicode name
+ fincore                Check if a file is cached by the OS
+ frm\-to\-schema          Decode a binary MySQl .frm file to DDL
+ import\-frm             Import a binary .frm as a MyISAM table
+ read\-ib\-binlog         Extract binary log filename/position from ibdata
+ split\-mysqldump        Split mysqldump output into separate files
+ tablename\-to\-filename  Encode a unicode tablename as a MySQL filename
+ uncache                Uncache a file from the OS page cache
+ upgrade\-mycnf          Patch a my.cnf to a new MySQL version
+
+Use \(aq./dbsake <command> \-\-help\(aq for individual command help.
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+DBSake requires python2.6+ to run.  If you are on an older Linux
+distribution such as RHEL5 you may need to install python2.6 or
+above from third party repositories.
+.UNINDENT
+.UNINDENT
+.sp
+With dbsake download you can run any of its subcommands.  For instance if you
+want to poke an frm and see its table structure you might use the
+\fIfrm\-to\-schema\fP command:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ sudo ./dbsake frm\-to\-schema /var/lib/mysql/mysql/plugin.frm
+\-\-
+\-\- Created with MySQL Version 5.6.15
+\-\-
+
+CREATE TABLE \(gaplugin\(ga (
+  \(ganame\(ga varchar(64) NOT NULL /* MYSQL_TYPE_VARCHAR */ DEFAULT \(aq\(aq,
+  \(gadl\(ga varchar(128) NOT NULL /* MYSQL_TYPE_VARCHAR */ DEFAULT \(aq\(aq,
+  PRIMARY KEY (\(ganame\(ga)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT \(aqMySQL plugins\(aq;
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH REPORTING BUGS
+.sp
+If you find a bug in dbsake please report the issue on the dbsake
+issue on github \fI\%here\fP
+.sp
+If you know how to fix the problem feel free to fork dbsake
+and submit a pull request.  See \fIcontributing\fP for more
+information.
+.SH USING DBSAKE
+.sp
+dbsake is a command line tool and has various subcommands.
+.sp
+Running dbsake without any subcommand will show the currently
+supports commands.  Each subcommand is documented below.
+.sp
+Here is the basic dbsake usage:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake [options] [subcommand] [subcommand\-options...]
+
+Options:
+  \-h, \-\-help            show this help message and exit
+  \-V, \-\-version         show dbsake version and exit
+  \-l <log\-level>, \-\-log\-level=<log\-level>
+                        Choose a log level; default: info
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-h, \-\-help
+Show the top\-level dbsake options
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+Running dbsake <subcommand> \-\-help instead shows the help for that subcommand.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-V, \-\-version
+Output the current dbsake version and exit
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-l, \-\-log\-level
+Adjust the dbsake log level.  This is mostly useful to enable debugging
+by running dbsake \-\-log\-level=debug <subcommand> [subcommand\-options...]
+.UNINDENT
+.SS mysql\-sandbox
+.sp
+New in version 1.0.3.
+.sp
+Setup a secondary MySQL instance easily.
+.sp
+This setups a MySQL under ~/sandboxes/ (by default) with a
+randomly generated password for the \fI\%root@localhost\fP user
+and networking disabled.
+.sp
+A simple shell script is provided to start, stop and connect
+to the MySQL instance.
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake mysql\-sandbox [<sandbox_directory>] [<mysql_distribution>] [<data_source>] [<table>] [<exclude_table>] [<cache_policy>]
+
+Useful docstring here
+
+Options:
+
+   \-d \-\-sandbox\-directory   base directory where sandbox will be installed
+   \-m \-\-mysql\-distribution  what mysql distribution to use for the sandbox;
+                            This defaults to \(aqsystem\(aq and this command will
+                            attempt to use the currently installed mysql
+                            distribution on the system.
+   \-D \-\-data\-source         how to populate the sandbox; this defaults to
+                            bootstrapping an empty mysql instance with a
+                            randomly generated password for the root@localhost
+                            user.
+   \-t \-\-table               table to include from the data source
+   \-T \-\-exclude\-table       table to exclude from data source;
+   \-c \-\-cache\-policy        the cache policy to use when downloading an mysql
+                            distribution
+
+(specifying a double hyphen (\-\-) in the argument list means all
+subsequent arguments are treated as bare arguments, not options)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake mysql\-sandbox \-d /opt/mysql\-5.6.15 \-\-mysql\-distribution 5.6.15
+Preparing sandbox instance: /opt/mysql\-5.6.15
+  Creating sandbox directories
+    \- Created /opt/mysql\-5.6.15/data
+    \- Created /opt/mysql\-5.6.15/tmp
+    * Prepared sandbox in 0.00 seconds
+  Deploying MySQL distribution
+    \- Attempting to deploy distribution for MySQL 5.6.15
+    \- Downloading from http://cdn.mysql.com/Downloads/MySQL\-5.6/mysql\-5.6.15\-linux\-glibc2.5\-x86_64.tar.gz
+    \- Caching download: /root/.dbsake/cache/mysql\-5.6.15\-linux\-glibc2.5\-x86_64.tar.gz
+    \- Unpacking tar stream. This may take some time
+(100.00%)[========================================] 290.3MiB / 290.3MiB
+    \- Stored MD5 checksum for download: /root/.dbsake/cache/mysql\-5.6.15\-linux\-glibc2.5\-x86_64.tar.gz.md5
+    \- Using mysqld (v5.6.15): /opt/mysql\-5.6.15/bin/mysqld
+    \- Using mysqld_safe: /opt/mysql\-5.6.15/bin/mysqld_safe
+    \- Using mysql: /opt/mysql\-5.6.15/bin/mysql
+    \- Using share directory: /opt/mysql\-5.6.15/share
+    \- Using mysqld \-\-basedir: /opt/mysql\-5.6.15
+    \- Using MySQL plugin directory: /opt/mysql\-5.6.15/lib/plugin
+    * Deployed MySQL distribution to sandbox in 18.19 seconds
+  Generating my.sandbox.cnf
+    \- Generated random password for sandbox user root@localhost
+    * Generated /opt/mysql\-5.6.15/my.sandbox.cnf in 0.00 seconds
+  Bootstrapping sandbox instance
+    \- Logging bootstrap output to /opt/mysql\-5.6.15/bootstrap.log
+    \- Generated bootstrap SQL
+    \- Running /opt/mysql\-5.6.15/bin/mysqld \-\-defaults\-file=/opt/mysql\-5.6.15/my.sandbox.cnf \-\-bootstrap
+    * Bootstrapped sandbox in 2.66 seconds
+  Creating sandbox.sh initscript
+    * Generated initscript in 0.00 seconds
+Sandbox created in 20.86 seconds
+Here are some useful sandbox commands
+   Start sandbox: /opt/mysql\-5.6.15/sandbox.sh start
+    Stop sandbox: /opt/mysql\-5.6.15/sandbox.sh stop
+Login to sandbox: /opt/mysql\-5.6.15/sandbox.sh mysql <options>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-sandbox\-directory <path>
+Specify the path under which to create the sandbox. This defaults
+to ~/sandboxes/sandbox_$(date +%Y%m%d_%H%M%S)
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-m, \-\-mysql\-distribution <name>
+Specify the source for the mysql distribution.  This can be one of:
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+.INDENT 2.0
+.TP
+.B system \- use the local mysqld binaries already installed on
+the system
+.UNINDENT
+.IP \(bu 2
+mysql*.tar.gz \- path to a tarball distribution
+.IP \(bu 2
+.INDENT 2.0
+.TP
+.B <mysql\-version> \- if a mysql version is specified then an
+attempt is made to download a binary tarball
+from dev.mysql.com and otherwise is identical
+to installing from a local tarball
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+The default, if no option is specified, will be to use system which
+copies the minimum binaries from system director to $sandbox_directory/bin/.
+.UNINDENT
+.sp
+Changed in version 1.0.4: \-\-mysql\-source was renamed to \-\-mysql\-distribution
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+\-\-mysql\-distribution = <version> will only auto\-download tarballs from
+mysql.com.  To install Percona or MariaDB sandboxes, you will need
+to download the tarballs separately and specify the tarball path
+via \-\-mysql\-distribution /path/to/my/tarball
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-data <tarball>
+Specify a tarball that will be extracted to the sandbox datadir prior
+to the bootstrap process.  This can be used to populate the sandbox
+with existing data prior to being brought online.
+.UNINDENT
+.sp
+New in version 1.0.4.
+.INDENT 0.0
+.TP
+.B \-t, \-\-table <glob>
+Specify a glob pattern to filter elements from the \-\-data option. If \-\-data
+is not specified this option has no effect. <glob> should be of the form
+database.table with optional glob special characters.  This use the python
+fnmatch mechanism under the hood so is limited to only the *, ?, [seq] and
+[!seq] glob operations.
+.UNINDENT
+.sp
+New in version 1.0.4.
+.INDENT 0.0
+.TP
+.B \-T, \-\-exclude\-table <glob>
+Specify a glob pattern to filter elements from the \-\-data option.  If \-\-data
+is not specified this option has no effect.
+.UNINDENT
+.sp
+New in version 1.0.4.
+.INDENT 0.0
+.TP
+.B \-c, \-\-cache\-policy <always|never|refresh|local>
+Specify the cache policy if installing a MySQL distribution via a download
+(i.e when only a version is specified). This command will cache downloaded
+tarballs by default in the directory specified by $DBSAKE_CACHE environment
+variable, or ~/.dbsake/cache if this is not specified.
+.sp
+The cache policies have the following semantics:
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+always \- check cache and update the cache if a download is required
+.IP \(bu 2
+never \- never use the cache \- this will always result in a download
+.IP \(bu 2
+refresh \- skip the cache, but update it from a download
+.IP \(bu 2
+local \- check cache, but fail if a local tarball is not present
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+New in version 1.0.4.
+.SS fincore
+.sp
+Discover which parts of a file are cached by the OS.
+.sp
+This command uses the mincore() system call on linux to grab a mapping of cached
+pages.  Currently this done with a single mincore() call and requires 1\-byte for
+each 4KiB page.  For very large files, this may require several MiBs or more of
+memory.  For a 1TB file this is 256MiB, for instance.
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake fincore [<verbose>] [<paths>...]
+
+Check if a file is cached by the OS
+
+    Outputs the cached vs. total pages with a percent.
+
+Options:
+
+   \-\-verbose  itemize which pages are cached
+
+Variable arguments:
+
+   *paths   check if these paths are cached
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake fincore /var/lib/mysql/ibdata1
+/var/lib/mysql/ibdata1: total_pages=37376 cached=0 percent=0.00
+$ cat /var/lib/mysql/ibdata1 > /dev/null
+$ dbsake fincore /var/lib/mysql/ibdata1
+/var/lib/mysql/ibdata1: total_pages=37376 cached=37376 percent=100.00
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B \-\-verbose
+Print each cached page number that is cached.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B path [path...]
+Path(s) to check for cached pages
+.UNINDENT
+.SS uncache
+.sp
+Remove a file\(aqs contents from the OS cache.
+.sp
+This command is useful when using O_DIRECT.  A file cached by the OS often
+causes O_DIRECT to use a slower path \- and often buffered + direct I/O is
+an unsafe operation anyway.
+.sp
+With MySQL, for instance, a file may be accidentally cached by filesystem
+backups that just archive all files under the MySQL datadir.  MySQL itself
+may be using innodb\-flush\-method=O_DIRECT, and once these pages are cached
+there can be a performance degradation.  uncache drops these cached pages
+from the OS so O_DIRECT can work better.
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake uncache [<paths>...]
+
+Uncache a file from the OS page cache
+
+Variable arguments:
+
+   *paths   uncache files for these paths
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake fincore /var/lib/mysql/ibdata1
+/var/lib/mysql/ibdata1: total_pages=37376 cached=37376 percent=100.00
+$ dbsake uncache /var/lib/mysql/ibdata1
+Uncached /var/lib/mysql/ibdata1
+$ dbsake fincore /var/lib/mysql/ibdata1
+/var/lib/mysql/ibdata1: total_pages=37376 cached=0 percent=0.00
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B path [path...]
+Path(s) to remove from cache.
+.UNINDENT
+.SS split\-mysqldump
+.sp
+Split mysqldump output into separate parts.
+.sp
+This command splits mysqldump into a .sql file for each table in the original
+dumpfile.   Files are created under a subdirectory which matches the database
+name.  An optional filtering command can be specified to compress these files,
+and split\-mysqldump defaults to filtering through gzip \-\-fast (gzip \-1).
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake split\-mysqldump [<target>] [<directory>] [<filter_command>] [<regex>]
+
+Split mysqldump output into separate files
+
+Options:
+
+   \-t \-\-target          MySQL version target (default 5.5)
+   \-C \-\-directory       Directory to output to (default .)
+   \-f \-\-filter\-command  Command to filter output through(default gzip \-1)
+   \-\-regex
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ mysqldump sakila | dbsake split\-mysqldump \-C backups/
+2014\-01\-04 05:34:01,181 Deferring indexes for sakila.actor (backups/sakila/actor.schema.sql)
+2014\-01\-04 05:34:01,185 Injecting deferred index creation backups/sakila/actor.data.sql
+2014\-01\-04 05:34:01,194 Not deferring index \(gaidx_fk_city_id\(ga \- used by constraint \(gafk_address_city\(ga
+2014\-01\-04 05:34:01,211 Not deferring index \(gaidx_fk_country_id\(ga \- used by constraint \(gafk_city_country\(ga
+2014\-01\-04 05:34:01,227 Not deferring index \(gaidx_fk_address_id\(ga \- used by constraint \(gafk_customer_address\(ga
+2014\-01\-04 05:34:01,227 Not deferring index \(gaidx_fk_store_id\(ga \- used by constraint \(gafk_customer_store\(ga
+2014\-01\-04 05:34:01,227 Deferring indexes for sakila.customer (backups/sakila/customer.schema.sql)
+2014\-01\-04 05:34:01,231 Injecting deferred index creation backups/sakila/customer.data.sql
+2014\-01\-04 05:34:01,240 Not deferring index \(gaidx_fk_original_language_id\(ga \- used by constraint \(gafk_film_language_original\(ga
+2014\-01\-04 05:34:01,240 Not deferring index \(gaidx_fk_language_id\(ga \- used by constraint \(gafk_film_language\(ga
+2014\-01\-04 05:34:01,240 Deferring indexes for sakila.film (backups/sakila/film.schema.sql)
+2014\-01\-04 05:34:01,245 Injecting deferred index creation backups/sakila/film.data.sql
+2014\-01\-04 05:34:01,258 Not deferring index \(gaidx_fk_film_id\(ga \- used by constraint \(gafk_film_actor_film\(ga
+2014\-01\-04 05:34:01,275 Not deferring index \(gafk_film_category_category\(ga \- used by constraint \(gafk_film_category_category\(ga
+2014\-01\-04 05:34:01,300 Not deferring index \(gaidx_fk_film_id\(ga \- used by constraint \(gafk_inventory_film\(ga
+2014\-01\-04 05:34:01,301 Not deferring index \(gaidx_store_id_film_id\(ga \- used by constraint \(gafk_inventory_store\(ga
+2014\-01\-04 05:34:01,330 Not deferring index \(gaidx_fk_customer_id\(ga \- used by constraint \(gafk_payment_customer\(ga
+2014\-01\-04 05:34:01,331 Not deferring index \(gaidx_fk_staff_id\(ga \- used by constraint \(gafk_payment_staff\(ga
+2014\-01\-04 05:34:01,331 Not deferring index \(gafk_payment_rental\(ga \- used by constraint \(gafk_payment_rental\(ga
+2014\-01\-04 05:34:01,380 Not deferring index \(gaidx_fk_staff_id\(ga \- used by constraint \(gafk_rental_staff\(ga
+2014\-01\-04 05:34:01,380 Not deferring index \(gaidx_fk_customer_id\(ga \- used by constraint \(gafk_rental_customer\(ga
+2014\-01\-04 05:34:01,381 Not deferring index \(gaidx_fk_inventory_id\(ga \- used by constraint \(gafk_rental_inventory\(ga
+2014\-01\-04 05:34:01,445 Not deferring index \(gaidx_fk_address_id\(ga \- used by constraint \(gafk_staff_address\(ga
+2014\-01\-04 05:34:01,446 Not deferring index \(gaidx_fk_store_id\(ga \- used by constraint \(gafk_staff_store\(ga
+2014\-01\-04 05:34:01,460 Not deferring index \(gaidx_fk_address_id\(ga \- used by constraint \(gafk_store_address\(ga
+2014\-01\-04 05:34:01,493 Split input into 1 database(s) 16 table(s) and 14 view(s)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B \-t <version>, \-\-target <version>
+Which version of MySQL the output files should be targetted to.
+This option toggles whether split\-mysqldump defers index creation
+until after the data is loaded (5.5+) or whether to defer foreign\-key
+creation (5.6+).
+.sp
+Valid values: 5.1, 5.5, 5.6
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-C <path>, \-\-directory <path>
+Where split\-mysqldump should create output files.
+split\-mysqldump will create this path if it does not already exist.
+Defaults to \(aq.\(aq \- the current working directory.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f <command>, \-\-filter\-command <command>
+Filter output files through this command.
+split\-mysqldump will detect most compression commands
+and set an appropriate suffix on its output files. E.g.
+\-f gzip results in a .gz suffix, \-f "bzip \-9" results in
+.bz2 suffix, etc.
+.sp
+Defaults to "gzip \-1"
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-regex <pattern>
+Matches tables and views against the provided regex.
+Any object that doesn\(aqt match the regex is skipped.
+Defaults to matching all objects.
+.UNINDENT
+.SS upgrade\-mycnf
+.sp
+Copy a my.cnf file and patch any deprecated options.
+.sp
+This command is used to rewrite a my.cnf file and either strip out or rewrite
+options that are not compatible with a newer version of MySQL.
+.sp
+The original my.cnf is left untouched.  A new my.cnf is output on stdout and
+reasons for rewriting or excluding options are output on stderr.
+.sp
+If \-p, \-\-patch is specified a unified diff is output on stdout rather than
+a full my.cnf.  \-\-patch is required if a my.cnf includes any !include*
+directives.
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake upgrade\-mycnf [<config>] [<target>] [<patch>]
+
+Patch a my.cnf to a new MySQL version
+
+Options:
+
+   \-c \-\-config  my.cnf file to parse (default: /etc/my.cnf)
+   \-t \-\-target  MySQL version to target the option file (default: 5.5)
+   \-p \-\-patch   Output unified diff rather than full config (default off)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake upgrade\-mycnf \-t 5.6 \-\-patch /etc/my.cnf
+2014\-01\-04 05:36:34,757 Removing option \(aqskip\-external\-locking\(aq. Reason: Default behavior in MySQL 4.1+
+\-\-\- a/etc/my.cnf
++++ b/etc/my.cnf
+@@ \-17,7 +17,6 @@
+ datadir                         = /var/lib/mysql
+ #tmpdir                         = /var/lib/mysqltmp
+ socket                          = /var/lib/mysql/mysql.sock
+\-skip\-external\-locking           = 1
+ open\-files\-limit                = 20000
+ #sql\-mode                       = TRADITIONAL
+ #event\-scheduler                = 1
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B \-c <config>, \-\-config <config>
+Specify which my.cnf file to process
+Defaults to /etc/my.cnf
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t <version>, \-\-target <version>
+Specify which version of MySQL to target.
+This controls which options are rewritten based on the deprecated options in
+the target MySQL version.
+Defaults to 5.5
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-patch
+Specify the output should be a unified diff rather than a full my.cnf.
+Defaults to outputting a full my.cnf if this option is not specified.
+.UNINDENT
+.SS frm\-to\-schema
+.sp
+Decode a MySQL .frm file and output a CREATE VIEW or CREATE TABLE statement.
+.sp
+This command does not require a MySQL server and interprets a .frm file
+according to rules similar to the MySQL server.
+.sp
+For more information on how this command works see \fIfrm_format\fP
+.sp
+\fBIMPORTANT:\fP
+.INDENT 0.0
+.INDENT 3.5
+This program only decodes data strictly available in the .frm file.
+InnoDB foreign\-key references are not preserved and AUTO_INCREMENT values
+are also not preserved as these are stored outside of the .frm.
+.UNINDENT
+.UNINDENT
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake frm\-to\-schema [<raw_types>] [<replace>] [<paths>...]
+
+Decode a binary MySQl .frm file to DDL
+
+Options:
+
+   \-\-raw\-types
+   \-\-replace    If a path references a view output CREATE OR REPLACE so a view
+                definition can be replaced.
+
+Variable arguments:
+
+   *paths   paths to extract schema from
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake frm\-to\-schema /var/lib/mysql/mysql/plugin.frm
+\-\-
+\-\- Table structure for table \(gaplugin\(ga
+\-\- Created with MySQL Version 5.6.15
+\-\-
+
+CREATE TABLE \(gaplugin\(ga (
+  \(ganame\(ga varchar(64) NOT NULL DEFAULT \(aq\(aq,
+  \(gadl\(ga varchar(128) NOT NULL DEFAULT \(aq\(aq,
+  PRIMARY KEY (\(ganame\(ga)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT \(aqMySQL plugins\(aq;
+
+$ dbsake frm\-to\-schema /var/lib/mysql/sakila/actor_info.frm
+\-\-
+\-\- View:         actor_info
+\-\- Timestamp:    2014\-01\-04 05:29:55
+\-\- Stored MD5:   402b8673b0c61034644b5b286519d3f1
+\-\- Computed MD5: 402b8673b0c61034644b5b286519d3f1
+\-\-
+
+CREATE ALGORITHM=UNDEFINED DEFINER=\(garoot\(ga@\(galocalhost\(ga SQL SECURITY INVOKER VIEW \(gaactor_info\(ga select \(gaa\(ga.\(gaactor_id\(ga AS \(gaactor_id\(ga,\(gaa\(ga.\(gafirst_name\(ga AS \(gafirst_name\(ga,\(gaa\(ga.\(galast_name\(ga AS \(galast_name\(ga,group_concat(distinct concat(\(gac\(ga.\(ganame\(ga,\(aq: \(aq,(select group_concat(\(gaf\(ga.\(gatitle\(ga order by \(gaf\(ga.\(gatitle\(ga ASC separator \(aq, \(aq) from ((\(gasakila\(ga.\(gafilm\(ga \(gaf\(ga join \(gasakila\(ga.\(gafilm_category\(ga \(gafc\(ga on((\(gaf\(ga.\(gafilm_id\(ga = \(gafc\(ga.\(gafilm_id\(ga))) join \(gasakila\(ga.\(gafilm_actor\(ga \(gafa\(ga on((\(gaf\(ga.\(gafilm_id\(ga = \(gafa\(ga.\(gafilm_id\(ga))) where ((\(gafc\(ga.\(gacategory_id\(ga = \(gac\(ga.\(gacategory_id\(ga) and (\(gafa\(ga.\(gaactor_id\(ga = \(gaa\(ga.\(gaactor_id\(ga)))) order by \(gac\(ga.\(ganame\(ga ASC separator \(aq; \(aq) AS \(gafilm_info\(ga from (((\(gasakila\(ga.\(gaactor\(ga \(gaa\(ga left join \(gasakila\(ga.\(gafilm_actor\(ga \(gafa\(ga on((\(gaa\(ga.\(gaactor_id\(ga = \(gafa\(ga.\(gaactor_id\(ga))) left join \(gasakila\(ga.\(gafilm_category\(ga \(gafc\(ga on((\(gafa\(ga.\(gafilm_id\(ga = \(gafc\(ga.\(gafilm_id\(ga))) left join \(gasakila\(ga.\(gacategory\(ga \(gac\(ga on((\(gafc\(ga.\(gacategory_id\(ga = \(gac\(ga.\(gacategory_id\(ga))) group by \(gaa\(ga.\(gaactor_id\(ga,\(gaa\(ga.\(gafirst_name\(ga,\(gaa\(ga.\(galast_name\(ga;
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B \-\-replace
+Output view as CREATE OR REPLACE so that running the DDL against MySQL will
+overwrite a view.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-raw\-types
+Add comment to base tables noting the underlying mysql type code
+as MYSQL_TYPE_<name>.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B path [path...]
+Specify the .frm files to generate a CREATE TABLE command from.
+.UNINDENT
+.sp
+New in version 1.0.2: Support for indexes with a prefix length in binary .frm files; e.g. KEY (blob_value(255))
+.sp
+Changed in version 1.0.2: Views are parsed from .frm files rather than skipped.
+.sp
+Changed in version 1.0.2: Raw MySQL types are no longer added as comments unless the \-\-raw\-types
+option is specified.
+.sp
+Changed in version 1.0.2: A \-\- Table structure for table \(ga<name>\(ga comment is added before each table
+.sp
+New in version 1.0.2: The \fIfrm\-to\-schema \-\-raw\-types\fP option
+.sp
+New in version 1.0.2: The \fIfrm\-to\-schema \-\-replace\fP option
+.SS filename\-to\-tablename
+.sp
+Decode a MySQL encoded filename
+.sp
+As of MySQL 5.1, tablenames with special characters are encoded with a custom
+"filename" encoding.  This command reverses that process to output the original
+tablename.
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake filename\-to\-tablename [<names>...]
+
+Decode a MySQL tablename as a unicode name
+
+Variable arguments:
+
+   *names   filenames to decode
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake filename\-to\-tablename $(basename /var/lib/mysql/test/foo@002ebar.frm .frm)
+foo.bar
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B path [path...]
+Specify a filename to convert to plain unicode
+.UNINDENT
+.SS tablename\-to\-filename
+.sp
+Encode a MySQL tablename with the MySQL filename encoding
+.sp
+This is the opposite of filename\-to\-tablename, where it takes a normal
+tablename and converts it using MySQL\(aqs filename encoding.
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake tablename\-to\-filename [<names>...]
+
+Encode a unicode tablename as a MySQL filename
+
+Variable arguments:
+
+   *names   names to encode
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake tablename\-to\-filename foo.bar
+foo@002ebar
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B path [path...]
+Specify a tablename to convert to an encoded filename
+.UNINDENT
+.SS import\-frm
+.sp
+Takes a source binary .frm and converts it to a MyISAM .frm
+.sp
+\fBDANGER:\fP
+.INDENT 0.0
+.INDENT 3.5
+This command is experimental.  The resulting .frm may crash the MySQL server
+in some cases, particularly if converting very old .frms.
+.UNINDENT
+.UNINDENT
+.sp
+This command is intended to essentially import a binary .frm to maintain its
+original column definitions which might be lost with a normal CREATE TABLE, or
+in cases where the .frm is otherwise not readable by MySQL with its current
+storage engine.
+.sp
+This is essentially equivalent to running the MySQL DDL command:
+.sp
+CREATE TABLE mytable LIKE source_table;
+ALTER TABLE mytable ENGINE = MYISAM, REMOVE PARTITIONING;
+.SS Options
+.INDENT 0.0
+.TP
+.B source destination
+import an existing .frm as a MyISAM table to the path specified by destination
+.UNINDENT
+.SS read\-ib\-binlog
+.sp
+Read the binary log coordinates from an innodb shared tablespace
+.sp
+If binary logging is enabled, InnoDB transactionally records the binary log
+coordinates relative to InnoDB transactions.  This is stored in the system
+header page of the first InnoDB shared tablespace (e.g. /var/lib/mysql/ibdata1
+with a standard MySQL configuration).  This command reads the filename and
+position of the log coordinates and outputs a friendly CHANGE MASTER command.
+.SS Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Usage: dbsake read\-ib\-binlog <path>
+
+Extract binary log filename/position from ibdata
+
+Required Arguments:
+
+  path
+
+(specifying a double hyphen (\-\-) in the argument list means all
+subsequent arguments are treated as bare arguments, not options)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ dbsake read\-ib\-binlog /var/lib/mysql/ibdata1
+CHANGE MASTER TO MASTER_LOG_FILE=\(aqmysqld\-bin.000003\(aq, MASTER_LOG_POS=644905653;
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Options
+.INDENT 0.0
+.TP
+.B path
+Specify the path to a shared InnoDB tablespace (e.g. /var/lib/mysql/ibdata1)
+Binary log information will be read from this file.
+.UNINDENT
+.SH AUTHOR
+Andrew Garner
+.SH COPYRIGHT
+2014, Andrew Garner
+.\" Generated by docutils manpage writer.
+.
