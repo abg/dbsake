@@ -2,6 +2,5 @@
 -- and setting a password
 USE mysql;
 DELETE FROM `db`;
-DELETE FROM `user` WHERE User <> 'root';
-DELETE FROM `user` WHERE User = 'root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+DELETE FROM `user` WHERE User = '';
 UPDATE `user` SET PASSWORD = PASSWORD('{{password|escape}}') WHERE User = 'root';
