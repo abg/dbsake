@@ -14,6 +14,7 @@ import time
 from dbsake import baker
 
 info = logging.info
+error = logging.error
 
 @baker.command(name='mysql-sandbox',
                shortopts={ 'sandbox_directory'  : 'd',
@@ -51,7 +52,18 @@ def mysql_sandbox(sandbox_directory=None,
 
     start = time.time()
     sbopts = common.check_options(**locals())
+    try:
+        create_sandbox(sbopts)
+    except common.SandboxError as exc:
+        error("!! Sandbox creation failed: %s", exc)
+        return 1
+    else:
+        return 0
 
+def create_sandbox(sbopts):
+    from . import common
+    from . import datasource
+    from . import distribution
     info("Preparing sandbox instance: %s", sbopts.basedir)
     info("  Creating sandbox directories")
     common.prepare_sandbox_paths(sbopts)
