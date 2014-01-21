@@ -111,7 +111,7 @@ case $1 in
     reload)
         exit 3
         ;;
-    shell|mysql)
+    shell|mysql|use)
         shift
         MYSQL_PS1="mysql[sandbox]> " $mysql --defaults-file=$defaults_file "$@"
         ;;
