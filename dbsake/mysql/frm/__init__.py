@@ -26,7 +26,7 @@ def parse(path):
         else:
             raise ValueError("Invalid .frm file '%s'" % path)
     return parse(path)
-       
+
 
 @baker.command(name='frm-to-schema')
 def frm_to_schema(raw_types=False, replace=False, *paths):
@@ -48,7 +48,7 @@ def frm_to_schema(raw_types=False, replace=False, *paths):
             print(table_or_view.format(**options), file=sys.stdout)
         except (ValueError, IOError) as exc:
             print("Failed to parse '%s': %s" % (name, exc), file=sys.stderr)
-            failures+= 1
+            failures += 1
             continue
 
     if failures:
