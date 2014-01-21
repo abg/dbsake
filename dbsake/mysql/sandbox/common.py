@@ -186,5 +186,5 @@ def bootstrap(options, dist, password, additional_options=()):
                                  stdout=stderr,
                                  stderr=stderr)
     if sum(pipeline.returncodes) != 0:
-        raise SandboxError("Bootstrap process failed")
+        raise SandboxError("Bootstrapping failed. Details in %s" % stderr.name)
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
