@@ -125,6 +125,8 @@ def generate_defaults(options, **kwargs):
     try:
         ib_logfile0 = os.path.join(options.basedir, 'data', 'ib_logfile0')
         kwargs['innodb_log_file_size'] = _format_logsize(os.stat(ib_logfile0).st_size)
+        info("    ! Existing ib_logfile0 detected. Setting innodb-log-file-size=%s",
+             kwargs['innodb_log_file_size'])
     except OSError as exc:
         # ignore errors here
         pass
@@ -133,7 +135,10 @@ def generate_defaults(options, **kwargs):
     try:
         datadir = os.path.join(options.basedir, 'data')
         innodb_log_files_in_group = sum(1 for name in os.listdir(datadir) if name.startswith('ib_logfile'))
-        kwargs['innodb_log_files_in_group'] = innodb_log_files_in_group
+        if innodb_log_files_in_group > 2:
+            kwargs['innodb_log_files_in_group'] = innodb_log_files_in_group
+            info("    ! Multiple ib_logfile* logs found. Setting innodb-log-files-in-group=%s",
+                 kwargs['innodb_log_files_in_group'])
     except OSError as exc:
         pass
 
