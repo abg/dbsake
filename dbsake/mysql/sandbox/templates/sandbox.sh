@@ -18,6 +18,7 @@ fi
 START_TIMEOUT=300
 STOP_TIMEOUT=300
 
+version="{{distribution.version}}"
 mysqld_safe={{distribution.mysqld_safe}}
 mysql={{distribution.mysql}}
 datadir={{datadir}}
@@ -134,7 +135,7 @@ case $1 in
             exit 1
         fi
 
-        echo "$(type -p cp) ${0} /etc/init.d/${name}"
+        echo "+ $(type -p cp) ${0} /etc/init.d/${name}"
         $(type -p cp) ${0} /etc/init.d/${name} || { echo "copying init script failed"; exit 1; }
         echo "+ $install_cmd"
         eval $install_cmd || { echo "installing init script failed"; exit 1; }
