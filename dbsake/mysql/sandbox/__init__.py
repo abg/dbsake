@@ -50,7 +50,6 @@ def mysql_sandbox(sandbox_directory=None,
     from . import datasource
     from . import distribution
 
-    start = time.time()
     sbopts = common.check_options(**locals())
     try:
         create_sandbox(sbopts)
@@ -64,6 +63,9 @@ def create_sandbox(sbopts):
     from . import common
     from . import datasource
     from . import distribution
+
+    start = time.time()
+
     info("Preparing sandbox instance: %s", sbopts.basedir)
     info("  Creating sandbox directories")
     common.prepare_sandbox_paths(sbopts)
@@ -96,8 +98,8 @@ def create_sandbox(sbopts):
                                defaults_file=os.path.join(sbopts.basedir, 'my.sandbox.cnf'))
 
     info("Sandbox created in %.2f seconds", time.time() - start)
-    info("Here are some useful sandbox commands")
-
+    info("")
+    info("Here are some useful sandbox commands:")
     info("       Start sandbox: %s/sandbox.sh start", sbopts.basedir)
     info("        Stop sandbox: %s/sandbox.sh stop", sbopts.basedir)
     info("  Connect to sandbox: %s/sandbox.sh mysql <options>", sbopts.basedir)
