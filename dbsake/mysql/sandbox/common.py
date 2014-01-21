@@ -20,6 +20,8 @@ from dbsake.util import path
 from dbsake.util import template
 
 info = logging.info
+warn = logging.warn
+debug = logging.debug
 
 class SandboxError(Exception):
     """Base sandbox exception"""
@@ -170,6 +172,8 @@ def mysql_install_db(dist, password):
         if line.startswith('INSERT INTO tmp_user VALUES'):
             add_user_ddl = line.replace("INSERT", "REPLACE", 1)
             add_user_ddl = add_user_ddl.replace("tmp_user", "user")
+            info("    - Ensuring root@localhost user is created with all privileges")
+            debug("    # %s", add_user_ddl)
             break
     else:
         warn("    ! Did not find root@localhost grant in %s",
