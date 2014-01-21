@@ -53,7 +53,7 @@ def check_options(**kwargs):
         not VERSION_CRE.match(dist)):
             raise SandboxError("Incoherent mysql distribution: %s" % dist)
 
-    if kwargs['data_source'] and DATASOURCE_CRE.match(kwargs['data_source']):
+    if kwargs['data_source'] and not DATASOURCE_CRE.match(kwargs['data_source']):
         raise SandboxError("Unsupported data source %s" %
                            kwargs['data_source'])
 
@@ -127,13 +127,16 @@ def mysql_install_db(dist, password):
     ]
     return os.linesep.join(content)
 
-def bootstrap(options, dist, password):
+def bootstrap(options, dist, password, additional_options=()):
     start = time.time()
     defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
     logfile = os.path.join(options.basedir, 'bootstrap.log')
     info("    - Logging bootstrap output to %s", logfile)
     cmd = sarge.shell_format("{0} --defaults-file={1} --bootstrap",
                              dist.mysqld, defaults_file)
+    additional = ' '.join(map(sarge.shell_format, additional_options))
+    if additional:
+        cmd += ' ' + additional
     with open(logfile, 'wb') as stderr:
         with tempfile.TemporaryFile() as tmpfile:
             tmpfile.write(mysql_install_db(dist, password).encode('utf8'))
