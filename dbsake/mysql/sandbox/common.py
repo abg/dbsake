@@ -162,6 +162,21 @@ def mysql_install_db(dist, password):
         cat(join(dist.sharedir, 'fill_help_tables.sql')),
         render_template("secure_mysql_installation.sql", password=password),
     ]
+
+    # generate a line to always create a root@localhost user
+    system_data = content[2]
+    add_user_ddl = None
+    for line in system_data.splitlines():
+        if line.startswith('INSERT INTO tmp_user VALUES'):
+            add_user_ddl = line.replace("INSERT", "REPLACE", 1)
+            add_user_ddl = add_user_ddl.replace("tmp_user", "user")
+            break
+    else:
+        warn("    ! Did not find root@localhost grant in %s",
+             join(dist.sharedir, 'mysql_system_tables_data.sql'))
+        warn("    ! my.sandbox.cnf may not have valid credentials")
+    if add_user_ddl:
+        content.insert(3, add_user_ddl)
     return os.linesep.join(content)
 
 def bootstrap(options, dist, password, additional_options=()):
