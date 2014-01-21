@@ -89,6 +89,6 @@ def mysql_sandbox(sandbox_directory=None,
     info("       Start sandbox: %s/sandbox.sh start", sbopts.basedir)
     info("        Stop sandbox: %s/sandbox.sh stop", sbopts.basedir)
     info("  Connect to sandbox: %s/sandbox.sh mysql <options>", sbopts.basedir)
-    info("   mysqldump sandbox: %s/sandbo.sh mysqldump <options>", sbopts.basedir)
+    info("   mysqldump sandbox: %s/sandbox.sh mysqldump <options>", sbopts.basedir)
     info("Install SysV service: %s/sandbox.sh install-service", sbopts.basedir)
     return 0
