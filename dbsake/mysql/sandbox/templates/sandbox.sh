@@ -118,6 +118,29 @@ case $1 in
         shift
         ${mysql}dump --defaults-file=$defaults_file "$@"
         ;;
+    install-service)
+        name=${2:-mysql-$version}
+        if [[ -e /etc/init.d/${name} ]]; then
+            echo "/etc/init.d/${name} already exists. Aborting."
+            exit 1
+        fi
+
+        if [[ $(type -p chkconfig) ]]; then
+            install_cmd="$(type -p chkconfig) --add ${name} && $(type -p chkconfig) ${name} on"
+        elif [[ $(type -p update-rc.d) ]]; then
+            install_cmd="$(type -p update-rc.d) ${name} defaults"
+        else
+            echo "Neither chkconfig or update-rc.d was found. Not installing service."
+            exit 1
+        fi
+
+        echo "$(type -p cp) ${0} /etc/init.d/${name}"
+        $(type -p cp) ${0} /etc/init.d/${name} || { echo "copying init script failed"; exit 1; }
+        echo "+ $install_cmd"
+        eval $install_cmd || { echo "installing init script failed"; exit 1; }
+        echo "Service installed in /etc/init.d/${name} and added to default runlevels"
+        exit 0
+        ;;
     *)
         echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
         exit 2
