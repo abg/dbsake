@@ -1,5 +1,42 @@
-Subcommands
------------
+Using dbsake
+------------
+
+dbsake is a command line tool and has various subcommands.
+
+Running dbsake without any subcommand will show the currently
+supports commands.  Each subcommand is documented below.
+
+Here is the basic dbsake usage:
+
+.. code-block:: bash
+
+   Usage: dbsake [options] [subcommand] [subcommand-options...]
+   
+   Options:
+     -h, --help            show this help message and exit
+     -V, --version         show dbsake version and exit
+     -l <log-level>, --log-level=<log-level>
+                           Choose a log level; default: info
+
+.. program:: dbsake
+
+.. option:: -h, --help
+
+   Show the top-level dbsake options
+
+.. note::
+
+   Running dbsake <subcommand> --help instead shows the help for that subcommand.
+
+.. option:: -V, --version
+
+   Output the current dbsake version and exit
+
+.. option:: -l, --log-level
+
+   Adjust the dbsake log level.  This is mostly useful to enable debugging
+   by running dbsake --log-level=debug <subcommand> [subcommand-options...]
+
 
 mysql-sandbox
 ~~~~~~~~~~~~~
@@ -15,35 +52,77 @@ and networking disabled.
 A simple shell script is provided to start, stop and connect
 to the MySQL instance.
 
+Usage
+.....
+
 .. code-block:: bash
 
-   $ time dbsake mysql-sandbox -d /opt/mysql-5.6.15 --mysql-source 5.6.15
-   Created /opt/mysql-5.6.15/data
-   Created /opt/mysql-5.6.15/tmp
-   2014-01-16 04:04:34,073 Streaming mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz from http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz
-   (100.00%)[########################################] 290.3 MiB/290.3 MiB
-   Generating random password for root@localhost...
-   Generating my.sandbox.cnf...
-   Bootstrapping new mysql instance (this may take a few seconds)...
-     Using mysqld=/opt/mysql-5.6.15/bin/mysqld
-     For details see /opt/mysql-5.6.15/bootstrap.log
-   Bootstrapping complete!
-   Generating init script /opt/mysql-5.6.15/sandbox.sh...
-   Sandbox creation complete!
-   You may start your sandbox by running: /opt/mysql-5.6.15/sandbox.sh start
-   You may login to your sandbox by running: /opt/mysql-5.6.15/sandbox.sh shell
-      or by running: mysql --socket=/opt/mysql-5.6.15/data/mysql.sock
-   Credentials are stored in /opt/mysql-5.6.15/my.sandbox.cnf
+   Usage: dbsake mysql-sandbox [<sandbox_directory>] [<mysql_distribution>] [<data_source>] [<table>] [<exclude_table>] [<cache_policy>]
+   
+   Useful docstring here
+   
+   Options:
+   
+      -d --sandbox-directory   base directory where sandbox will be installed
+      -m --mysql-distribution  what mysql distribution to use for the sandbox;
+                               This defaults to 'system' and this command will
+                               attempt to use the currently installed mysql
+                               distribution on the system.
+      -D --data-source         how to populate the sandbox; this defaults to
+                               bootstrapping an empty mysql instance with a
+                               randomly generated password for the root@localhost
+                               user.
+      -t --table               table to include from the data source
+      -T --exclude-table       table to exclude from data source;
+      -c --cache-policy        the cache policy to use when downloading an mysql
+                               distribution
+   
+   (specifying a double hyphen (--) in the argument list means all
+   subsequent arguments are treated as bare arguments, not options)
 
-   $ /opt/mysql-5.6.15/sandbox.sh start
-   Starting sandbox: [OK]
+Example
+.......
 
-   $ /opt/mysql-5.6.15/sandbox.sh shell -e 'select @@datadir'
-   +-------------------------+
-   | @@datadir               |
-   +-------------------------+
-   | /opt/mysql-5.6.15/data/ |
-   +-------------------------+
+.. code-block:: bash
+
+   $ dbsake mysql-sandbox -d /opt/mysql-5.6.15 --mysql-distribution 5.6.15
+   Preparing sandbox instance: /opt/mysql-5.6.15
+     Creating sandbox directories
+       - Created /opt/mysql-5.6.15/data
+       - Created /opt/mysql-5.6.15/tmp
+       * Prepared sandbox in 0.00 seconds
+     Deploying MySQL distribution
+       - Attempting to deploy distribution for MySQL 5.6.15
+       - Downloading from http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz
+       - Caching download: /root/.dbsake/cache/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz
+       - Unpacking tar stream. This may take some time
+   (100.00%)[========================================] 290.3MiB / 290.3MiB
+       - Stored MD5 checksum for download: /root/.dbsake/cache/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz.md5
+       - Using mysqld (v5.6.15): /opt/mysql-5.6.15/bin/mysqld
+       - Using mysqld_safe: /opt/mysql-5.6.15/bin/mysqld_safe
+       - Using mysql: /opt/mysql-5.6.15/bin/mysql
+       - Using share directory: /opt/mysql-5.6.15/share
+       - Using mysqld --basedir: /opt/mysql-5.6.15
+       - Using MySQL plugin directory: /opt/mysql-5.6.15/lib/plugin
+       * Deployed MySQL distribution to sandbox in 18.19 seconds
+     Generating my.sandbox.cnf
+       - Generated random password for sandbox user root@localhost
+       * Generated /opt/mysql-5.6.15/my.sandbox.cnf in 0.00 seconds
+     Bootstrapping sandbox instance
+       - Logging bootstrap output to /opt/mysql-5.6.15/bootstrap.log
+       - Generated bootstrap SQL
+       - Running /opt/mysql-5.6.15/bin/mysqld --defaults-file=/opt/mysql-5.6.15/my.sandbox.cnf --bootstrap
+       * Bootstrapped sandbox in 2.66 seconds
+     Creating sandbox.sh initscript
+       * Generated initscript in 0.00 seconds
+   Sandbox created in 20.86 seconds
+   Here are some useful sandbox commands
+      Start sandbox: /opt/mysql-5.6.15/sandbox.sh start
+       Stop sandbox: /opt/mysql-5.6.15/sandbox.sh stop
+   Login to sandbox: /opt/mysql-5.6.15/sandbox.sh mysql <options>
+
+Options
+.......
 
 .. program:: mysql-sandbox
 
@@ -52,13 +131,13 @@ to the MySQL instance.
    Specify the path under which to create the sandbox. This defaults
    to ~/sandboxes/sandbox_$(date +%Y%m%d_%H%M%S)
 
-.. option:: -m, --mysql-source <source>
+.. option:: -m, --mysql-distribution <name>
 
    Specify the source for the mysql distribution.  This can be one of:
 
-        * 'system' - use the local mysqld binaries already installed on
+        * system - use the local mysqld binaries already installed on
                      the system
-        * mysql*.tar.gz - use an already downloaded MySQL binary tarball
+        * mysql*.tar.gz - path to a tarball distribution
         * <mysql-version> - if a mysql version is specified then an
                             attempt is made to download a binary tarball
                             from dev.mysql.com and otherwise is identical
@@ -66,6 +145,16 @@ to the MySQL instance.
 
    The default, if no option is specified, will be to use system which
    copies the minimum binaries from system director to $sandbox_directory/bin/.
+
+.. versionchanged:: 1.0.4
+   --mysql-source was renamed to --mysql-distribution
+
+.. note::
+   --mysql-distribution = <version> will only auto-download tarballs from
+   mysql.com.  To install Percona or MariaDB sandboxes, you will need
+   to download the tarballs separately and specify the tarball path
+   via --mysql-distribution /path/to/my/tarball
+
 
 .. option:: -D, --data <tarball>
 
@@ -85,6 +174,29 @@ to the MySQL instance.
 
 .. versionadded:: 1.0.4
 
+.. option:: -T, --exclude-table <glob>
+
+   Specify a glob pattern to filter elements from the --data option.  If --data
+   is not specified this option has no effect.
+
+.. versionadded:: 1.0.4
+
+.. option:: -c, --cache-policy <always|never|refresh|local>
+
+   Specify the cache policy if installing a MySQL distribution via a download
+   (i.e when only a version is specified). This command will cache downloaded
+   tarballs by default in the directory specified by $DBSAKE_CACHE environment
+   variable, or ~/.dbsake/cache if this is not specified.
+
+   The cache policies have the following semantics:
+
+     * always - check cache and update the cache if a download is required
+     * never - never use the cache - this will always result in a download
+     * refresh - skip the cache, but update it from a download
+     * local - check cache, but fail if a local tarball is not present
+
+.. versionadded:: 1.0.4
+
 fincore
 ~~~~~~~
 
@@ -95,6 +207,28 @@ pages.  Currently this done with a single mincore() call and requires 1-byte for
 each 4KiB page.  For very large files, this may require several MiBs or more of
 memory.  For a 1TB file this is 256MiB, for instance.
 
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake fincore [<verbose>] [<paths>...]
+   
+   Check if a file is cached by the OS
+   
+       Outputs the cached vs. total pages with a percent.
+   
+   Options:
+   
+      --verbose  itemize which pages are cached
+   
+   Variable arguments:
+   
+      *paths   check if these paths are cached
+
+Example
+.......
+
 .. code-block:: bash
 
    $ dbsake fincore /var/lib/mysql/ibdata1
@@ -102,6 +236,9 @@ memory.  For a 1TB file this is 256MiB, for instance.
    $ cat /var/lib/mysql/ibdata1 > /dev/null
    $ dbsake fincore /var/lib/mysql/ibdata1
    /var/lib/mysql/ibdata1: total_pages=37376 cached=37376 percent=100.00
+
+Options
+.......
 
 .. program:: fincore
 
@@ -128,6 +265,22 @@ may be using innodb-flush-method=O_DIRECT, and once these pages are cached
 there can be a performance degradation.  uncache drops these cached pages
 from the OS so O_DIRECT can work better.
 
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake uncache [<paths>...]
+
+   Uncache a file from the OS page cache
+
+   Variable arguments:
+
+      *paths   uncache files for these paths
+
+Example
+.......
+
 .. code-block:: bash
 
    $ dbsake fincore /var/lib/mysql/ibdata1
@@ -136,6 +289,9 @@ from the OS so O_DIRECT can work better.
    Uncached /var/lib/mysql/ibdata1
    $ dbsake fincore /var/lib/mysql/ibdata1
    /var/lib/mysql/ibdata1: total_pages=37376 cached=0 percent=0.00
+
+Options
+.......
 
 .. program:: uncache
 
@@ -152,6 +308,25 @@ This command splits mysqldump into a .sql file for each table in the original
 dumpfile.   Files are created under a subdirectory which matches the database
 name.  An optional filtering command can be specified to compress these files,
 and split-mysqldump defaults to filtering through gzip --fast (gzip -1).
+
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake split-mysqldump [<target>] [<directory>] [<filter_command>] [<regex>]
+   
+   Split mysqldump output into separate files
+   
+   Options:
+   
+      -t --target          MySQL version target (default 5.5)
+      -C --directory       Directory to output to (default .)
+      -f --filter-command  Command to filter output through(default gzip -1)
+      --regex
+
+Example
+.......
 
 .. code-block:: bash
 
@@ -182,6 +357,9 @@ and split-mysqldump defaults to filtering through gzip --fast (gzip -1).
    2014-01-04 05:34:01,446 Not deferring index `idx_fk_store_id` - used by constraint `fk_staff_store`
    2014-01-04 05:34:01,460 Not deferring index `idx_fk_address_id` - used by constraint `fk_store_address`
    2014-01-04 05:34:01,493 Split input into 1 database(s) 16 table(s) and 14 view(s)
+
+Options
+.......
 
 .. program:: split-mysqldump
 
@@ -231,6 +409,24 @@ If -p, --patch is specified a unified diff is output on stdout rather than
 a full my.cnf.  --patch is required if a my.cnf includes any !include*
 directives.
 
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake upgrade-mycnf [<config>] [<target>] [<patch>]
+   
+   Patch a my.cnf to a new MySQL version
+   
+   Options:
+   
+      -c --config  my.cnf file to parse (default: /etc/my.cnf)
+      -t --target  MySQL version to target the option file (default: 5.5)
+      -p --patch   Output unified diff rather than full config (default off)
+
+Example
+.......
+
 .. code-block:: bash
 
    $ dbsake upgrade-mycnf -t 5.6 --patch /etc/my.cnf
@@ -246,6 +442,9 @@ directives.
     #sql-mode                       = TRADITIONAL
     #event-scheduler                = 1
     
+
+Options
+.......
 
 .. program:: upgrade-mycnf
 
@@ -283,6 +482,27 @@ For more information on how this command works see :ref:`frm_format`
    InnoDB foreign-key references are not preserved and AUTO_INCREMENT values
    are also not preserved as these are stored outside of the .frm.
 
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake frm-to-schema [<raw_types>] [<replace>] [<paths>...]
+   
+   Decode a binary MySQl .frm file to DDL
+   
+   Options:
+   
+      --raw-types
+      --replace    If a path references a view output CREATE OR REPLACE so a view
+                   definition can be replaced.
+   
+   Variable arguments:
+   
+      *paths   paths to extract schema from
+
+Example
+.......
 
 .. code-block:: bash
 
@@ -309,6 +529,8 @@ For more information on how this command works see :ref:`frm_format`
    
    CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `actor_info` select `a`.`actor_id` AS `actor_id`,`a`.`first_name` AS `first_name`,`a`.`last_name` AS `last_name`,group_concat(distinct concat(`c`.`name`,': ',(select group_concat(`f`.`title` order by `f`.`title` ASC separator ', ') from ((`sakila`.`film` `f` join `sakila`.`film_category` `fc` on((`f`.`film_id` = `fc`.`film_id`))) join `sakila`.`film_actor` `fa` on((`f`.`film_id` = `fa`.`film_id`))) where ((`fc`.`category_id` = `c`.`category_id`) and (`fa`.`actor_id` = `a`.`actor_id`)))) order by `c`.`name` ASC separator '; ') AS `film_info` from (((`sakila`.`actor` `a` left join `sakila`.`film_actor` `fa` on((`a`.`actor_id` = `fa`.`actor_id`))) left join `sakila`.`film_category` `fc` on((`fa`.`film_id` = `fc`.`film_id`))) left join `sakila`.`category` `c` on((`fc`.`category_id` = `c`.`category_id`))) group by `a`.`actor_id`,`a`.`first_name`,`a`.`last_name`;
 
+Options
+.......
 
 .. program:: frm-to-schema
 
@@ -354,10 +576,30 @@ As of MySQL 5.1, tablenames with special characters are encoded with a custom
 "filename" encoding.  This command reverses that process to output the original
 tablename.
 
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake filename-to-tablename [<names>...]
+   
+   Decode a MySQL tablename as a unicode name
+   
+   Variable arguments:
+   
+      *names   filenames to decode
+
+
+Example
+.......
+
 .. code-block:: bash
 
    $ dbsake filename-to-tablename $(basename /var/lib/mysql/test/foo@002ebar.frm .frm)
    foo.bar
+
+Options
+.......
 
 .. program:: filename-to-tablename
 
@@ -373,10 +615,30 @@ Encode a MySQL tablename with the MySQL filename encoding
 This is the opposite of filename-to-tablename, where it takes a normal
 tablename and converts it using MySQL's filename encoding.
 
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake tablename-to-filename [<names>...]
+   
+   Encode a unicode tablename as a MySQL filename
+   
+   Variable arguments:
+   
+      *names   names to encode
+
+
+Example
+.......
+
 .. code-block:: bash
 
    $ dbsake tablename-to-filename foo.bar
    foo@002ebar
+
+Options
+.......
 
 .. program:: tablename-to-filename
 
@@ -403,6 +665,9 @@ This is essentially equivalent to running the MySQL DDL command:
 CREATE TABLE mytable LIKE source_table;
 ALTER TABLE mytable ENGINE = MYISAM, REMOVE PARTITIONING;
 
+Options
+.......
+
 .. program:: import-frm
 
 .. option:: source destination
@@ -420,11 +685,32 @@ header page of the first InnoDB shared tablespace (e.g. /var/lib/mysql/ibdata1
 with a standard MySQL configuration).  This command reads the filename and
 position of the log coordinates and outputs a friendly CHANGE MASTER command.
 
+Usage
+.....
+
+.. code-block:: bash
+
+   Usage: dbsake read-ib-binlog <path>
+   
+   Extract binary log filename/position from ibdata
+   
+   Required Arguments:
+   
+     path
+   
+   (specifying a double hyphen (--) in the argument list means all
+   subsequent arguments are treated as bare arguments, not options)
+
+Example
+.......
+
 .. code-block:: bash
 
    $ dbsake read-ib-binlog /var/lib/mysql/ibdata1
    CHANGE MASTER TO MASTER_LOG_FILE='mysqld-bin.000003', MASTER_LOG_POS=644905653;
 
+Options
+.......
 
 .. program:: read-ib-binlog
 
