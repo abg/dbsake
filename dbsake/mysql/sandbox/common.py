@@ -4,6 +4,7 @@ dbsake.mysql.sandbox.common
 
 Common API schtuff
 """
+from __future__ import print_function
 
 import codecs
 import collections
@@ -50,7 +51,7 @@ def check_options(**kwargs):
     basedir = os.path.normpath(os.path.expanduser(basedir))
 
     dist = kwargs.pop('mysql_distribution')
-    if (dist != 'system' and 
+    if (dist != 'system' and
         not os.path.exists(dist) and
         not VERSION_CRE.match(dist)):
             raise SandboxError("Incoherent mysql distribution: %s" % dist)
@@ -60,7 +61,7 @@ def check_options(**kwargs):
                            kwargs['data_source'])
 
     if kwargs['cache_policy'] not in ('always', 'never', 'local', 'refresh'):
-        raise SandboxError("Unknown --cache-policy '%s'" % 
+        raise SandboxError("Unknown --cache-policy '%s'" %
                            kwargs['cache_policy'])
 
     return SandboxOptions(
@@ -136,7 +137,8 @@ def generate_defaults(options, **kwargs):
     # Check for innodb_log_files_in_group
     try:
         datadir = os.path.join(options.basedir, 'data')
-        innodb_log_files_in_group = sum(1 for name in os.listdir(datadir) if name.startswith('ib_logfile'))
+        innodb_log_files_in_group = sum(1 for name in os.listdir(datadir)
+                                          if name.startswith('ib_logfile'))
         if innodb_log_files_in_group > 2:
             kwargs['innodb_log_files_in_group'] = innodb_log_files_in_group
             info("    ! Multiple ib_logfile* logs found. Setting innodb-log-files-in-group=%s",
@@ -151,38 +153,59 @@ def generate_defaults(options, **kwargs):
     info("    * Generated %s in %.2f seconds", defaults_file, time.time() - start)
     return defaults_file
 
-def mysql_install_db(dist, password):
+def generate_sandbox_user_grant(datadir):
+    from dbsake.mysql.frm import binaryfrm
+
+    user_frm = os.path.join(datadir, 'mysql', 'user.frm')
+    debug("    # Parsing binary frm: %s", user_frm)
+    table = binaryfrm.parse(user_frm)
+    debug("    # user.frm was created by MySQL %s", table.mysql_version)
+    names = []
+    values = []
+
+    for column in table.columns:
+        names.append(column.name)
+        if column.name.endswith('_priv'):
+            values.append("'Y'")
+        elif column.name == 'Host':
+            values.append("'localhost'")
+        elif column.name == 'User':
+            values.append("'root'")
+        elif column.name == 'Password':
+            # this gets reset later in the bootstrap process
+            # initialize to a bad hash so at worst, the password
+            # does not work
+            values.append("'_invalid'")
+        elif column.default is not None:
+            values.append(column.default)
+        else:
+            values.append("''")
+
+    return 'REPLACE INTO `user` ({names}) VALUES ({values});'.format(
+        names=','.join("`{0}`".format(name) for name in names),
+        values=','.join("{0}".format(value) for value in values)
+    )
+
+def mysql_install_db(distribution, **kwargs):
     join = os.path.join
     def cat(path):
         with codecs.open(path, 'r', 'utf8') as fileobj:
             return fileobj.read()
 
-    content = [
-        render_template("bootstrap_initialize.sql"),
-        cat(join(dist.sharedir, 'mysql_system_tables.sql')),
-        cat(join(dist.sharedir, 'mysql_system_tables_data.sql')),
-        cat(join(dist.sharedir, 'fill_help_tables.sql')),
-        render_template("secure_mysql_installation.sql", password=password),
-    ]
+    sharedir = distribution.sharedir
+    mysql_system_tables = cat(join(sharedir, 'mysql_system_tables.sql'))
+    mysql_system_tables_data = cat(join(sharedir,
+                                        'mysql_system_tables_data.sql'))
+    fill_help_tables = cat(join(sharedir, 'fill_help_tables.sql'))
 
-    # generate a line to always create a root@localhost user
-    system_data = content[2]
-    add_user_ddl = None
-    for line in system_data.splitlines():
-        if line.startswith('INSERT INTO tmp_user VALUES'):
-            add_user_ddl = line.replace("INSERT", "REPLACE", 1)
-            add_user_ddl = add_user_ddl.replace("tmp_user", "user")
-            info("    - Ensuring root@localhost user is created with all privileges")
-            debug("    # %s", add_user_ddl)
-            break
-    else:
-        warn("    ! Did not find root@localhost grant in %s",
-             join(dist.sharedir, 'mysql_system_tables_data.sql'))
-        warn("    ! my.sandbox.cnf may not have valid credentials")
-    add_user_ddl = None
-    if add_user_ddl:
-        content.insert(3, add_user_ddl)
-    return os.linesep.join(content)
+    sql = render_template('bootstrap.sql',
+                          distribution=distribution,
+                          mysql_system_tables=mysql_system_tables,
+                          mysql_system_tables_data=mysql_system_tables_data,
+                          fill_help_tables=fill_help_tables,
+                          **kwargs)
+    for line in sql.splitlines():
+        yield line
 
 def bootstrap(options, dist, password, additional_options=()):
     start = time.time()
@@ -194,17 +217,36 @@ def bootstrap(options, dist, password, additional_options=()):
     additional = ' '.join(map(sarge.shell_format, additional_options))
     if additional:
         cmd += ' ' + additional
+
+    datadir = os.path.join(options.basedir, 'data')
+    user_dml = None
+    if os.path.exists(os.path.join(datadir, 'mysql', 'user.frm')):
+        info("    - User supplied mysql.user table detected.")
+        info("    - Skipping normal load of system table data")
+        info("    - Ensuring root@localhost exists")
+        user_dml = generate_sandbox_user_grant(datadir)
+        debug("    # DML: %s", user_dml)
+        bootstrap_data = False
+    else:
+        info("    - Will bootstrap the mysql database")
+        bootstrap_data = True # at least no user table
+
+    bootstrap_sql = os.path.join(options.basedir, 'bootstrap.sql')
+    with codecs.open(bootstrap_sql, 'wb', 'utf8') as fileobj:
+        os.fchmod(fileobj.fileno(), 0o0660)
+        for line in mysql_install_db(dist,
+                                     bootstrap_data=bootstrap_data,
+                                     password=password,
+                                     user_dml=user_dml):
+            print(line, file=fileobj)
     with open(logfile, 'wb') as stderr:
-        with tempfile.TemporaryFile() as tmpfile:
-            tmpfile.write(mysql_install_db(dist, password).encode('utf8'))
-            tmpfile.flush()
-            tmpfile.seek(0)
             info("    - Generated bootstrap SQL")
             info("    - Running %s", cmd)
-            pipeline = sarge.run(cmd,
-                                 input=tmpfile.fileno(),
-                                 stdout=stderr,
-                                 stderr=stderr)
+            with open(bootstrap_sql, 'rb') as fileobj:
+                pipeline = sarge.run(cmd,
+                                     input=fileobj.fileno(),
+                                     stdout=stderr,
+                                     stderr=stderr)
     if sum(pipeline.returncodes) != 0:
         raise SandboxError("Bootstrapping failed. Details in %s" % stderr.name)
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
