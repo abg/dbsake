@@ -179,6 +179,7 @@ def mysql_install_db(dist, password):
         warn("    ! Did not find root@localhost grant in %s",
              join(dist.sharedir, 'mysql_system_tables_data.sql'))
         warn("    ! my.sandbox.cnf may not have valid credentials")
+    add_user_ddl = None
     if add_user_ddl:
         content.insert(3, add_user_ddl)
     return os.linesep.join(content)

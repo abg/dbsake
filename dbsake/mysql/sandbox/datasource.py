@@ -63,12 +63,11 @@ def prepare_datadir(datadir):
     from dbsake.thirdparty import sarge
 
     xb_log = os.path.join(datadir, 'innobackupex.log')
-    cmd = sarge.shell_format('{0} --apply-log {1} > {2} 2>&1',
-                             innobackupex,
-                             datadir,
-                             xb_log)
+    cmd = sarge.shell_format('{0} --apply-log . > innobackupex.log 2>&1',
+                             innobackupex)
     info("    - Running: %s", cmd)
-    result = sarge.run(cmd, env=dict(PATH=path))
+    info("    - (cwd: %s)", datadir)
+    result = sarge.run(cmd, cwd=datadir)
 
     if result.returncode != 0:
         info("    ! innobackupex --apply-log failed. See details in %s", xb_log)
