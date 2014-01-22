@@ -13,6 +13,9 @@ import tarfile
 
 from dbsake.mysql.frm import tablename
 
+from . import common
+from . import util
+
 info = logging.info
 debug = logging.debug
 
@@ -50,6 +53,29 @@ def _is_sqldump(path):
             return True
     return False
 
+def prepare_datadir(datadir):
+    from dbsake.util.path import which
+
+    innobackupex = which('innobackupex')
+    if not innobackupex:
+        raise common.SandboxError("innobackupex not found in path. Unable to prepare backup data.")
+
+    from dbsake.thirdparty import sarge
+
+    xb_log = os.path.join(datadir, 'innobackupex.log')
+    cmd = sarge.shell_format('{0} --apply-log {1} > {2} 2>&1',
+                             innobackupex,
+                             datadir,
+                             xb_log)
+    info("    - Running: %s", cmd)
+    result = sarge.run(cmd, env=dict(PATH=path))
+
+    if result.returncode != 0:
+        info("    ! innobackupex --apply-log failed. See details in %s", xb_log)
+        raise common.SandboxError("Data preloading failed")
+    else:
+        info("    - innobackupex --apply-log succeeded. datadir is ready.")
+
 def preload(options):
     if not options.datasource:
         return
@@ -60,9 +86,13 @@ def preload(options):
         # tablename encoders
         _filter = table_filter(options.tables, options.exclude_tables)
         info("  Preloading sandbox data from %s", options.datasource)
-        deploy_tarball(options.datasource,
-                       os.path.join(options.basedir, 'data'),
-                       table_filter=_filter)
+        datadir = os.path.join(options.basedir, 'data')
+        deploy_tarball(options.datasource, datadir, table_filter=_filter)
+        ib_logfile = os.path.join(datadir, 'ib_logfile0')
+        xb_logfile = os.path.join(datadir, 'xtrabackup_logfile')
+        if not os.path.exists(ib_logfile) and os.path.exists(xb_logfile):
+            info("    - Sandbox data appears to be an unprepared xtrabackup image")
+            prepare_datadir(datadir)
     elif _is_sqldump(options.datasource):
         # nothing to do before the sandbox is started
         pass
@@ -103,7 +133,7 @@ def _is_required(path):
 
 def deploy_tarball(datasource, datadir, table_filter):
     
-    tar = tarfile.open(datasource, 'r|*')
+    tar = tarfile.open(datasource, 'r|*', ignore_zeros=True)
     # python 2.6's tarfile does not support the context manager protocol
     # so try...finally is used here
     try:
@@ -111,7 +141,7 @@ def deploy_tarball(datasource, datadir, table_filter):
             if not tarinfo.isreg(): continue
             tarinfo.name = os.path.normpath(tarinfo.name)
             if _is_required(tarinfo.name):
-                info("    - Extracting required file: %s", tarinfo.name)
+                debug("    # Extracting required file: %s", tarinfo.name)
                 tar.extract(tarinfo, datadir)
                 continue
             # otherwise treat it like a table
@@ -121,9 +151,9 @@ def deploy_tarball(datasource, datadir, table_filter):
             name = name.replace('/', '.')
             name = tablename.decode(name)
             if table_filter(name):
-                info("    > Excluding %s - excluded by table filters", tarinfo.name)
+                debug("    # Excluding %s - excluded by table filters", tarinfo.name)
                 continue
-            #info("    - Extracting %s", tarinfo.name)
+            debug("    # Extracting %s", tarinfo.name)
             tar.extract(tarinfo, datadir)
     finally:
         tar.close()
