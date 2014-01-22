@@ -5,10 +5,12 @@ dbsake.mysql.sandbox.datasource
 Support for importing data sources
 
 """
+from __future__ import print_function
 
 import fnmatch
 import logging
 import os
+import sys
 import tarfile
 
 from dbsake.mysql.frm import tablename
@@ -16,6 +18,7 @@ from dbsake.mysql.frm import tablename
 from . import common
 from . import util
 
+logger = logging.getLogger()
 info = logging.info
 debug = logging.debug
 
@@ -131,15 +134,17 @@ def _is_required(path):
     return False
 
 def deploy_tarball(datasource, datadir, table_filter):
-    
-    tar = tarfile.open(datasource, 'r|*', ignore_zeros=True)
-    # python 2.6's tarfile does not support the context manager protocol
-    # so try...finally is used here
-    try:
+    show_progress = os.isatty(sys.stderr.fileno())
+    with util.StreamProxy(open(datasource, 'rb')) as proxy:
+        if show_progress:
+            proxy.add(util.progressbar(max=os.fstat(proxy.fileno()).st_size))
+        tar = tarfile.open(None, mode='r|*', fileobj=proxy, ignore_zeros=True)
         for tarinfo in tar:
             if not tarinfo.isreg(): continue
             tarinfo.name = os.path.normpath(tarinfo.name)
             if _is_required(tarinfo.name):
+                if logger.isEnabledFor(logging.DEBUG) and show_progress:
+                    print(" "*80, file=sys.stderr, end="\r")
                 debug("    # Extracting required file: %s", tarinfo.name)
                 tar.extract(tarinfo, datadir)
                 continue
@@ -150,9 +155,11 @@ def deploy_tarball(datasource, datadir, table_filter):
             name = name.replace('/', '.')
             name = tablename.decode(name)
             if table_filter(name):
-                debug("    # Excluding %s - excluded by table filters", tarinfo.name)
+                if logger.isEnabledFor(logging.DEBUG):
+                    print(" "*80, file=sys.stderr, end="\r")
+                    debug("    # Excluding %s - excluded by table filters", tarinfo.name)
                 continue
-            debug("    # Extracting %s", tarinfo.name)
+            if logger.isEnabledFor(logging.DEBUG):
+                print(" "*80, file=sys.stderr, end="\r")
+                debug("    # Extracting %s", tarinfo.name)
             tar.extract(tarinfo, datadir)
-    finally:
-        tar.close()
