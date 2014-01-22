@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2013 Vinay M. Sajip. See LICENSE for licensing information.
+# Copyright (C) 2012-2014 Vinay M. Sajip. See LICENSE for licensing information.
 #
 # sarge: Subprocess Allegedly Rewards Good Encapsulation :-)
 #
@@ -20,15 +20,25 @@ import subprocess
 import sys
 import threading
 
+try:
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def handle(self, record): pass
+        emit = handle
+        def createLock(self): self.lock = None
+
 from .shlext import shell_shlex
 
 __all__ = ('shell_quote', 'Capture', 'Command', 'ShellFormatter', 'Pipeline',
            'shell_format', 'run', 'parse_command_line',
            'capture_stdout', 'capture_stderr', 'capture_both')
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
+del NullHandler
 
 # We use a separate logger for parsing, as that's sometimes too much
 # information :-)
@@ -463,29 +473,49 @@ class Popen(subprocess.Popen):
             return result
 
         if stdout == STDERR and stderr == subprocess.STDOUT:
+            # Issue #15: Following Python issue #18851, a change was made
+            # to how Popen._get_handles works, which surfaced in Python 2.7.6.
+            # Instead of returning a 6-tuple of handles as it did in earlier
+            # versions, a 2-tuple is returned with the 6-tuple as first element
+            # and a set as a second element. At this time, only Python 2
+            # appears to have this change.
+            # To handle, we check for a 2-tuple return and act accordingly.
             PIPE = subprocess.PIPE
-            (p2cread, p2cwrite,
-             c2pread, c2pwrite,
-             errread, errwrite) = super(Popen, self)._get_handles(stdin, PIPE,
-                                                                  PIPE)
+            t = super(Popen, self)._get_handles(stdin, PIPE, PIPE)
+            nreturned = len(t)
+            if nreturned == 2:
+                p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite = t[0]
+                to_close = t[1]
+            else:
+                p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite = t
             logger.debug('swapping stdout and stderr')
-            return p2cread, p2cwrite, errread, errwrite, c2pread, c2pwrite
+            if nreturned == 2:
+                return (p2cread, p2cwrite, errread,
+                        errwrite, c2pread, c2pwrite), to_close
+            else:
+                return p2cread, p2cwrite, errread, errwrite, c2pread, c2pwrite
         else:
             orig_stdout = stdout
             if stdout == STDERR:
                 stdout = None
-            (p2cread, p2cwrite,
-             c2pread, c2pwrite,
-             errread, errwrite) = super(Popen, self)._get_handles(stdin,
-                                                                  stdout,
-                                                                  stderr)
+            t = super(Popen, self)._get_handles(stdin, stdout, stderr)
+            nreturned = len(t)
+            if nreturned == 2:
+                p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite = t[0]
+                to_close = t[1]
+            else:
+                p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite = t
             if orig_stdout == STDERR:
                 # c2pread, c2pwrite are None on 2,x and -1 on 3,x
                 close(c2pread)
                 close(c2pwrite)
                 c2pread = dup(errread)
                 c2pwrite = dup(errwrite)
-            return p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite
+            if nreturned == 2:
+                return (p2cread, p2cwrite, c2pread,
+                        c2pwrite, errread, errwrite), to_close
+            else:
+                return p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite
 
     if os.name == 'posix' and sys.version_info[0] < 3:
         # Issue 12: add restore_signals support to avoid spurious
