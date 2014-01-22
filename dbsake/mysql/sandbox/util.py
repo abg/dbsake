@@ -54,11 +54,12 @@ class StreamProxy(object):
 
 def progressbar(max=0, width=40, interval=0.5):
     template = '({pct:6.2%})[{fill:.<{width}}]{cur_size:^10}/{max_size:^10}'
-    params = dict(length=0, last_update=0)
+    params = dict(length=0, last_update=0, complete=False)
     max_size = util.format_filesize(max)
     def _show_progress(data):
         params['length'] += len(data)
-        if time.time() - params['last_update'] >= interval or not data:
+        if time.time() - params['last_update'] >= interval or \
+            (not data and not params['complete']):
             params['last_update'] = time.time()
             frac = params['length'] / max
             units = int(frac*width)
@@ -70,8 +71,9 @@ def progressbar(max=0, width=40, interval=0.5):
                                   width=width)
             print(bar, end="\r", file=sys.stderr)
             sys.stderr.flush()
-        if not data:
+        if not data and not params['complete']:
             print(file=sys.stderr)
+            params['complete'] = True
     return _show_progress
 
 @contextlib.contextmanager
