@@ -34,14 +34,9 @@ def discover_commands():
         loader.load_module(name)
 
 def configure_logging(level):
-    logger = logging.getLogger()
-    handler = logging.StreamHandler(sys.stderr)
-    formatter = logging.Formatter('%(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(level)
+    logging.basicConfig(format='%(message)s', level=level)
     # suppress sarge logging for now
-    logging.getLogger("sarge").setLevel(logging.FATAL)
+    logging.getLogger("dbsake.thirdparty.sarge").setLevel(logging.FATAL)
     
 def log_level(name):
     try:
