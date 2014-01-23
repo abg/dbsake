@@ -37,7 +37,7 @@ def discover_commands():
     for importer, name, is_pkg in walk_packages(__path__, __name__ + '.'):
         if not is_pkg: continue
         # don't autoload third party packages
-        if 'sarge' in name or 'tempita' in name: continue
+        if 'thirdparty' in name or 'util' in name: continue
         logging.debug("# Loading commands from '%s'", name)
         loader = importer.find_module(name, None)
         loader.load_module(name)
