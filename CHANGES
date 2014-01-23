@@ -1,6 +1,53 @@
 dbsake changelog
 ================
 
+Version 1.0.4
+-------------
+
+[dbsake]
+- dbsake no longer depends on argparse and argparse has been removed from the
+  source tree
+- dbsake now traps SIGINT for a cleaner exit on interrupt
+- dbsake now has a simpler logging format
+- debug logging will no longer emit verbose command (sarge) output
+- dbsake --log-level option was removed in favor of simpler --quiet
+  and --debug options;  --quiet attempts to suppress all logging and
+  --debug will enable debug level logging
+
+[dbsake/mysql-sandbox]
+- the --mysql-source option has been renamed to --mysql-distribution; the
+  short option, -m, is unchanged
+- add --data-source option to create a sandbox preloaded with a binary backup;
+  this assumes that a tarball is relative to the mysql datadir such as
+  those created by percona-xtrabackup
+- with --data-source, mysql-sandbox supports applying logs on unprepared
+  xtrabackup data, if innobackupex is available
+- add --table/-t and --exclude-table/-T options to work with --data-source
+  to supports inclusion/exclusion filters against the tarball; See the
+  documentation for further details
+- mysql-sandbox will now cache mysql binary tarball distributions in
+  the location specified by the DBSAKE_CACHE environment variable, or
+  ~/.dbsake/cache (if unset). This behavior is controlled by the --cache-policy
+  option.  See the documentation for further details
+- mysql-sandbox will use a simple progress bar when unpacking both
+  --mysql-distribution and --data-source tarballs; This is only displayed
+  when stderr is connected to a tty.
+- mysql-sandbox now emits timing for each major step in the sandbox setup
+  process
+- sandbox.sh now supports both 'use' and 'mysql' as an alias for the 'shell'
+  action introduced in v1.0.3 - namely starting a mysql commandline client
+  against the sandbox
+- sandbox.sh now supports a mysqldump action that will run mysqldump
+  against the sandbox.  This is an alias for:
+  mysqldump --defaults-file=${sandbox_directory}/my.sandbox.cnf [options]
+- sandbox.sh start now supports passing options directly to mysqld_safe
+  similar to the mysql community init script.
+- sandbox.sh now supports an 'install-service' action that attempts to
+  copy itself into /etc/init.d and add itself as a local system service
+- bootstrapping is now more careful about removing users in light of
+  the --data-source option; only anonymous users and db privileges on
+  the test/test_% databases are removed.
+
 Version 1.0.3
 -------------
 :released: Thursday, January 16th 2014
@@ -9,13 +56,13 @@ Version 1.0.3
 - added third-party "sarge" package - a pure-python subprocess wrapper
 - added third-party "tempita" package - a pure-python template engine
 - most commands now lazy load their submodules to improve the startup
-  time of dbsake. dbsake also only loads top-level modules when 
+  time of dbsake. dbsake also only loads top-level modules when
   discovering commands
 
 [dbsake/frm-to-schema]
 - add support for old MYSQL_TYPE_VAR_STRING type to support very old VARCHAR
   types
-- some internal code cleanup was done to make parsing binary frms and 
+- some internal code cleanup was done to make parsing binary frms and
   plaintext VIEW frms more consistent.
 
 [dbsake/mysql-sandbox]
@@ -32,7 +79,7 @@ Version 1.0.2
 [dbsake/frm-to-schema]
 - Parse MySQL views from .frm
 - Add --replace option to support CREATE OR REPLACE VIEW syntax
-- Format indexes with a prefix length 
+- Format indexes with a prefix length
 - Add --raw-types option to output MYSQL_TYPE information
 - Do not output MYSQL_TYPE information by default for binary .frms
 - Add additional SQL comment for tables similar to mysqldump
@@ -59,7 +106,7 @@ Version 1.0.1
 - Add initial Sphinx documentation
 
 [rpm]
-- Add missing Requires/BuildRequires: python-setuptools to 
+- Add missing Requires/BuildRequires: python-setuptools to
   contrib/dbsake.spec
 
 Version 1.0.0
