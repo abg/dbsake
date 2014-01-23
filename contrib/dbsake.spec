@@ -10,7 +10,7 @@
 Name:           dbsake
 Version:        1.0.4
 Release:        1%{?dist}
-Summary:        Database administration toolkit for MySQL
+Summary:        a dba (s)wiss-(a)rmy-(k)nif(e) for mysql
 Group:          Applications/Databases
 
 License:        GPLv2
@@ -22,9 +22,16 @@ BuildRequires:  python%{?pyver}-devel
 BuildRequires:  python%{?pyver}-setuptools
 
 %description
-DBSake is a collection of command-line tools to perform various DBA related
-tasks for MySQL.
+dbsake (pronounced "dee-bee sah-kay") is a set of commands to assist with:
 
+- Parsing MySQL .frm files and output DDL
+- Splitting mysqldump output into a file per object
+- Patching a my.cnf to remove or convert deprecated options
+- Deploying a new standalone MySQL "sandbox" instance
+- Decoding/encoding MySQL filenames
+- Managing OS caching for a set of files
+
+Read the documentation at: http://docs.dbsake.net
 
 %prep
 %setup -q -n %{name}-%{version}
