@@ -15,7 +15,7 @@ Group:          Applications/Databases
 
 License:        GPLv2
 URL:            https://github.com/abg/dbsake
-Source0:        https://github.com/abg/dbsake/archive/dbsake-%{version}.tar.gz
+Source0:        https://github.com/abg/dbsake/archive/dbsake-%{version}%{?tag}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python%{?pyver}-devel
@@ -34,7 +34,7 @@ dbsake (pronounced "dee-bee sah-kay") is a set of commands to assist with:
 Read the documentation at: http://docs.dbsake.net
 
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q -n %{name}-%{version}%{?tag}
 
 
 %build
