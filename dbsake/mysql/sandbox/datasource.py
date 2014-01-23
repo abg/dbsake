@@ -10,6 +10,7 @@ from __future__ import print_function
 import fnmatch
 import logging
 import os
+import re
 import sys
 import tarfile
 import time
@@ -121,18 +122,10 @@ def finalize(sandbox_options):
         # finally:
         #   sarge.run(sandbox.stop) || fail
 
-required_file_patterns = [
-    'ibdata*', # typical name for shared tablespace
-    'ib_logfile[0-9]*', # innodb redo log names
-    'backup-my.cnf', # used by xtrabackup
-    'xtrabackup*', # various xtrabackup files requires
-    'aria_log*',
-]
-def _is_required(path):
-    for pattern in required_file_patterns:
-        if fnmatch.fnmatch(path, pattern):
-            return True
-    return False
+#: files required for the sandbox - and never filtered
+is_required = re.compile('(ibdata.*|ib_logfile[0-9]+|backup-my.cnf|'
+                         'xtrabackup.*|aria_log.*|'
+                         'mysql/slave_.*|mysql/innodb_.*)$')
 
 def deploy_tarball(datasource, datadir, table_filter):
     show_progress = os.isatty(sys.stderr.fileno())
@@ -143,7 +136,7 @@ def deploy_tarball(datasource, datadir, table_filter):
         for tarinfo in tar:
             if not tarinfo.isreg(): continue
             tarinfo.name = os.path.normpath(tarinfo.name)
-            if _is_required(tarinfo.name):
+            if is_required.match(tarinfo.name):
                 if logger.isEnabledFor(logging.DEBUG) and show_progress:
                     print(" "*80, file=sys.stderr, end="\r")
                 debug("    # Extracting required file: %s", tarinfo.name)
