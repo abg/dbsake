@@ -402,9 +402,9 @@ Options
 
    Filter output files through this command.
    split-mysqldump will detect most compression commands
-   and set an appropriate suffix on its output files. E.g.
-   -f gzip results in a .gz suffix, -f "bzip -9" results in
-   .bz2 suffix, etc.
+   and set an appropriate extension on its output files. E.g.
+   -f gzip results in a gz extension, -f "bzip -9" results in
+   bz2 extension, etc.
 
    Defaults to "gzip -1"
 
