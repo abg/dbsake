@@ -13,15 +13,24 @@ import os
 import pkgutil
 import sys
 
+from . import baker
+from . import util
+
 try:
     _basestring = basestring
 except NameError:
     _basestring = str
 
+try:
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def handle(self, record): pass
+        emit = handle
+        def createLock(self): self.lock = None
+
 __version__ = '1.0.4-dev'
 
-from . import baker
-from . import util
 
 def discover_commands():
     walk_packages = pkgutil.walk_packages
@@ -33,16 +42,16 @@ def discover_commands():
         loader = importer.find_module(name, None)
         loader.load_module(name)
 
-def configure_logging(level):
-    logging.basicConfig(format='%(message)s', level=level)
+def configure_logging(quiet=False, debug=False):
+    level = logging.INFO
+    if quiet:
+        # suppress all logging output
+        logging.getLogger().addHandler(NullHandler())
+    else:
+        if debug: level = logging.DEBUG
+        logging.basicConfig(format='%(message)s', level=level)
     # suppress sarge logging for now
     logging.getLogger("dbsake.thirdparty.sarge").setLevel(logging.FATAL)
-    
-def log_level(name):
-    try:
-        return logging._levelNames[name.upper()]
-    except KeyError:
-        raise ValueError("Invalid logging level '%s'", name)
 
 def main():
     sys.stdout = codecs.getwriter('utf8')(sys.stdout)
@@ -53,11 +62,12 @@ def main():
     parser.add_option('-V', '--version',
                       action='store_true',
                       help="show dbsake version and exit")
-    parser.add_option('-l', '--log-level',
-                      choices=valid_log_levels,
-                      metavar='<log-level>',
-                      help="Choose a log level; default: info",
-                      default='info')
+    parser.add_option('-q', '--quiet',
+                      action='store_true',
+                      help="Silence logging output")
+    parser.add_option('-d', '--debug',
+                      action='store_true',
+                      help="Enable debug messages")
     parser.disable_interspersed_args()
     opts, args = parser.parse_args()
 
@@ -65,7 +75,7 @@ def main():
         print("dbsake v" + __version__)
         return 0
 
-    configure_logging(log_level(opts.log_level))
+    configure_logging(quiet=opts.quiet, debug=opts.debug)
     discover_commands()
     # /home/abg/.virtualenv/.../bin/dbsake -> 'dbsake'
     sys.argv[0] = os.path.basename(sys.argv[0])
