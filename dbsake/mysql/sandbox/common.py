@@ -102,7 +102,7 @@ def generate_initscript(sandbox_directory, **kwargs):
     sandbox_sh_path = os.path.join(sandbox_directory, 'sandbox.sh')
     with codecs.open(sandbox_sh_path, 'w', encoding='utf8') as fileobj:
         # ensure initscript is executable by current user + group
-        os.fchmod(fileobj.fileno(), 0550)
+        os.fchmod(fileobj.fileno(), 0o0755)
         fileobj.write(content)
     info("    * Generated initscript in %.2f seconds", time.time() - start)
 
