@@ -153,7 +153,7 @@ def unpack_tarball_distribution(stream, path):
     # so try...finally is used here
     try:
         for tarinfo in tar:
-            if not tarinfo.isreg(): continue
+            if not (tarinfo.isreg() or tarinfo.issym()): continue
             tarinfo.name = os.path.normpath(tarinfo.name)
             name = os.path.join(*tarinfo.name.split(os.sep)[1:])
             item0 = name.split(os.sep)[0]
@@ -194,18 +194,7 @@ def distribution_from_tarball(options):
     info("    - Using mysqld --basedir: %s", options.basedir)
     plugin_dir = os.path.join(options.basedir, 'lib', 'plugin')
     if os.path.exists(plugin_dir):
-        import glob
         info("    - Using MySQL plugin directory: %s", os.path.join(options.basedir, 'lib', 'plugin'))
-        ha_innodb_plugin = os.path.join(plugin_dir, 'ha_innodb_plugin.so*')
-        ha_glob = glob.glob(ha_innodb_plugin)
-        if (5,1,32) < version < (5,5) and ha_glob:
-            os.symlink(ha_glob[0], os.path.join(plugin_dir, 'ha_innodb_plugin.so'))
-            # this is essentially an implementation detail but means we don't
-            # have to know the exact path in the my.sandbox.cnf
-            # This is logged publically so the user is aware we did something
-            # extra that may not be expected from a normal extraction
-            info("    - Symlinked innodb plugin %s to ha_innodb_plugin.so",
-                 os.path.basename(ha_glob[0]))
 
     return MySQLDistribution(
         version=version,
@@ -431,18 +420,7 @@ def distribution_from_download(options):
     info("    - Using mysqld --basedir: %s", options.basedir)
     plugin_dir = os.path.join(options.basedir, 'lib', 'plugin')
     if os.path.exists(plugin_dir):
-        import glob
         info("    - Using MySQL plugin directory: %s", os.path.join(options.basedir, 'lib', 'plugin'))
-        ha_innodb_plugin = os.path.join(plugin_dir, 'ha_innodb_plugin.so*')
-        ha_glob = glob.glob(ha_innodb_plugin)
-        if (5,1,32) < version < (5,5) and ha_glob:
-            os.symlink(ha_glob[0], os.path.join(plugin_dir, 'ha_innodb_plugin.so'))
-            # this is essentially an implementation detail but means we don't
-            # have to know the exact path in the my.sandbox.cnf
-            # This is logged publically so the user is aware we did something
-            # extra that may not be expected from a normal extraction
-            info("      > Symlinked innodb plugin %s to ha_innodb_plugin.so",
-                 os.path.basename(ha_glob[0]))
 
     return MySQLDistribution(
         version=version,
