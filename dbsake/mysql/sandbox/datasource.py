@@ -41,13 +41,11 @@ def table_filter(include, exclude):
 
     return _filter
 
-def _is_tarball(path):
-    # check for either .tar or .tar.[ext]
-    for _ in xrange(2):
-        path, ext = os.path.splitext(path)
-        if ext == '.tar':
-            return True
-    return False
+def is_tarball(path):
+    try:
+        return tarfile.is_tarfile(path)
+    except IOError:
+        return False
 
 def _is_sqldump(path):
     for _ in xrange(2):
@@ -81,7 +79,7 @@ def prepare_datadir(datadir):
 def preload(options):
     if not options.datasource:
         return
-    elif _is_tarball(options.datasource):
+    elif is_tarball(options.datasource):
         # build table filter from tables/exclude_tables
         # So here we want to map database.table to database/table
         # filtering the database and tablename through the mysql
