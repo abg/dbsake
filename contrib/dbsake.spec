@@ -15,7 +15,7 @@ Group:          Applications/Databases
 
 License:        GPLv2
 URL:            https://github.com/abg/dbsake
-Source0:        https://github.com/abg/dbsake/archive/%{version}.tar.gz
+Source0:        https://github.com/abg/dbsake/archive/dbsake-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python%{?pyver}-devel
