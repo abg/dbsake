@@ -1,9 +1,11 @@
 %if 0%{?rhel} == 5
-%global pyvertag 26
-%global pyver 2.6
+%global pyver 26
+%global pybasever 2.6
+%global __python /usr/bin/python%{pybasever}
+%global __os_install_post %{__python26_os_install_post}
 %endif
 
-%{!?python_sitelib: %global python_sitelib %(%{__python}%{?pyver} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name:           dbsake
 Version:        1.0.4
@@ -13,12 +15,11 @@ Group:          Applications/Databases
 
 License:        GPLv2
 URL:            https://github.com/abg/dbsake
-Source0:        https://github.com/abg/dbsake/archive/%{version}.tar.gz
+Source0:        https://github.com/abg/dbsake/archive/dbsake-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
-BuildRequires:  python%{?pyvertag}-devel
-BuildRequires:  python%{?pyvertag}-setuptools
-Requires:       python%{?pyvertag}-setuptools
+BuildRequires:  python%{?pyver}-devel
+BuildRequires:  python%{?pyver}-setuptools
 
 %description
 DBSake is a collection of command-line tools to perform various DBA related
@@ -30,20 +31,22 @@ tasks for MySQL.
 
 
 %build
-%{__python}%{?pyver} setup.py build
+%{__python} setup.py build
 
 
 %install
 rm -rf %{buildroot}
-%{__python}%{?pyver} setup.py install -O1 --skip-build --root %{buildroot}
-
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+# install manpage
+install --mode=0755 -d %{buildroot}%{_mandir}/man1
+install --mode=0644 contrib/dbsake.1.man %{buildroot}%{_mandir}/man1/dbsake.1
  
 %files
-%doc
+%doc README.md CHANGES LICENSE
 # For noarch packages: sitelib
 %{python_sitelib}/*
 %{_bindir}/dbsake
-
+%{_mandir}/man1/dbsake.1*
 
 %changelog
 * Thu Jan 16 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.3-1
