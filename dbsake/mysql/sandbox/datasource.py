@@ -12,6 +12,7 @@ import logging
 import os
 import sys
 import tarfile
+import time
 
 from dbsake.mysql.frm import tablename
 
@@ -84,6 +85,7 @@ def preload(options):
         # So here we want to map database.table to database/table
         # filtering the database and tablename through the mysql
         # tablename encoders
+        start = time.time()
         _filter = table_filter(options.tables, options.exclude_tables)
         info("  Preloading sandbox data from %s", options.datasource)
         datadir = os.path.join(options.basedir, 'data')
@@ -93,6 +95,7 @@ def preload(options):
         if not os.path.exists(ib_logfile) and os.path.exists(xb_logfile):
             info("    - Sandbox data appears to be an unprepared xtrabackup image")
             prepare_datadir(datadir)
+        info("    * Data extracted in %.2f seconds", time.time() - start)
     elif _is_sqldump(options.datasource):
         # nothing to do before the sandbox is started
         pass
