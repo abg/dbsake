@@ -222,6 +222,73 @@ Options
 
 .. versionadded:: 1.0.4
 
+Using the sandbox.sh control script
+...................................
+
+Usage: ./sandbox.sh <action> [options]
+
+When creating a sandbox, mysql-sandbox generate a simple bash script to control
+the sandbox in ./sandbox.sh under the sandbox directory.  This follows the
+pattern of a SysV init script and has many standard actions:
+
+- start
+
+  start the sandbox (noop if already started)
+
+  Note: sandbox.sh start passes any additional options directly to the
+        mysqld_safe script.  So you can do things like:
+        ./sandbox.sh start --init-file=reset_root.sql
+
+- stop
+
+  stop the sandbox (noop if already stopped)
+
+- restart
+
+  stop then start the sandbox
+
+- condrestart
+
+  only restart if sandbox is running
+
+- status
+  check if the sandbox is running
+
+
+Additionally there are several custom actions to make managing the sandbox
+easier:
+
+- mysql [options]
+
+  connect to the sandbox using the mysql command line client
+
+  You can pass any option you might pass to mysql here.  I.e:
+  ./sanbox.sh mysql -e 'SHOW ENGINE INNODB STATUS\G'
+  For convenience the action 'use' is an alias for 'mysql'
+
+- mysqldump [options]
+
+  run mysqldump against the sandbox
+    
+  Example: ./sandbox.sh mysqldump --all-databases | gzip > backup.sql.gz
+
+- install-service
+
+  attempt to install the sandbox.sh under /etc/init.d and add to default
+  runlevels.  This is effectively just an alias for:
+
+.. code-block:: bash
+
+   # cp sandbox.sh /etc/init.d/${name}
+   # chkconfig --add ${name} && chkconfig ${name} on
+
+   Under ubuntu update-rc.d is used instead of chkconfig.
+                      
+   install-service accept one argument as the name of the service to install.
+   By default this will be called mysql-${version} where $version is the
+   current mysqld version being used (e.g. 5.6.15)
+                        
+
 fincore
 ~~~~~~~
 
