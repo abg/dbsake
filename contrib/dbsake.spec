@@ -20,7 +20,6 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python%{?pyver}-devel
 BuildRequires:  python%{?pyver}-setuptools
-Requires:       python%{?pyver}-setuptools
 
 %description
 DBSake is a collection of command-line tools to perform various DBA related
