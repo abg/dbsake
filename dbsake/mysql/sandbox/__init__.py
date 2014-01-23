@@ -5,7 +5,7 @@ dbsake.mysql.sandbox
 MySQL sandboxing support
 
 """
-from __future__ import print_function
+from __future__ import print_function, division
 
 import logging
 import os
@@ -59,11 +59,23 @@ def mysql_sandbox(sandbox_directory=None,
                          distribution. One of: always,never,refresh,local
                          Default: always
     """
+    from dbsake.util import format_filesize
+    from dbsake.util.path import disk_usage, resolve_mountpoint
     from . import common
     from . import datasource
     from . import distribution
 
     sbopts = common.check_options(**locals())
+
+    # a basic sanity check: make sure there's at least 1GB free (or 5%) before we start
+    usage = disk_usage(sbopts.basedir)
+    if usage.free < 1024**3:
+        error("Only {0} of {1} (<{2:.2%}) available on {3}. Aborting.".format(
+              format_filesize(usage.free), format_filesize(usage.total),
+              usage.free / usage.total,
+              resolve_mountpoint(sbopts.basedir)))
+        return 1
+
     try:
         create_sandbox(sbopts)
     except common.SandboxError as exc:
