@@ -13,10 +13,10 @@ Here is the basic dbsake usage:
    Usage: dbsake [options] [subcommand] [subcommand-options...]
    
    Options:
-     -h, --help            show this help message and exit
-     -V, --version         show dbsake version and exit
-     -l <log-level>, --log-level=<log-level>
-                           Choose a log level; default: info
+     -h, --help     show this help message and exit
+     -V, --version  show dbsake version and exit
+     -q, --quiet    Silence logging output
+     -d, --debug    Enable debug messages
 
 .. program:: dbsake
 
@@ -32,11 +32,16 @@ Here is the basic dbsake usage:
 
    Output the current dbsake version and exit
 
-.. option:: -l, --log-level
+.. option:: -q, --quiet
 
-   Adjust the dbsake log level.  This is mostly useful to enable debugging
-   by running dbsake --log-level=debug <subcommand> [subcommand-options...]
+   Suppresses all logging output.  Commands that output to stdout will still
+   emit output, but no logging will be performed.  You can use the exit
+   status of dbsake to detect failure in these cases
 
+.. option:: -d, --debug
+
+   Enable debugging output.  This enables more verbose logs that are typically
+   not necessary, but may be helpful for troubleshooting.
 
 mysql-sandbox
 ~~~~~~~~~~~~~
@@ -718,9 +723,6 @@ Usage
    
      path
    
-   (specifying a double hyphen (--) in the argument list means all
-   subsequent arguments are treated as bare arguments, not options)
-
 Example
 .......
 
