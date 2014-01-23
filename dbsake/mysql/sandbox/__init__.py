@@ -30,21 +30,34 @@ def mysql_sandbox(sandbox_directory=None,
                   table=(),
                   exclude_table=(),
                   cache_policy='always'):
-    """
-    Useful docstring here
+    """Create a temporary MySQL instance
+
+    This command installs a new MySQL instance under the
+    specified sandbox directory, or under
+    ~/sandboxes/sandbox_<datetime> if none is specified.
 
     :param sandbox_directory: base directory where sandbox will be installed
+                              default: ~/sandboxes/sandbox_<datetime>
+
     :param mysql_distribution: what mysql distribution to use for the sandbox;
-                               This defaults to 'system' and this command will
-                               attempt to use the currently installed mysql
-                               distribution on the system.
+                               system|<major.minor.release>|<tarball>;
+                               default: "system"
+
     :param data_source: how to populate the sandbox; this defaults to
-                        bootstrapping an empty mysql instance with a randomly
-                        generated password for the root@localhost user.
-    :param table: table to include from the data source
-    :param exclude_table: table to exclude from data source;
+                        bootstrapping an empty mysql instance similar to
+                        running mysql_install_db
+
+    :param table: glob pattern include from --data;
+                  This option should be in database.table format
+                  and may be specified multiple times
+
+    :param exclude_table: glob pattern to exclude from --data;
+                          This option should be in database.table format
+                          and may be specified multiple times
+
     :param cache_policy: the cache policy to use when downloading an mysql
-                         distribution
+                         distribution. One of: always,never,refresh,local
+                         Default: always
     """
     from . import common
     from . import datasource
