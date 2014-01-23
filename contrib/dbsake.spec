@@ -37,14 +37,16 @@ tasks for MySQL.
 %install
 rm -rf %{buildroot}
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
-
+# install manpage
+install --mode=0755 -d %{buildroot}%{_mandir}/man1
+install --mode=0644 contrib/dbsake.1.man %{buildroot}%{_mandir}/man1/dbsake.1
  
 %files
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/*
 %{_bindir}/dbsake
-
+%{_mandir}/man1/dbsake.1*
 
 %changelog
 * Thu Jan 16 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.3-1
