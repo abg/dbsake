@@ -61,7 +61,7 @@ def prepare_datadir(datadir):
 
     innobackupex = which('innobackupex')
     if not innobackupex:
-        raise common.SandboxError("innobackupex not found in path. Unable to prepare backup data.")
+        raise common.SandboxError("innobackupex not found in path. Aborting.")
 
     from dbsake.thirdparty import sarge
 
@@ -94,7 +94,7 @@ def preload(options):
         ib_logfile = os.path.join(datadir, 'ib_logfile0')
         xb_logfile = os.path.join(datadir, 'xtrabackup_logfile')
         if not os.path.exists(ib_logfile) and os.path.exists(xb_logfile):
-            info("    - Sandbox data appears to be an unprepared xtrabackup image")
+            info("    - Sandbox data appears to be unprepared xtrabackup data")
             prepare_datadir(datadir)
         info("    * Data extracted in %.2f seconds", time.time() - start)
     elif _is_sqldump(options.datasource):
@@ -115,7 +115,8 @@ def finalize(sandbox_options):
         # ./sandbox shell <datafiles>
         # sarge.run(sandbox.start) || fail
         # try:
-        #   with sarge.run(sanbox shell, async=True, stdin=PIPE, stderr|stdout=import.log):
+        #   with sarge.run(sandbox shell, async=True, stdin=PIPE,
+        #                  stderr|stdout=import.log):
         #       for each sql file:
         #           with open(sql_file, 'rb') as fileobj:
         #               shutil.copyfileobj(fileobj, stdin)
@@ -151,7 +152,8 @@ def deploy_tarball(datasource, datadir, table_filter):
             if table_filter(name):
                 if logger.isEnabledFor(logging.DEBUG):
                     print(" "*80, file=sys.stderr, end="\r")
-                    debug("    # Excluding %s - excluded by table filters", tarinfo.name)
+                    debug("    # Excluding %s - excluded by table filters",
+                          tarinfo.name)
                 continue
             if logger.isEnabledFor(logging.DEBUG):
                 print(" "*80, file=sys.stderr, end="\r")
