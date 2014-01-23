@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "DBSAKE" "1" "January 21, 2014" "1.0.4-dev" "dbsake"
+.TH "DBSAKE" "1" "January 23, 2014" "1.0.4-dev" "dbsake"
 .SH NAME
 dbsake \- dbsake Documentation
 .
@@ -226,26 +226,30 @@ to the MySQL instance.
 .ft C
 Usage: dbsake mysql\-sandbox [<sandbox_directory>] [<mysql_distribution>] [<data_source>] [<table>] [<exclude_table>] [<cache_policy>]
 
-Useful docstring here
+Create a temporary MySQL instance
+
+    This command installs a new MySQL instance under the specified sandbox
+    directory, or under ~/sandboxes/sandbox_<datetime> if none is specified.
 
 Options:
 
    \-d \-\-sandbox\-directory   base directory where sandbox will be installed
+                            default: ~/sandboxes/sandbox_<datetime>
    \-m \-\-mysql\-distribution  what mysql distribution to use for the sandbox;
-                            This defaults to \(aqsystem\(aq and this command will
-                            attempt to use the currently installed mysql
-                            distribution on the system.
+                            system|<major.minor.release>|<tarball>; default:
+                            "system"
    \-D \-\-data\-source         how to populate the sandbox; this defaults to
-                            bootstrapping an empty mysql instance with a
-                            randomly generated password for the root@localhost
-                            user.
-   \-t \-\-table               table to include from the data source
-   \-T \-\-exclude\-table       table to exclude from data source;
+                            bootstrapping an empty mysql instance similar to
+                            running mysql_install_db
+   \-t \-\-table               glob pattern include from \-\-data; This option
+                            should be in database.table format and may be
+                            specified multiple times
+   \-T \-\-exclude\-table       glob pattern to exclude from \-\-data; This option
+                            should be in database.table format and may be
+                            specified multiple times
    \-c \-\-cache\-policy        the cache policy to use when downloading an mysql
-                            distribution
-
-(specifying a double hyphen (\-\-) in the argument list means all
-subsequent arguments are treated as bare arguments, not options)
+                            distribution. One of: always,never,refresh,local
+                            Default: always
 .ft P
 .fi
 .UNINDENT
@@ -256,18 +260,25 @@ subsequent arguments are treated as bare arguments, not options)
 .sp
 .nf
 .ft C
-$ dbsake mysql\-sandbox \-d /opt/mysql\-5.6.15 \-\-mysql\-distribution 5.6.15
+$ dbsake mysql\-sandbox \-\-sandbox\-directory=/opt/mysql\-5.6.15 \e
+>                      \-\-mysql\-distribution=5.6.15 \e
+>                      \-\-data\-source=backup.tar.gz
 Preparing sandbox instance: /opt/mysql\-5.6.15
   Creating sandbox directories
     \- Created /opt/mysql\-5.6.15/data
     \- Created /opt/mysql\-5.6.15/tmp
     * Prepared sandbox in 0.00 seconds
+  Preloading sandbox data from backup.tar.gz
+    \- Sandbox data appears to be unprepared xtrabackup data
+    \- Running: /root/xb/bin/innobackupex \-\-apply\-log . > innobackupex.log 2>&1
+    \- (cwd: /opt/mysql\-5.6.15/data)
+    \- innobackupex \-\-apply\-log succeeded. datadir is ready.
+    * Data extracted in 15.72 seconds
   Deploying MySQL distribution
     \- Attempting to deploy distribution for MySQL 5.6.15
     \- Downloading from http://cdn.mysql.com/Downloads/MySQL\-5.6/mysql\-5.6.15\-linux\-glibc2.5\-x86_64.tar.gz
     \- Caching download: /root/.dbsake/cache/mysql\-5.6.15\-linux\-glibc2.5\-x86_64.tar.gz
     \- Unpacking tar stream. This may take some time
-(100.00%)[========================================] 290.3MiB / 290.3MiB
     \- Stored MD5 checksum for download: /root/.dbsake/cache/mysql\-5.6.15\-linux\-glibc2.5\-x86_64.tar.gz.md5
     \- Using mysqld (v5.6.15): /opt/mysql\-5.6.15/bin/mysqld
     \- Using mysqld_safe: /opt/mysql\-5.6.15/bin/mysqld_safe
@@ -275,22 +286,29 @@ Preparing sandbox instance: /opt/mysql\-5.6.15
     \- Using share directory: /opt/mysql\-5.6.15/share
     \- Using mysqld \-\-basedir: /opt/mysql\-5.6.15
     \- Using MySQL plugin directory: /opt/mysql\-5.6.15/lib/plugin
-    * Deployed MySQL distribution to sandbox in 18.19 seconds
+    * Deployed MySQL distribution to sandbox in 20.79 seconds
   Generating my.sandbox.cnf
     \- Generated random password for sandbox user root@localhost
-    * Generated /opt/mysql\-5.6.15/my.sandbox.cnf in 0.00 seconds
+    ! Existing ib_logfile0 detected. Setting innodb\-log\-file\-size=5M
+    * Generated /opt/mysql\-5.6.15/my.sandbox.cnf in 0.01 seconds
   Bootstrapping sandbox instance
     \- Logging bootstrap output to /opt/mysql\-5.6.15/bootstrap.log
+    \- User supplied mysql.user table detected.
+    \- Skipping normal load of system table data
+    \- Ensuring root@localhost exists
     \- Generated bootstrap SQL
     \- Running /opt/mysql\-5.6.15/bin/mysqld \-\-defaults\-file=/opt/mysql\-5.6.15/my.sandbox.cnf \-\-bootstrap
-    * Bootstrapped sandbox in 2.66 seconds
+    * Bootstrapped sandbox in 1.98 seconds
   Creating sandbox.sh initscript
     * Generated initscript in 0.00 seconds
-Sandbox created in 20.86 seconds
-Here are some useful sandbox commands
-   Start sandbox: /opt/mysql\-5.6.15/sandbox.sh start
-    Stop sandbox: /opt/mysql\-5.6.15/sandbox.sh stop
-Login to sandbox: /opt/mysql\-5.6.15/sandbox.sh mysql <options>
+Sandbox created in 38.50 seconds
+
+Here are some useful sandbox commands:
+       Start sandbox: /opt/mysql\-5.6.15/sandbox.sh start
+        Stop sandbox: /opt/mysql\-5.6.15/sandbox.sh stop
+  Connect to sandbox: /opt/mysql\-5.6.15/sandbox.sh mysql <options>
+   mysqldump sandbox: /opt/mysql\-5.6.15/sandbox.sh mysqldump <options>
+Install SysV service: /opt/mysql\-5.6.15/sandbox.sh install\-service
 .ft P
 .fi
 .UNINDENT
@@ -595,9 +613,9 @@ Defaults to \(aq.\(aq \- the current working directory.
 .B \-f <command>, \-\-filter\-command <command>
 Filter output files through this command.
 split\-mysqldump will detect most compression commands
-and set an appropriate suffix on its output files. E.g.
-\-f gzip results in a .gz suffix, \-f "bzip \-9" results in
-.bz2 suffix, etc.
+and set an appropriate extension on its output files. E.g.
+\-f gzip results in a gz extension, \-f "bzip \-9" results in
+bz2 extension, etc.
 .sp
 Defaults to "gzip \-1"
 .UNINDENT
