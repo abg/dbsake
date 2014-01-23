@@ -104,9 +104,13 @@ case $1 in
     stop)
         sandbox_stop
         ;;
-    restart|cond-restart|try-restart|force-reload)
+    restart|force-reload)
         sandbox_stop
         sandbox_start
+        ;;
+    condrestart|try-restart)
+        sandbox_status &> /dev/null || exit 0
+        sandbox_stop && start_start
         ;;
     reload)
         exit 3
@@ -143,7 +147,7 @@ case $1 in
         exit 0
         ;;
     *)
-        echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        echo "Usage: ${NAME} {start|stop|status|restart|condrestart|mysql|mysqldump|install-service}"
         exit 2
         ;;
 esac
