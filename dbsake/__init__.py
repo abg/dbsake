@@ -32,6 +32,14 @@ except ImportError:
 __version__ = '1.0.4-dev'
 
 
+def handle_uncaught_exception():
+    logging.fatal(('Uncaught exception.  (\xe2\x95\xaf\xc2\xb0\xe2\x96\xa1\xc2'
+                  '\xb0\xef\xbc\x89\xe2\x95\xaf\xef\xb8\xb5 \xe2\x94\xbb\xe2'
+                  '\x94\x81\xe2\x94\xbb').decode('utf8'), exc_info=True)
+    logging.fatal(("It's okay. \xe2\x94\xac\xe2\x94\x80\xe2\x94\xac\xe3\x83\x8e( \xc2\xba"
+                  '_ \xc2\xba\xe3\x83\x8e)').decode('utf8'))
+    logging.fatal("You can view and file bugs at https://github.com/abg/dbsake/issues")
+
 def discover_commands():
     walk_packages = pkgutil.walk_packages
     for importer, name, is_pkg in walk_packages(__path__, __name__ + '.'):
@@ -55,6 +63,7 @@ def configure_logging(quiet=False, debug=False):
 
 def main():
     sys.stdout = codecs.getwriter('utf8')(sys.stdout)
+    sys.stderr = codecs.getwriter('utf8')(sys.stderr)
     parser = optparse.OptionParser(prog='dbsake')
     valid_log_levels = [name.lower() for name in logging._levelNames
                         if isinstance(name, _basestring) and 
@@ -95,6 +104,5 @@ def main():
         return os.EX_SOFTWARE
     except:
         # uncaught exception
-        logging.fatal("Uncaught exception.", exc_info=True)
-        logging.fatal("Please file a bug at github.com/abg/dbsake/issues")
+        handle_uncaught_exception()
         return os.EX_SOFTWARE
