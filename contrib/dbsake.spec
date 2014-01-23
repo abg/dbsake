@@ -42,7 +42,7 @@ install --mode=0755 -d %{buildroot}%{_mandir}/man1
 install --mode=0644 contrib/dbsake.1.man %{buildroot}%{_mandir}/man1/dbsake.1
  
 %files
-%doc
+%doc README.md CHANGES LICENSE
 # For noarch packages: sitelib
 %{python_sitelib}/*
 %{_bindir}/dbsake
