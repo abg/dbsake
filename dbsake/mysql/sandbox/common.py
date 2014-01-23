@@ -76,9 +76,12 @@ def check_options(**kwargs):
 
 def prepare_sandbox_paths(sbopts):
     start = time.time()
-    for name in ('data', 'tmp'):
-        if path.makedirs(os.path.join(sbopts.basedir, name)):
-            info("    - Created %s/%s", sbopts.basedir, name)
+    try:
+        for name in ('data', 'tmp'):
+            if path.makedirs(os.path.join(sbopts.basedir, name)):
+                info("    - Created %s/%s", sbopts.basedir, name)
+    except OSError as exc:
+        raise SandboxError("%s" % exc)
     info("    * Prepared sandbox in %.2f seconds", time.time() - start)
 
 # Template renderer that can load + render templates in the templates
