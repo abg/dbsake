@@ -54,7 +54,7 @@ def check_options(**kwargs):
     if (dist != 'system' and
         not os.path.exists(dist) and
         not VERSION_CRE.match(dist)):
-            raise SandboxError("Incoherent mysql distribution: %s" % dist)
+            raise SandboxError("Invalid MySQL distribution '%s' (not a tarball and not a valid mysql version)" % dist)
 
     if kwargs['data_source'] and not DATASOURCE_CRE.match(kwargs['data_source']):
         raise SandboxError("Unsupported data source %s" %

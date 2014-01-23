@@ -65,7 +65,11 @@ def mysql_sandbox(sandbox_directory=None,
     from . import datasource
     from . import distribution
 
-    sbopts = common.check_options(**locals())
+    try:
+        sbopts = common.check_options(**locals())
+    except common.SandboxError as exc:
+        error("!! %s", exc)
+        return 1
 
     # a basic sanity check: make sure there's at least 1GB free (or 5%) before we start
     usage = disk_usage(sbopts.basedir)
