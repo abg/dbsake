@@ -36,6 +36,7 @@ class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')
 
     @classmethod
     def from_string(cls, value):
+        value = value.partition('-')[0]
         return cls(*map(int, value.split('.')))
 
 MySQLDistribution = collections.namedtuple('MySQLDistribution',
