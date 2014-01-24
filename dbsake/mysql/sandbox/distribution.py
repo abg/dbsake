@@ -372,8 +372,25 @@ def cache_download(name):
     with open(name, 'wb') as fileobj:
         yield fileobj
 
+def check_for_libaio(options):
+    """Verify that libaio is available, where necessary
+
+    See http:/bugs.mysql.com/60544 for details of why this check is being done
+
+    """
+    version = MySQLVersion.from_string(options.distribution)
+    if version < (5, 5, 4):
+        return
+    info("    - Checking for required libraries...")
+    import ctypes.util
+
+    if ctypes.util.find_library("aio") is None:
+        raise common.SandboxError("libaio not found - required by MySQL %s" %
+                                  (version, ))
+
 def distribution_from_download(options):
     version = options.distribution # the --mysql-distribution option
+    check_for_libaio(options)
     info("    - Attempting to deploy distribution for MySQL %s", version)
     # allow up to 2 attempts - so if the local cache fails we will at least
     # try the network path
