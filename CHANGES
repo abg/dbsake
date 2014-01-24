@@ -3,6 +3,7 @@ dbsake changelog
 
 Version 1.0.4
 -------------
+:released: Friday, January 24th 2014
 
 [dbsake]
 - dbsake no longer depends on argparse and argparse has been removed from the
