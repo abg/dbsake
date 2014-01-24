@@ -5,10 +5,14 @@ Version 1.0.5
 -------------
 [dbsake/mysql-sandbox]
 - added 'upgrade' action to sandbox.sh script
+  Resolves issue #1
 - --mysql-distribution=system (the default) no longer copies bin/mysql, or
   bin/mysqld_safe to the sandbox directory and instead assumes they are
   in the path. only mysqld continues to be copied to workaround
   apparmor preventing access to non-standard paths otherwise.
+- when --data-source is used, a new user is now added with the auth
+  plugin = mysql_native_password to avoid an issue with mysql 5.7.3
+  Resolves issue #2
 
 Version 1.0.4
 -------------
