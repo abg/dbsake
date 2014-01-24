@@ -272,6 +272,16 @@ easier:
     
   Example: ./sandbox.sh mysqldump --all-databases | gzip > backup.sql.gz
 
+- upgrade [options]
+
+  run mysql_upgrade against the sandbox
+
+  Example: ./sandbox.sh upgrade --upgrade-system-tables
+
+  This is useful in conjunction with the --data-source option where you
+  might load data from a previous MySQL version into a new version for
+  testing and want to perform an in-place upgrade of that data.
+
 - install-service
 
   attempt to install the sandbox.sh under /etc/init.d and add to default
