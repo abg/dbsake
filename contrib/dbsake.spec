@@ -10,7 +10,7 @@
 Name:           dbsake
 Version:        1.0.4
 Release:        1%{?dist}
-Summary:        a dba (s)wiss-(a)rmy-(k)nif(e) for mysql
+Summary:        A DBA's (s)wiss-(a)rmy-(k)nif(e) for mysql
 Group:          Applications/Databases
 
 License:        GPLv2
@@ -64,6 +64,11 @@ chmod 0755 %{buildroot}%{_bindir}/dbsake
 %{_mandir}/man1/dbsake.1*
 
 %changelog
+* Fri Jan 24 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.4-1
+- Added optional %%tag to allow building -dev releases
+- Overwrite setuptools generated %%{_bindir}/dbsake to remove runtime
+  dependency on setuptools
+
 * Thu Jan 16 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.3-1
 - Added %%pyver and %%pyvertag to allow building against EPEL5
   where python2.6 is not the default python version
