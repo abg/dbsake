@@ -29,6 +29,7 @@ from . import util
 info = logging.info
 debug = logging.debug
 warn = logging.warn
+error = logging.error
 
 class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')):
     def __str__(self):
@@ -53,7 +54,9 @@ def mysqld_version(mysqld):
     cmd = sarge.shell_format('{0} --version', mysqld)
     result = sarge.capture_both(cmd)
     if result.returncode != 0:
-        raise common.SandboxError("Failed to run mysqld --version")
+        error("    ! %s", result.stderr.text.rstrip())
+        raise common.SandboxError("%s failed (exit status: %d)" %
+                                  (cmd, result.returncode))
     m = re.search('(\d+[.]\d+[.]\d+)', result.stdout.text)
     if not m:
         raise common.SandboxError("Failed to discover version for %s" % cmd)
