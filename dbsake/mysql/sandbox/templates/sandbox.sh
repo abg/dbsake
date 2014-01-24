@@ -123,6 +123,10 @@ case $1 in
         shift
         ${mysql}dump --defaults-file=$defaults_file "$@"
         ;;
+    upgrade|mysql_upgrade)
+        shift
+        ${mysql}_upgrade --defaults-file=$defaults_file "$@"
+        ;;
     install-service)
         name=${2:-mysql-$version}
         if [[ -e /etc/init.d/${name} ]]; then
@@ -147,7 +151,7 @@ case $1 in
         exit 0
         ;;
     *)
-        echo "Usage: ${NAME} {start|stop|status|restart|condrestart|mysql|mysqldump|install-service}"
+        echo "Usage: ${NAME} {start|stop|status|restart|condrestart|mysql|mysqldump|upgrade|install-service}"
         exit 2
         ;;
 esac
