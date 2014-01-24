@@ -1,1 +1,1 @@
-recursive-include   templates *
+recursive-include   dbsake templates/*

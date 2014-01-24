@@ -3,15 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to DBSake
+Welcome to dbsake
 =================
 
-DBSake is a collection of command-line tools to perform various DBA related
+dbsake is a collection of command-line tools to perform various DBA related
 tasks for MySQL.
 
 .. code-block:: bash
 
-   # wget www.maybesql.net/get/dbsake
+   # curl http://get.dbsake.net > dbsake
    # chmod u+x dbsake
    # mysqldump --all-databases | ./dbsake split-mysqldump -C /var/lib/backups/today/
    ...
@@ -38,5 +38,7 @@ tasks for MySQL.
 Indices and tables
 ==================
 
-* :ref:`genindex`
-* :ref:`search`
+.. only:: html
+
+   * :ref:`genindex`
+   * :ref:`search`

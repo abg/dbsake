@@ -1,0 +1,125 @@
+{{default networking = None}}
+{{default additional_options = ()}}
+{{default open_files_limit = 1024}}
+{{default innodb_log_files_in_group = 2}}
+
+[client]
+{{if user}}
+user                            = "{{user|escape}}"
+{{endif}}
+{{if password}}
+password                        = "{{password|escape}}"
+{{endif}}
+{{if socket}}
+socket                          = {{socket}}
+{{endif}}
+
+[mysqld]
+{{if basedir}}
+basedir                         = {{basedir}}
+{{endif}}
+user                            = {{system_user}}
+datadir                         = {{datadir}}
+tmpdir                          = {{tmpdir}}
+socket                          = {{socket}}
+skip-name-resolve
+sql-mode                        = NO_ENGINE_SUBSTITUTION
+#event-scheduler                = 1
+
+## Cache
+thread-cache-size               = 0
+{{if mysql_version < (5,1)}}
+table-cache                     = 512
+{{else}}
+table-open-cache                = 512
+table-definition-cache          = 512
+{{endif}}
+query-cache-size                = 0
+query-cache-type                = 0
+
+## Per-thread Buffers
+#sort-buffer-size               = 2M
+
+## Temp Tables
+#tmp-table-size                 = 16M
+#max-heap-table-size            = 16M
+
+## Networking
+{{if not networking}}
+skip-networking
+{{else}}
+port                            = {{port}}
+bind-address                    = {{bind_address}}
+{{endif}}
+back-log                        = 50
+max-connections                 = 64
+max-connect-errors              = 10000
+max-allowed-packet              = 16M
+interactive-timeout             = 3600
+wait-timeout                    = 600
+
+### Storage Engines
+
+## MyISAM
+key-buffer-size                 = 8M
+myisam-sort-buffer-size         = 128M
+{{if mysql_version < (5,5,3)}}
+myisam-recover                  = DEFAULT
+{{else}}
+myisam-recover-options          = DEFAULT
+{{endif}}
+
+## InnoDB
+innodb-buffer-pool-size         = 64M
+{{if innodb_log_file_size}}
+innodb-log-file-size            = {{innodb_log_file_size}}
+{{else}}
+innodb-log-file-size            = 32M
+{{endif}}
+{{if innodb_log_files_in_group != 2 }}
+innodb-log-files-in-group       = {{innodb_log_files_in_group}}
+{{endif}}
+innodb-log-buffer-size          = 8M
+innodb-file-per-table           = 1
+innodb-open-files               = 300
+{{if (5,1,32) < mysql_version < (5, 5)}}
+ignore-builtin-innodb
+plugin-load                     = ha_innodb_plugin.so
+{{endif}}
+
+## Replication
+server-id                       = 1
+#log-bin                        = /var/lib/mysqllogs/bin-log
+#relay-log                      = /var/lib/mysqllogs/relay-log
+relay-log-space-limit           = 16G
+expire-logs-days                = 7
+#read-only                      = 1
+#sync-binlog                    = 1
+#log-slave-updates              = 1
+#binlog-format                  = MIXED
+#auto-increment-offset          = 1
+#auto-increment-increment       = 2
+
+## Logging
+{{if mysql_version < (5,1)}}
+log-slow-queries                = {{datadir}}/slow.log
+{{else}}
+log-output                      = FILE
+slow-query-log                  = 1
+slow-query-log-file             = {{datadir}}/slow.log
+log-slow-slave-statements
+log-slow-admin-statements
+{{endif}}
+long-query-time                 = 2
+
+{{if additional_options}}
+
+## Additional options
+{{for option in additional_options}}
+{{option}}
+{{endfor}}
+{{endif}}
+
+[mysqld_safe]
+log-error                       = {{datadir}}/mysqld.log
+open-files-limit                = {{open_files_limit}}

@@ -1,14 +1,14 @@
 Getting Started
 ---------------
 
-A quick way to get started is to fetch dbsake from http://www.maybesql.com/get/dbake
+A quick way to get started is to fetch dbsake from http://docs.dbsake.net/get/dbake
 
 This is an executable .zip file - once downloaded you can run it via python or
 make it executable and run it directly.
 
 .. code-block:: bash
 
-   $ wget http://www.maybesql.com/get/dbsake
+   $ wget http://docs.dbsake.net/get/dbsake
    $ python dbsake --help
    usage: dbsake [-h] [--version] [-l {warn,error,debug,info,warning,critical}]
                  ...
