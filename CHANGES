@@ -13,6 +13,9 @@ Version 1.0.5
 - when --data-source is used, a new user is now added with the auth
   plugin = mysql_native_password to avoid an issue with mysql 5.7.3
   Resolves issue #2
+- when attempting to download a version > 5.5, dbsake will now
+  check for libaio and fail early if it is not found.  This behavior
+  can be disabled by using the new --skip-libcheck option.
 
 Version 1.0.4
 -------------
