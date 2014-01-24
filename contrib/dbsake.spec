@@ -8,7 +8,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name:           dbsake
-Version:        1.0.4
+Version:        1.0.5
 Release:        1%{?dist}
 Summary:        A DBA's (s)wiss-(a)rmy-(k)nif(e) for mysql
 Group:          Applications/Databases
