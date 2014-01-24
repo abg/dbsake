@@ -31,7 +31,7 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                         ['basedir',
                                          'distribution', 'datasource',
                                          'tables', 'exclude_tables',
-                                         'cache_policy',
+                                         'cache_policy', 'skip_libcheck'
                                         ])
 
 
@@ -70,7 +70,8 @@ def check_options(**kwargs):
         datasource=kwargs['data_source'],
         tables=kwargs['table'],
         exclude_tables=kwargs['exclude_table'],
-        cache_policy=kwargs['cache_policy']
+        cache_policy=kwargs['cache_policy'],
+        skip_libcheck=kwargs['skip_libcheck']
     )
 
 

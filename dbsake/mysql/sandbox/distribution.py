@@ -29,6 +29,7 @@ from . import util
 info = logging.info
 debug = logging.debug
 warn = logging.warn
+error = logging.error
 
 class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')):
     def __str__(self):
@@ -36,6 +37,7 @@ class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')
 
     @classmethod
     def from_string(cls, value):
+        value = value.partition('-')[0]
         return cls(*map(int, value.split('.')))
 
 MySQLDistribution = collections.namedtuple('MySQLDistribution',
@@ -52,11 +54,12 @@ def mysqld_version(mysqld):
     cmd = sarge.shell_format('{0} --version', mysqld)
     result = sarge.capture_both(cmd)
     if result.returncode != 0:
-        raise common.SandboxError("Failed to run mysqld --version")
+        error("    ! %s", result.stderr.text.rstrip())
+        raise common.SandboxError("%s failed (exit status: %d)" %
+                                  (cmd, result.returncode))
     m = re.search('(\d+[.]\d+[.]\d+)', result.stdout.text)
     if not m:
         raise common.SandboxError("Failed to discover version for %s" % cmd)
-    #return tuple(map(int, m.group(0).split('.')))
     return MySQLVersion.from_string(m.group(0))
 
 def first_subdir(basedir, *paths):
@@ -372,8 +375,29 @@ def cache_download(name):
     with open(name, 'wb') as fileobj:
         yield fileobj
 
+def check_for_libaio(options):
+    """Verify that libaio is available, where necessary
+
+    See http:/bugs.mysql.com/60544 for details of why this check is being done
+
+    """
+    version = MySQLVersion.from_string(options.distribution)
+    if version < (5, 5, 4):
+        return
+    info("    - Checking for required libraries...")
+    import ctypes.util
+
+    if ctypes.util.find_library("aio") is None:
+        msg = "libaio not found - required by MySQL %s" % (version, )
+        if options.skip_libcheck:
+            warn("    ! %s", msg)
+            warn("    ! (continuing anyway due to --skip-libcheck")
+        else:
+            raise common.SandboxError(msg)
+
 def distribution_from_download(options):
     version = options.distribution # the --mysql-distribution option
+    check_for_libaio(options)
     info("    - Attempting to deploy distribution for MySQL %s", version)
     # allow up to 2 attempts - so if the local cache fails we will at least
     # try the network path
