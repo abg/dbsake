@@ -47,7 +47,15 @@ rm -rf %{buildroot}
 # install manpage
 install --mode=0755 -d %{buildroot}%{_mandir}/man1
 install --mode=0644 contrib/dbsake.1.man %{buildroot}%{_mandir}/man1/dbsake.1
- 
+cat <<EOF > %{buildroot}%{_bindir}/dbsake
+#!%{__python}
+import sys
+if __name__ == '__main__':
+    sys.exit(__import__('dbsake').main())
+EOF
+chmod 0755 %{buildroot}%{_bindir}/dbsake
+
+
 %files
 %doc README.md CHANGES LICENSE
 # For noarch packages: sitelib
