@@ -60,7 +60,6 @@ def mysqld_version(mysqld):
     m = re.search('(\d+[.]\d+[.]\d+)', result.stdout.text)
     if not m:
         raise common.SandboxError("Failed to discover version for %s" % cmd)
-    #return tuple(map(int, m.group(0).split('.')))
     return MySQLVersion.from_string(m.group(0))
 
 def first_subdir(basedir, *paths):
