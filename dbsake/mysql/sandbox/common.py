@@ -179,6 +179,8 @@ def generate_sandbox_user_grant(datadir):
             # initialize to a bad hash so at worst, the password
             # does not work
             values.append("'_invalid'")
+        elif column.name == 'plugin':
+            values.append("'mysql_native_password'")
         elif column.default is not None:
             values.append(column.default)
         else:
