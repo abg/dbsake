@@ -29,7 +29,7 @@ except ImportError:
         emit = handle
         def createLock(self): self.lock = None
 
-__version__ = '1.0.4-dev'
+__version__ = '1.0.4'
 
 
 def handle_uncaught_exception():

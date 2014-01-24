@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "DBSAKE" "1" "January 23, 2014" "1.0.4-dev" "dbsake"
+.TH "DBSAKE" "1" "January 24, 2014" "1.0.4" "dbsake"
 .SH NAME
 dbsake \- dbsake Documentation
 .
@@ -175,10 +175,10 @@ Here is the basic dbsake usage:
 Usage: dbsake [options] [subcommand] [subcommand\-options...]
 
 Options:
-  \-h, \-\-help            show this help message and exit
-  \-V, \-\-version         show dbsake version and exit
-  \-l <log\-level>, \-\-log\-level=<log\-level>
-                        Choose a log level; default: info
+  \-h, \-\-help     show this help message and exit
+  \-V, \-\-version  show dbsake version and exit
+  \-q, \-\-quiet    Silence logging output
+  \-d, \-\-debug    Enable debug messages
 .ft P
 .fi
 .UNINDENT
@@ -202,9 +202,16 @@ Output the current dbsake version and exit
 .UNINDENT
 .INDENT 0.0
 .TP
-.B \-l, \-\-log\-level
-Adjust the dbsake log level.  This is mostly useful to enable debugging
-by running dbsake \-\-log\-level=debug <subcommand> [subcommand\-options...]
+.B \-q, \-\-quiet
+Suppresses all logging output.  Commands that output to stdout will still
+emit output, but no logging will be performed.  You can use the exit
+status of dbsake to detect failure in these cases
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debugging output.  This enables more verbose logs that are typically
+not necessary, but may be helpful for troubleshooting.
 .UNINDENT
 .SS mysql\-sandbox
 .sp
@@ -416,6 +423,81 @@ local \- check cache, but fail if a local tarball is not present
 .UNINDENT
 .sp
 New in version 1.0.4.
+.SS Using the sandbox.sh control script
+.sp
+Usage: ./sandbox.sh <action> [options]
+.sp
+When creating a sandbox, mysql\-sandbox generate a simple bash script to control
+the sandbox in ./sandbox.sh under the sandbox directory.  This follows the
+pattern of a SysV init script and has many standard actions:
+.INDENT 0.0
+.IP \(bu 2
+start
+.sp
+start the sandbox (noop if already started)
+.INDENT 2.0
+.TP
+.B Note: sandbox.sh start passes any additional options directly to the
+mysqld_safe script.  So you can do things like:
+./sandbox.sh start \-\-init\-file=reset_root.sql
+.UNINDENT
+.IP \(bu 2
+stop
+.sp
+stop the sandbox (noop if already stopped)
+.IP \(bu 2
+restart
+.sp
+stop then start the sandbox
+.IP \(bu 2
+condrestart
+.sp
+only restart if sandbox is running
+.IP \(bu 2
+status
+check if the sandbox is running
+.UNINDENT
+.sp
+Additionally there are several custom actions to make managing the sandbox
+easier:
+.INDENT 0.0
+.IP \(bu 2
+mysql [options]
+.sp
+connect to the sandbox using the mysql command line client
+.sp
+You can pass any option you might pass to mysql here.  I.e:
+./sanbox.sh mysql \-e \(aqSHOW ENGINE INNODB STATUSG\(aq
+For convenience the action \(aquse\(aq is an alias for \(aqmysql\(aq
+.IP \(bu 2
+mysqldump [options]
+.sp
+run mysqldump against the sandbox
+.sp
+Example: ./sandbox.sh mysqldump \-\-all\-databases | gzip > backup.sql.gz
+.IP \(bu 2
+install\-service
+.sp
+attempt to install the sandbox.sh under /etc/init.d and add to default
+runlevels.  This is effectively just an alias for:
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# cp sandbox.sh /etc/init.d/${name}
+# chkconfig \-\-add ${name} && chkconfig ${name} on
+
+Under ubuntu update\-rc.d is used instead of chkconfig.
+
+install\-service accept one argument as the name of the service to install.
+By default this will be called mysql\-${version} where $version is the
+current mysqld version being used (e.g. 5.6.15)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
 .SS fincore
 .sp
 Discover which parts of a file are cached by the OS.
@@ -935,9 +1017,6 @@ Extract binary log filename/position from ibdata
 Required Arguments:
 
   path
-
-(specifying a double hyphen (\-\-) in the argument list means all
-subsequent arguments are treated as bare arguments, not options)
 .ft P
 .fi
 .UNINDENT
