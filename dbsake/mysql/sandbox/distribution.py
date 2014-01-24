@@ -119,14 +119,14 @@ def distribution_from_system(options):
     # then return an appropriate MySQLDistribution instance
     bindir = os.path.join(options.basedir, 'bin')
     dbsake_path.makedirs(bindir, 0770, exist_ok=True)
-    for name in (mysqld, mysqld_safe, mysql):
+    for name in [mysqld]:
         shutil.copy2(name, bindir)
     info("    - Copied minimal MySQL commands to %s", bindir)
     return MySQLDistribution(
         version=version,
         mysqld=os.path.join(bindir, os.path.basename(mysqld)),
-        mysqld_safe=os.path.join(bindir, os.path.basename(mysqld_safe)),
-        mysql=os.path.join(bindir, os.path.basename(mysql)),
+        mysqld_safe=mysqld_safe,
+        mysql=mysql,
         basedir=basedir,
         sharedir=sharedir,
         libexecdir=bindir,
