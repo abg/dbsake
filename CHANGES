@@ -3,6 +3,12 @@ dbsake changelog
 
 Version 1.0.5
 -------------
+[dbsake/mysql-sandbox]
+- added 'upgrade' action to sandbox.sh script
+- --mysql-distribution=system (the default) no longer copies bin/mysql, or
+  bin/mysqld_safe to the sandbox directory and instead assumes they are
+  in the path. only mysqld continues to be copied to workaround
+  apparmor preventing access to non-standard paths otherwise.
 
 Version 1.0.4
 -------------
