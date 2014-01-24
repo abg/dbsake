@@ -222,6 +222,17 @@ Options
 
 .. versionadded:: 1.0.4
 
+.. option:: --skip-libcheck
+
+   As of dbsake 1.0.5, if a version of MySQL >= 5.5.4 is requested for
+   download, dbsake checks for libaio on the system.  Without libaio
+   mysqld from any recent version of MySQL will fail to start at all.
+   This option allows proceeding anyway in case, dbsake is not detecting libaio
+   correctly.  Use of this option will often cause the sandbox process to just
+   fail later in the process.
+
+.. versionadded:: 1.0.5
+
 Using the sandbox.sh control script
 ...................................
 

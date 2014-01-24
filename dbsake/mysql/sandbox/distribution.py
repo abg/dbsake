@@ -385,8 +385,12 @@ def check_for_libaio(options):
     import ctypes.util
 
     if ctypes.util.find_library("aio") is None:
-        raise common.SandboxError("libaio not found - required by MySQL %s" %
-                                  (version, ))
+        msg = "libaio not found - required by MySQL %s" % (version, )
+        if options.skip_libcheck:
+            warn("    ! %s", msg)
+            warn("    ! (continuing anyway due to --skip-libcheck")
+        else:
+            raise common.SandboxError(msg)
 
 def distribution_from_download(options):
     version = options.distribution # the --mysql-distribution option
