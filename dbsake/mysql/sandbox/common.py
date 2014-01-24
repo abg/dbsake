@@ -180,6 +180,9 @@ def generate_sandbox_user_grant(datadir):
             # does not work
             values.append("'_invalid'")
         elif column.name == 'plugin':
+            # add this to satisfy MySQL 5.7 in cases
+            # where we're loading a 5.5+ tarball into a newer
+            # version
             values.append("'mysql_native_password'")
         elif column.default is not None:
             values.append(column.default)
