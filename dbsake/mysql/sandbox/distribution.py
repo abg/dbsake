@@ -137,44 +137,59 @@ def distribution_from_system(options):
     )
 
 
-def _fix_tarinfo_user_group(tarinfo):
-    # this only matters if we're already root
-    # and we don't want user/group settings to
-    # carry over from whatever weird value was
-    # in the tarball
-    # default to mysql:mysql - and fallback to
-    # root:root (0:0) if necessary
-    tarinfo.uname = 'mysql'
-    tarinfo.gname = 'mysql'
-    tarinfo.uid = 0
-    tarinfo.gid = 0
+def unpack_tarball_distribution(stream, destdir):
+    """Unpack a MySQL tar distribution in a directory
 
-def unpack_tarball_distribution(stream, path):
-    debug("    # unpacking tarball stream=%r destination=%r", stream, path)
+    This method filters several items from the tarball:
+        - static libraries from ./lib/
+        - *_embedded and mysqld-debug from ./bin/
+        - ./mysql-test
+        - ./sql-bench
+
+    :param stream: stream of bytes from which the tarball data can be read
+    :param destdir: destination directory files should be unpacked to
+    """
+    debug("    # unpacking tarball stream=%r destination=%r", stream, destdir)
     tar = tarfile.open(None, 'r|*', fileobj=stream)
+    total_size = 0
+    extracted_size = 0
     # python 2.6's tarfile does not support the context manager protocol
     # so try...finally is used here
     try:
         for tarinfo in tar:
+            total_size += tarinfo.size
             if not (tarinfo.isreg() or tarinfo.issym()): continue
-            tarinfo.name = os.path.normpath(tarinfo.name)
-            name = os.path.join(*tarinfo.name.split(os.sep)[1:])
-            item0 = name.split(os.sep)[0]
-            if item0 in ('bin', 'lib', 'share', 'scripts'):
+            name = os.path.normpath(tarinfo.name).partition(os.sep)[2]
+            name0 = name.partition(os.sep)[0]
+            if (name0 == 'bin' and
+                not name.endswith('_embedded') and
+                not name.endswith('mysqld-debug')) or \
+               (name0 == 'lib' and not name.endswith('.a')) or \
+               name0 == 'share':
                 tarinfo.name = name
-                #debug("Extracting %s to %s", tarinfo.name, path)
-            elif item0 in ('COPYING', 'README', 'INSTALL-BINARY'):
-                tarinfo.name = os.sep.join(['docs.mysql', item0])
-                #debug("Extracting documentation %s to %s", tarinfo.name, path)
-            elif name == 'docs/ChangeLog':
-                tarinfo.name = 'docs.mysql/ChangeLog'
-                #debug("Extracting Changelog to %s", tarinfo.name)
+            elif name0 == 'scripts':
+                tarinfo.name = os.path.join('bin', os.path.basename(name))
+            elif name in ('COPYING', 'README', 'INSTALL-BINARY',
+                          'docs/ChangeLog'):
+                tarinfo.name = os.path.join('docs.mysql',
+                                            os.path.basename(name))
             else:
+                debug("    # Filtering: %s", name)
                 continue
-            _fix_tarinfo_user_group(tarinfo)
-            tar.extract(tarinfo, path)
+            # reset the user to something sane
+            tarinfo.uname = 'mysql'
+            tarinfo.group = 'mysql'
+            tarinfo.uid = 0
+            tarinfo.gid = 0
+            # finally extract the element
+            debug("    # Extracting: %s", name)
+            tar.extract(tarinfo, destdir)
+            extracted_size += tarinfo.size
     finally:
         tar.close()
+        from dbsake.util import format_filesize
+        info("    * Total tarball size: %s Extracted size: %s",
+             format_filesize(total_size), format_filesize(extracted_size))
 
 def distribution_from_tarball(options):
     """Deploy a MySQL distribution from a binary tarball
