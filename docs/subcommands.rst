@@ -79,10 +79,10 @@ Usage
       -D --data-source         how to populate the sandbox; this defaults to
                                bootstrapping an empty mysql instance similar to
                                running mysql_install_db
-      -t --table               glob pattern include from --data; This option
+      -t --table               glob pattern include from --data-source; This option
                                should be in database.table format and may be
                                specified multiple times
-      -T --exclude-table       glob pattern to exclude from --data; This option
+      -T --exclude-table       glob pattern to exclude from --data-source; This option
                                should be in database.table format and may be
                                specified multiple times
       -c --cache-policy        the cache policy to use when downloading an mysql
@@ -181,7 +181,7 @@ Options
    via --mysql-distribution /path/to/my/tarball
 
 
-.. option:: -D, --data <tarball>
+.. option:: -D, --data-source <tarball>
 
    Specify a tarball that will be extracted to the sandbox datadir prior
    to the bootstrap process.  This can be used to populate the sandbox
@@ -191,18 +191,18 @@ Options
 
 .. option:: -t, --table <glob>
 
-   Specify a glob pattern to filter elements from the --data option. If --data
-   is not specified this option has no effect. <glob> should be of the form
-   database.table with optional glob special characters.  This use the python
-   fnmatch mechanism under the hood so is limited to only the \*, ?, [seq] and
-   [!seq] glob operations.
+   Specify a glob pattern to filter elements from the --data-source option. If
+   --data-source is not specified this option has no effect. <glob> should be
+   of the form database.table with optional glob special characters.  This use
+   the python fnmatch mechanism under the hood so is limited to only the \*, ?,
+   [seq] and [!seq] glob operations.
 
 .. versionadded:: 1.0.4
 
 .. option:: -T, --exclude-table <glob>
 
-   Specify a glob pattern to filter elements from the --data option.  If --data
-   is not specified this option has no effect.
+   Specify a glob pattern to filter elements from the --data-source option.  If
+   --data-source is not specified this option has no effect.
 
 .. versionadded:: 1.0.4
 
