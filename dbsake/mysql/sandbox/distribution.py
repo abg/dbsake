@@ -149,7 +149,7 @@ def unpack_tarball_distribution(stream, destdir):
     :param stream: stream of bytes from which the tarball data can be read
     :param destdir: destination directory files should be unpacked to
     """
-    debug("    # unpacking tarball stream=%r destination=%r", stream, path)
+    debug("    # unpacking tarball stream=%r destination=%r", stream, destdir)
     tar = tarfile.open(None, 'r|*', fileobj=stream)
     total_size = 0
     extracted_size = 0
@@ -161,7 +161,6 @@ def unpack_tarball_distribution(stream, destdir):
             if not (tarinfo.isreg() or tarinfo.issym()): continue
             name = os.path.normpath(tarinfo.name).partition(os.sep)[2]
             name0 = name.partition(os.sep)[0]
-            debug("    # name=%r name0=%r", name, name0)
             if (name0 == 'bin' and
                 not name.endswith('_embedded') and
                 not name.endswith('mysqld-debug')) or \
@@ -184,7 +183,7 @@ def unpack_tarball_distribution(stream, destdir):
             tarinfo.gid = 0
             # finally extract the element
             debug("    # Extracting: %s", name)
-            tar.extract(tarinfo, path)
+            tar.extract(tarinfo, destdir)
             extracted_size += tarinfo.size
     finally:
         tar.close()

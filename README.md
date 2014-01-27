@@ -1,6 +1,6 @@
 ![dbsake](https://raw.github.com/abg/dbsake/master/sake-icon.png)
 
-## DBSake
+## dbsake
 
 dbsake - a (s)wiss-(a)rmy-(k)nif(e) for MySQL
 
