@@ -514,6 +514,75 @@ def check_for_libaio(options):
         else:
             raise common.SandboxError(msg)
 
+def download_tarball_asc(options):
+    """Download the signature for a tarball"""
+    version = options.distribution
+    cdn = MySQLCDNInfo.from_version(version)
+    for url in cdn:
+        try:
+            stream = urllib2.urlopen(url + '.asc')
+        except urllib2.HTTPError as exc:
+            if exc.code != 404:
+                raise common.SandboxError("Failed to download: %s" % exc)
+            else:
+                continue
+        except urllib2.URLError as exc:
+            raise common.SandboxError("Failed to download: %s" % exc)
+        else:
+            break # stream was opened successfully
+    else:
+        raise common.SandboxError("GPG signature not found for %s" % version)
+
+    asc_path = discover_cache_path(cdn.name + '.asc')
+    dbsake_path.makedirs(os.path.dirname(asc_path), exist_ok=True)
+    with open(asc_path, 'wb') as fileobj:
+        fileobj.write(stream.read())
+        info("    - Wrote %s", fileobj.name)
+        return fileobj.name
+
+def initialize_gpg():
+    gpghome = os.path.expanduser('~/.dbsake/gpg')
+    dbsake_path.makedirs(gpghome, mode=0o0700, exist_ok=True)
+    gpg = dbsake_path.which('gpg') or dbsake_path.which('gpg2')
+    if not gpg:
+        raise common.SandboxError("Failed to find gpg")
+    cmd = sarge.shell_format('{0} -k 5072E1F5', gpg)
+    debug("    # Verifying .dbsake/gpg is initialized")
+    ret = sarge.capture_both(cmd, env={'GNUPGHOME' : gpghome})
+    if not ret.returncode:
+        return # all is well
+    else:
+        for line in ret.stderr:
+            debug("    # gpg: %s", line.rstrip())
+
+    # else import the mysql key
+    info("    - Importing mysql public key to %s", gpghome)
+    cmd = sarge.shell_format('{0} --keyserver=pgp.mit.edu --recv-keys 5072E1F5', gpg)
+    ret = sarge.capture_both(cmd, env={'GNUPGHOME' : gpghome})
+    for line in ret.stderr:
+        debug("    # %s", line.rstrip())
+    if ret.returncode != 0:
+        raise common.SandboxError("Failed to import mysql public key")
+
+@contextlib.contextmanager
+def gpg_verify_stream(signature):
+    from subprocess import PIPE
+
+    gpghome = os.path.expanduser('~/.dbsake/gpg')
+    gpg = dbsake_path.which('gpg') or dbsake_path.which('gpg2')
+    cmd = sarge.shell_format('{0} --verify {1} -', gpg, signature)
+    info("    - Verifying gpg signature via: %s", cmd)
+    with sarge.capture_both(cmd, input=PIPE, async=True, env={'GNUPGHOME' : gpghome }) as pipeline:
+        stdin = pipeline.processes[0].stdin
+        yield stdin
+        stdin.close()
+    for line in pipeline.stderr:
+        debug("    # %s", line.rstrip())
+    if pipeline.returncode != 0:
+        raise common.SandboxError("gpg signature not valid")
+    else:
+        info("    - GPG signature validated")
+
 def distribution_from_download(options):
     """Deploy a MySQL distribution via a download from cdn.mysql.com
 
@@ -542,6 +611,10 @@ def distribution_from_download(options):
     check_for_libaio(options)
     info("    - Attempting to deploy distribution for MySQL %s", version)
     checksum = hashlib.new('md5')
+
+    if not options.skip_gpgcheck:
+        initialize_gpg()
+        signature = download_tarball_asc(options)
     with download_mysql(version, 'x86_64', options.cache_policy) as stream:
         managers = []
         stream.add(checksum.update)
@@ -553,10 +626,12 @@ def distribution_from_download(options):
             info("    - Caching download: %s", stream.headers['x-dbsake-cache'])
         else:
             debug("    # Not caching download")
+
+        if not options.skip_gpgcheck:
+            managers.append(gpg_verify_stream(signature))
         with contextlib.nested(*managers) as ctx:
-            if ctx:
-                stream.add(ctx[0].write)
-                debug("Caching download to %s", ctx[0].name)
+            for _f in ctx:
+                stream.add(_f.write)
             info("    - Unpacking tar stream. This may take some time")
             unpack_tarball_distribution(stream, options.basedir)
 
