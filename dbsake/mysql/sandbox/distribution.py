@@ -414,8 +414,6 @@ def distribution_from_download(options):
     version = options.distribution # the --mysql-distribution option
     check_for_libaio(options)
     info("    - Attempting to deploy distribution for MySQL %s", version)
-    # allow up to 2 attempts - so if the local cache fails we will at least
-    # try the network path
     checksum = hashlib.new('md5')
     with download_mysql(version, 'x86_64', options.cache_policy) as stream:
         managers = []
