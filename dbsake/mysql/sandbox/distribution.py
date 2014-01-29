@@ -32,6 +32,19 @@ warn = logging.warn
 error = logging.error
 
 class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')):
+    """Represent a MySQL version
+
+    This class represents a MySQL version as a tuple of integer.  I.e. MySQL
+    '5.6.15' is represented as (5, 6, 15).  This is used to make version
+    comparisons easier.
+
+    Typically instances are instantiated using the from_string class method
+
+    >>> MySQLVersion.from_string('5.6.15')
+    MySQLVersion(major=5, minor=6, release=15)
+    >>> MySQLVersion.from_string('5.6.15') > (5, 5)
+    True
+    """
     def __str__(self):
         return '.'.join(str(part) for part in self)
 
@@ -40,6 +53,7 @@ class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')
         value = value.partition('-')[0]
         return cls(*map(int, value.split('.')))
 
+#: Represent a MySQL distribution
 MySQLDistribution = collections.namedtuple('MySQLDistribution',
                                            ['version',
                                             'mysqld',
@@ -51,6 +65,20 @@ MySQLDistribution = collections.namedtuple('MySQLDistribution',
                                             'plugindir'])
 
 def mysqld_version(mysqld):
+    """Discover the MySQL version from a mysqld binary
+
+    This method runs mysqld --version and extract out the
+    version string to create a MySQLVersion tuple.  This is used
+    to allow other portions of dbsake to check the mysql version
+    in use and take appropriate action.  This is largely used by
+    the generate_defaults method in dbsake.mysql.sandbox.common
+    to conditionally enable my.cnf options based on the target
+    MySQL version.
+
+    :param mysqld: path to mysqld binary
+    :returns: MySQLVersion instance
+    """
+
     cmd = sarge.shell_format('{0} --version', mysqld)
     result = sarge.capture_both(cmd)
     if result.returncode != 0:
@@ -62,9 +90,11 @@ def mysqld_version(mysqld):
         raise common.SandboxError("Failed to discover version for %s" % cmd)
     return MySQLVersion.from_string(m.group(0))
 
+# XXX this documentation isn't very clear
 def first_subdir(basedir, *paths):
     """Return the first path from ``paths`` that exists under basedir
 
+    :returns: first path that exists or None if no path was found
     """
     for name in paths:
         cpath = os.path.normpath(os.path.join(basedir, name))
@@ -73,6 +103,29 @@ def first_subdir(basedir, *paths):
     return None
 
 def deploy(options):
+    """Deploy a MySQL distribution
+
+    This is the entry point to the distribution deployment API.  Currently
+    this method supports either 'system', a tarball path or a mysql version
+    string that facilitates downloading a tarball.
+
+    'system' implies finding MySQL binaries and support files from common OS
+    paths as provided by various distributions.  Binaries will typically be
+    installed under /usr/bin, /usr/sbin or /usr/libexec.  Support files are
+    often stored under /usr/share/mysql/.
+
+    The tarball method expects a path to a binary distribution of MySQL and
+    unpacks the tarball into the sandbox directory.
+
+    The version method expects a version string along the lines of
+    <major>.<minor>.<release>[-suffix] and will attempt to fetch the tarball
+    on the user's behalf from cdn.mysql.com.  Aside from the download
+    logic this is otherwise identical to the tarball method.
+
+    :param options: SandboxOptions instance
+    :returns: MySQLDistribution instance describing the distribution
+    """
+
     start = time.time()
     try:
         if options.distribution == 'system':
@@ -226,6 +279,16 @@ def distribution_from_tarball(options):
     )
 
 class MySQLCDNInfo(collections.namedtuple("MySQLCDNInfo", "name locations")):
+    """Encode information about the MySQL CDN
+
+    This class provides a simple lookup table for expected tarball names and
+    urls to try to fetch from in order to obtain these tarballs.
+
+    This class is generally instantiated using the from_version class method
+
+    To fetch a url, iterate over the instance which yields likely urls for
+    various locations where a tarball might be found.
+    """
     VERSIONS = {
         '5.0' : dict(
             name='mysql-{version}-linux-{arch}-glibc23.tar.gz',
@@ -280,6 +343,11 @@ class MySQLCDNInfo(collections.namedtuple("MySQLCDNInfo", "name locations")):
             yield '/'.join([self.prefix, path, self.name])
 
 def open_http_download(url):
+    """Open a stream to tarball from cdn.mysql.com
+
+    :param url: url to fetch from
+    :returns: file-like object whose contents are a tarball
+    """
     try:
         stream = urllib2.urlopen(url)
         # since this from cdn.mysql.com the etag encodes the md5sum
@@ -297,6 +365,16 @@ def open_http_download(url):
         raise common.SandboxError("Failed http download: %s" % exc)
 
 def open_cached_download(path):
+    """Open a stream to a cache binary tarball distribution
+
+    This method finds the distribution specified by ``path`` and verifies
+    that the stored md5sum exists and the stored file size matches. If
+    the cached download looks incorrect a SandboxError is raised and
+    allows a fallback to a network download.
+
+    :param name: absolute path to the cached tarball
+    :return: file-like object to cached download
+    """
     # first check md5 information
     checksum = None
     length = None
@@ -329,6 +407,15 @@ def open_cached_download(path):
         raise common.SandboxError("Invalid cache file %s" % path)
 
 def discover_cache_path(name):
+    """Discover the cache path for a base filename
+
+    This computes the path from either the DBSAKE_CACHE environment variable
+    and defaulting to ~/.dbsake/cache if DBSAKE_CACHE is not otherwise
+    defined.
+
+    :param name: base filename to cache
+    :returns: absolute path name where the file should be written
+    """
     # pull cache directory from environment and default to ~/.dbsake.cache
     cache_directory = os.environ.get('DBSAKE_CACHE', '~/.dbsake/cache')
     cache_path = os.path.join(cache_directory, name)
@@ -339,6 +426,15 @@ def discover_cache_path(name):
     return os.path.normpath(cache_path)
 
 def download_mysql(version, arch, cache_policy):
+    """Open a download stream for a MySQL binary tarball distribution
+
+    :param version: version of MySQL to download
+    :param arch: architecture to download for (should be either x86_64 or i686)
+    :param cache_policy: how the download should be cached; one of:
+                         'always', 'never', 'refresh', 'local'
+    :returns: file-like object whose contents are a binary tarball
+    :raises: SandboxError on error
+    """
     cdn = MySQLCDNInfo.from_version(version)
     debug("    # Found MySQL CDN data: %r", cdn)
 
@@ -386,6 +482,14 @@ def download_mysql(version, arch, cache_policy):
 
 @contextlib.contextmanager
 def cache_download(name):
+    """Cache a download in the specified path
+
+    This is a context manager that provides a file object to write a cached
+    download to.  This is used internally by the distribution_from_download
+    method.
+
+    :param name: path to write a cached download ot
+    """
     dbsake_path.makedirs(os.path.dirname(name), exist_ok=True)
     with open(name, 'wb') as fileobj:
         yield fileobj
@@ -411,6 +515,29 @@ def check_for_libaio(options):
             raise common.SandboxError(msg)
 
 def distribution_from_download(options):
+    """Deploy a MySQL distribution via a download from cdn.mysql.com
+
+    Given a version specified by ``SandboxOptions.distribution`` attempt to
+    find a binary tarball distribution from cdn.mysql.com and unpack the
+    archive into the sandbox directory.
+
+    This method will optionally cache downloads to avoid hitting the network
+    for repeated sandbox deployments of the same version.  Downloads are
+    cached in ~/.dbsake/cache and can be customized by setting the DBSAKE_CACHE
+    environment variable to some other path.
+
+    The tarball is verified by leveraging the etag provided by MySQL's
+    CDN which provides an md5sum embedded in the etag.  This checksum is saved
+    in the cache directory in a format understood by /usr/bin/md5sum so the
+    download can be manually verified later.
+
+    Other than the download logic, the resulting deployment is identical to the
+    distribution_from_tarball method used if a binary distribution is provided
+    directly to dbsake.
+
+    :param options: SandboxOptions instance
+    :raises: SandboxError on error
+    """
     version = options.distribution # the --mysql-distribution option
     check_for_libaio(options)
     info("    - Attempting to deploy distribution for MySQL %s", version)
