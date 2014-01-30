@@ -57,6 +57,9 @@ and networking disabled.
 A simple shell script is provided to start, stop and connect
 to the MySQL instance.
 
+.. versionchanged:: 1.0.5
+   dbsake verifies the gpg signature of downloaded MySQL tarball distributions
+
 Usage
 .....
 
@@ -244,6 +247,13 @@ Options
    This option allows proceeding anyway in case, dbsake is not detecting libaio
    correctly.  Use of this option will often cause the sandbox process to just
    fail later in the process.
+
+.. versionadded:: 1.0.5
+
+.. option:: --skip-gpgcheck
+
+   Disables verification of the gpg signature when downloading MySQL tarball
+   distributions.
 
 .. versionadded:: 1.0.5
 
