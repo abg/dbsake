@@ -30,7 +30,8 @@ def mysql_sandbox(sandbox_directory=None,
                   table=(),
                   exclude_table=(),
                   cache_policy='always',
-                  skip_libcheck=False):
+                  skip_libcheck=False,
+                  skip_gpgcheck=False):
     """Create a temporary MySQL instance
 
     This command installs a new MySQL instance under the
