@@ -18,6 +18,7 @@ fi
 START_TIMEOUT=300
 STOP_TIMEOUT=300
 
+version_and_comment="{{distribution.version}} {{distribution.version.comment}}"
 version="{{distribution.version}}"
 mysqld_safe={{distribution.mysqld_safe}}
 mysql={{distribution.mysql}}
@@ -114,6 +115,19 @@ case $1 in
         ;;
     reload)
         exit 3
+        ;;
+    ## Non-standard actions useful for sandbox interaction
+    version)
+        echo "${version_and_comment}"
+        ;;
+    metadata)
+        echo "version         ${version_and_comment}"
+        echo "sandbox datadir ${datadir}"
+        echo "sandbox config  ${defaults_file}"
+        echo "mysqld_safe     ${mysqld_safe}"
+        echo "mysql           ${mysql}"
+        echo "mysqldump       ${mysql}dump"
+        echo "mysql_upgrade   ${mysql}_upgrade"
         ;;
     shell|mysql|use)
         shift

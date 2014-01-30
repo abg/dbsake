@@ -31,7 +31,8 @@ debug = logging.debug
 warn = logging.warn
 error = logging.error
 
-class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')):
+class MySQLVersion(collections.namedtuple('MySQLVersion',
+                                          'major minor release tag comment')):
     """Represent a MySQL version
 
     This class represents a MySQL version as a tuple of integer.  I.e. MySQL
@@ -46,12 +47,22 @@ class MySQLVersion(collections.namedtuple('MySQLVersion', 'major minor release')
     True
     """
     def __str__(self):
-        return '.'.join(str(part) for part in self)
+        version = '.'.join(str(part) for part in self[0:3])
+        if self.tag:
+            version += '-' + self.tag
+        return version
 
     @classmethod
     def from_string(cls, value):
-        value = value.partition('-')[0]
-        return cls(*map(int, value.split('.')))
+        m = re.search(r'(?P<version>\d+[.]\d+[.]\d+(?:-\S+)?)' # match a version string
+                      r'.*?' # skip arbitrary number of interim characters
+                      r'(?P<version_comment>[(].*[)])?$', # match the trailing version_comment string
+                      value)
+        if not m:
+            raise common.SandboxError("Failed to discover version for %s" % _version)
+        version, version_comment = m.group(1, 2)
+        value, _, tag = version.partition('-')
+        return cls(*map(int, value.split('.')) + [tag, version_comment])
 
 #: Represent a MySQL distribution
 MySQLDistribution = collections.namedtuple('MySQLDistribution',
@@ -79,7 +90,7 @@ def mysqld_version(mysqld):
     :returns: MySQLVersion instance
     """
 
-    cmd = sarge.shell_format('{0} --version', mysqld)
+    cmd = sarge.shell_format('{0} --no-defaults --version', mysqld)
     result = sarge.capture_both(cmd)
     if result.returncode != 0:
         error("    ! %s", result.stderr.text.rstrip())
@@ -88,7 +99,7 @@ def mysqld_version(mysqld):
     m = re.search('(\d+[.]\d+[.]\d+)', result.stdout.text)
     if not m:
         raise common.SandboxError("Failed to discover version for %s" % cmd)
-    return MySQLVersion.from_string(m.group(0))
+    return MySQLVersion.from_string(result.stdout.text)
 
 # XXX this documentation isn't very clear
 def first_subdir(basedir, *paths):
