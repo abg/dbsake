@@ -3,6 +3,7 @@ dbsake changelog
 
 Version 1.0.5
 -------------
+:released: Friday, January 31st 2014
 
 [dbsake/mysql-sandbox]
 - added 'upgrade' action to sandbox.sh script

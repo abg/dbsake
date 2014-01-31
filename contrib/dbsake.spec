@@ -64,6 +64,9 @@ chmod 0755 %{buildroot}%{_bindir}/dbsake
 %{_mandir}/man1/dbsake.1*
 
 %changelog
+* Fri Jan 31 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.5-1
+- New release
+
 * Fri Jan 24 2014 Andrew Garner <andrew.garner@rackspace.com> - 1.0.4-1
 - Added optional %%tag to allow building -dev releases
 - Overwrite setuptools generated %%{_bindir}/dbsake to remove runtime
