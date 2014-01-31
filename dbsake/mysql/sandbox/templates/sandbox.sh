@@ -106,8 +106,9 @@ case $1 in
         sandbox_stop
         ;;
     restart|force-reload)
+        shift
         sandbox_stop
-        sandbox_start
+        sandbox_start "$@"
         ;;
     condrestart|try-restart)
         sandbox_status &> /dev/null || exit 0
