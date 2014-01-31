@@ -293,6 +293,17 @@ pattern of a SysV init script and has many standard actions:
 Additionally there are several custom actions to make managing the sandbox
 easier:
 
+- metadata
+
+  Outputs some basic information about the sandbox environment including
+  the version, the my.cnf being used, and various mysql command paths
+  that are used by sandbox.sh
+
+- version
+
+  Output a version string for the mysql server process this sandbox was
+  initialized with.
+
 - mysql [options]
 
   connect to the sandbox using the mysql command line client
