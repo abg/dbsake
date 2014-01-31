@@ -40,6 +40,10 @@ Version 1.0.5
 - The ./sandbox.sh now supports a 'version' action for emitting the version
   string the sandbox was created with.  This is similar to running:
   mysql -e "SELECT CONCAT(@@version,' ', @@version_comment)"
+- ./sandbox.sh restart now accepts additional command line options to pass
+  to the underlying mysqld_safe script, similarly to start.  Previously
+  only ./sandbox.sh start [options] passed on additional user specified
+  options.
 
 Version 1.0.4
 -------------
