@@ -29,7 +29,7 @@ except ImportError:
         emit = handle
         def createLock(self): self.lock = None
 
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 
 def handle_uncaught_exception():
@@ -38,7 +38,7 @@ def handle_uncaught_exception():
                   '\x94\x81\xe2\x94\xbb').decode('utf8'), exc_info=True)
     logging.fatal(("It's okay. \xe2\x94\xac\xe2\x94\x80\xe2\x94\xac\xe3\x83\x8e( \xc2\xba"
                   '_ \xc2\xba\xe3\x83\x8e)').decode('utf8'))
-    logging.fatal("You can view and file bugs at https://github.com/abg/dbsake/issues")
+    logging.fatal("Consider filing a bug report at https://github.com/abg/dbsake/issues")
 
 def discover_commands():
     walk_packages = pkgutil.walk_packages

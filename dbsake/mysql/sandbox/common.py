@@ -32,6 +32,7 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                          'distribution', 'datasource',
                                          'tables', 'exclude_tables',
                                          'cache_policy',
+                                         'skip_libcheck', 'skip_gpgcheck',
                                         ])
 
 
@@ -56,7 +57,8 @@ def check_options(**kwargs):
         not VERSION_CRE.match(dist)):
             raise SandboxError("Invalid MySQL distribution '%s' (not a tarball and not a valid mysql version)" % dist)
 
-    if kwargs['data_source'] and not DATASOURCE_CRE.match(kwargs['data_source']):
+    if kwargs['data_source'] and (not DATASOURCE_CRE.match(kwargs['data_source']) and
+                                  not os.path.isdir(kwargs['data_source'])):
         raise SandboxError("Unsupported data source %s" %
                            kwargs['data_source'])
 
@@ -70,7 +72,9 @@ def check_options(**kwargs):
         datasource=kwargs['data_source'],
         tables=kwargs['table'],
         exclude_tables=kwargs['exclude_table'],
-        cache_policy=kwargs['cache_policy']
+        cache_policy=kwargs['cache_policy'],
+        skip_libcheck=kwargs['skip_libcheck'],
+        skip_gpgcheck=kwargs['skip_gpgcheck'],
     )
 
 
@@ -179,6 +183,11 @@ def generate_sandbox_user_grant(datadir):
             # initialize to a bad hash so at worst, the password
             # does not work
             values.append("'_invalid'")
+        elif column.name == 'plugin':
+            # add this to satisfy MySQL 5.7 in cases
+            # where we're loading a 5.5+ tarball into a newer
+            # version
+            values.append("'mysql_native_password'")
         elif column.default is not None:
             values.append(column.default)
         else:

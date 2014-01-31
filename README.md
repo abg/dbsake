@@ -1,8 +1,8 @@
 ![dbsake](https://raw.github.com/abg/dbsake/master/sake-icon.png)
 
-## DBSake
+## dbsake
 
-dbsake - a (s)wiss-(a)rmy-(k)nif(e) for various dba tasks
+dbsake - a (s)wiss-(a)rmy-(k)nif(e) for MySQL
 
 dbsake (pronounced "dee-bee sah-kay") is a set of commands to assist with:
 

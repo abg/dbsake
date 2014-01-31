@@ -18,6 +18,7 @@ fi
 START_TIMEOUT=300
 STOP_TIMEOUT=300
 
+version_and_comment="{{distribution.version}} {{distribution.version.comment}}"
 version="{{distribution.version}}"
 mysqld_safe={{distribution.mysqld_safe}}
 mysql={{distribution.mysql}}
@@ -105,8 +106,9 @@ case $1 in
         sandbox_stop
         ;;
     restart|force-reload)
+        shift
         sandbox_stop
-        sandbox_start
+        sandbox_start "$@"
         ;;
     condrestart|try-restart)
         sandbox_status &> /dev/null || exit 0
@@ -115,6 +117,19 @@ case $1 in
     reload)
         exit 3
         ;;
+    ## Non-standard actions useful for sandbox interaction
+    version)
+        echo "${version_and_comment}"
+        ;;
+    metadata)
+        echo "version         ${version_and_comment}"
+        echo "sandbox datadir ${datadir}"
+        echo "sandbox config  ${defaults_file}"
+        echo "mysqld_safe     ${mysqld_safe}"
+        echo "mysql           ${mysql}"
+        echo "mysqldump       ${mysql}dump"
+        echo "mysql_upgrade   ${mysql}_upgrade"
+        ;;
     shell|mysql|use)
         shift
         MYSQL_PS1="mysql[sandbox]> " $mysql --defaults-file=$defaults_file "$@"
@@ -122,6 +137,10 @@ case $1 in
     mysqldump)
         shift
         ${mysql}dump --defaults-file=$defaults_file "$@"
+        ;;
+    upgrade|mysql_upgrade)
+        shift
+        ${mysql}_upgrade --defaults-file=$defaults_file "$@"
         ;;
     install-service)
         name=${2:-mysql-$version}
@@ -147,7 +166,7 @@ case $1 in
         exit 0
         ;;
     *)
-        echo "Usage: ${NAME} {start|stop|status|restart|condrestart|mysql|mysqldump|install-service}"
+        echo "Usage: ${NAME} {start|stop|status|restart|condrestart|mysql|mysqldump|upgrade|install-service}"
         exit 2
         ;;
 esac

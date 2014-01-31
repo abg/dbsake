@@ -29,7 +29,9 @@ def mysql_sandbox(sandbox_directory=None,
                   data_source=None,
                   table=(),
                   exclude_table=(),
-                  cache_policy='always'):
+                  cache_policy='always',
+                  skip_libcheck=False,
+                  skip_gpgcheck=False):
     """Create a temporary MySQL instance
 
     This command installs a new MySQL instance under the
@@ -58,6 +60,10 @@ def mysql_sandbox(sandbox_directory=None,
     :param cache_policy: the cache policy to use when downloading an mysql
                          distribution. One of: always,never,refresh,local
                          Default: always
+
+    :param skip_libcheck: skip a check for required libraries. This avoids
+                          aborting the sandbox setup process if libaio is not
+                          found.
     """
     from dbsake.util import format_filesize
     from dbsake.util.path import disk_usage, resolve_mountpoint

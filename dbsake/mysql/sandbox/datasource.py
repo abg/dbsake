@@ -7,6 +7,8 @@ Support for importing data sources
 """
 from __future__ import print_function
 
+import errno
+import fcntl
 import fnmatch
 import logging
 import os
@@ -81,6 +83,8 @@ def prepare_datadir(datadir):
 def preload(options):
     if not options.datasource:
         return
+    elif os.path.isdir(options.datasource):
+        datasource_from_directory(options)
     elif is_tarball(options.datasource):
         # build table filter from tables/exclude_tables
         # So here we want to map database.table to database/table
@@ -100,6 +104,26 @@ def preload(options):
     elif _is_sqldump(options.datasource):
         # nothing to do before the sandbox is started
         pass
+
+def datasource_from_directory(options):
+    datadir = os.path.normpath(os.path.realpath(options.datasource))
+
+    # first check that this is not an active datadir
+    try:
+        with open(os.path.join(datadir, 'ib_logfile0'), 'rb') as fileobj:
+            fcntl.lockf(fileobj.fileno(), fcntl.LOCK_SH|fcntl.LOCK_NB)
+    except IOError as exc:
+        if exc.errno == errno.EAGAIN:
+            raise common.SandboxError("Directory '%s' seems to be in active use (ib_logfile0 locked)" % datadir)
+        raise
+
+    # otherwise:
+    # 1) Remove the empty datadir
+    os.rmdir(os.path.join(options.basedir, 'data'))
+    # 2) symlink the datadir
+    os.symlink(datadir, os.path.join(options.basedir, 'data'))
+    info("  Symlinked datadir '%s' to %s",
+         datadir, os.path.join(options.basedir, 'data'))
 
 def finalize(sandbox_options):
     if _is_tarball(datasource):
