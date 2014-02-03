@@ -663,7 +663,7 @@ class Baker(object):
                 else:
                     # The argument was not specified with an equals sign...
                     name = arg[2:]
-                    default = keywords.get(name)
+                    default = keywords.get(name.replace('-', '_'))
 
                     if type(default) is bool:
                         # If this option is a boolean, it doesn't need a value;
