@@ -557,7 +557,8 @@ class Baker(object):
                     len(head))
 
         ret.append("")
-        if any(cmd.keywords.get(a) is None for a in cmd.argnames):
+        missing = object() # simple sentinel
+        if any(cmd.keywords.get(a, missing) is missing for a in cmd.argnames):
             ret.append("(specifying a double hyphen (--) in the argument"
                        " list means all")
             ret.append("subsequent arguments are treated as bare "
