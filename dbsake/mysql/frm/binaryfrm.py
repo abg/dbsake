@@ -106,15 +106,18 @@ class Table(_Table):
         handler_options = constants.HaOption(data.uint16_at(0x001e))
 
         # items possibly derived from extra section
-        if extrainfo.getvalue():
-            connection = extrainfo.bytes_prefix16()
-            engine = extrainfo.bytes_prefix16()
-            partition_info = extrainfo.bytes_prefix32()
+        connection = None
+        engine = None
+        partition_info = None
+        extrasize = len(extrainfo.getvalue())
+        if extrasize:
+            if extrainfo.tell() < extrasize:
+                connection = extrainfo.bytes_prefix16()
+            if extrainfo.tell() < extrasize:
+                engine = extrainfo.bytes_prefix16()
+            if extrainfo.tell() < extrasize:
+                partition_info = extrainfo.bytes_prefix32()
             extrainfo.skip(2) # skip null + autopartition flag
-        else:
-            connection = None
-            engine = None
-            partition_info = None
 
         if not engine:
             # legacy_db_type
