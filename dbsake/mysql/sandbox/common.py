@@ -49,7 +49,7 @@ def check_options(**kwargs):
         basedir = os.path.join('~',
                                'sandboxes',
                                'sandbox_' + time.strftime('%Y%m%d_%H%M%S'))
-    basedir = os.path.normpath(os.path.expanduser(basedir))
+    basedir = os.path.abspath(os.path.expanduser(basedir))
 
     dist = kwargs.pop('mysql_distribution')
     if (dist != 'system' and
