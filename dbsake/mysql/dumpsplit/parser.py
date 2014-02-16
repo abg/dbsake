@@ -131,6 +131,8 @@ class MySQLDumpParser(object):
             # read /* -- */ session initialization
             line = next(self)
             while line.strip():
+                if not (line.startswith('--') or line.startswith('/*!')):
+                    raise ValueError("Unexpected header line: %s" % line)
                 header.append(line)
                 line = next(self)
             header.append(line)
