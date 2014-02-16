@@ -10,6 +10,7 @@ from __future__ import print_function
 
 import collections
 import contextlib
+import errno
 import hashlib
 import logging
 import os
@@ -91,9 +92,16 @@ def mysqld_version(mysqld):
     """
 
     cmd = sarge.shell_format('{0} --no-defaults --version', mysqld)
-    result = sarge.capture_both(cmd)
+    try:
+        result = sarge.capture_stdout(cmd)
+    except OSError as exc:
+        if os.path.exists(mysqld) and exc.errno == errno.ENOENT:
+            error("    !! mysqld is not executable. "
+                  "You may have a tarball not compatible with this system")
+        raise common.SandboxError("%s Failed (errno: %d[%s])" %
+                                  (cmd, exc.errno, errno.errorcode[exc.errno]))
+
     if result.returncode != 0:
-        error("    ! %s", result.stderr.text.rstrip())
         raise common.SandboxError("%s failed (exit status: %d)" %
                                   (cmd, result.returncode))
     m = re.search('(\d+[.]\d+[.]\d+)', result.stdout.text)
