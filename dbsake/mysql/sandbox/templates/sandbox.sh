@@ -47,9 +47,10 @@ sandbox_start() {
     local start_timeout=${START_TIMEOUT}
     until [[ -S "${datadir}/mysql.sock" || $start_timeout -le 0 ]]
     do
+      kill -0 $! &>/dev/null || break
+      echo -n "."
       sleep 1
       (( start_timeout-- ))
-      kill -0 $! &>/dev/null || break
     done
     [[ -S "${datadir}/mysql.sock" ]]
     ret=$?
@@ -80,17 +81,19 @@ sandbox_stop() {
         return 0
     fi
 
+    echo -n "Stopping sandbox: "
     kill -TERM "$pid"
     local stop_timeout=${STOP_TIMEOUT}
     until [[ $stop_timeout -le 0 ]]
     do
         kill -0 "$pid" &>/dev/null || break
+        echo -n "."
         sleep 1
         (( stop_timeout-- ))
     done
     ! kill -0 "$pid" &>/dev/null
     ret=$?
-    [[ $ret -eq 0 ]] && echo "Stopping sandbox: [OK]" || echo "Stopping sandbox: [FAILED]"
+    [[ $ret -eq 0 ]] && echo "[OK]" || echo "[FAILED]"
     return $ret
 }
 
