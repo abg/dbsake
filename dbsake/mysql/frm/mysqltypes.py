@@ -213,7 +213,13 @@ def unpack_default(defaults, context):
                         null_map - bit string of nullable column bits
     :returns: string of default value
     """
-    if context.flags.NO_DEFAULT or context.unireg_check == constants.Utype.NEXT_NUMBER:
+    # Utype.NEXT_NUMBER (AUTO_INCREMENT) columns will never have a default
+    # blob fields also never have a default in any current MySQL version but
+    # some mysql forks don't set the NO_DEFAULT field flag, so default
+    # processing is special cased here to handle these cases
+    if (context.flags.NO_DEFAULT or
+        context.unireg_check in (constants.Utype.NEXT_NUMBER,
+                                 constants.Utype.BLOB_FIELD)):
         return None
 
     if context.flags.MAYBE_NULL:
@@ -318,36 +324,29 @@ def unpack_type_newdecimal(defaults, context):
 ## Integer types
 # For integer types signed is denoted
 # by tagging the FIELDFLAG_DECIMAL flag
+def _format_integer_default(value):
+    return "'%d'" % value
+
 def unpack_type_tiny(defaults, context):
     """Unpack a MySQL TINY 1-byte integer"""
-    if context.flags.DECIMAL:
-        return defaults.sint8()
-    else:
-        return defaults.uint8()
+    value = defaults.sint8() if context.flags.DECIMAL else defaults.uint8()
+    return _format_integer_default(value)
 
 def unpack_type_short(defaults, context):
-    if context.flags.DECIMAL:
-        return defaults.sint16()
-    else:
-        return defaults.uint16()
+    value = defaults.sint16() if context.flags.DECIMAL else defaults.uint16()
+    return _format_integer_default(value)
 
 def unpack_type_int24(defaults, context):
-    if context.flags.DECIMAL:
-        return defaults.sint24()
-    else:
-        return defaults.uint24()
+    value = defaults.sint24() if context.flags.DECIMAL else defaults.uint24()
+    return _format_integer_default(value)
 
 def unpack_type_long(defaults, context):
-    if context.flags.DECIMAL:
-        return defaults.sint32()
-    else:
-        return defaults.uint32()
+    value = defaults.sint32() if context.flags.DECIMAL else defaults.uint32()
+    return _format_integer_default(value)
 
 def unpack_type_longlong(defaults, context):
-    if context.flags.DECIMAL:
-        return defaults.sint32()
-    else:
-        return defaults.uint64()
+    value = defaults.sint64() if context.flags.DECIMAL else defaults.uint64()
+    return _format_integer_default(vaue)
 
 ## Floating point types
 def unpack_type_float(defaults, context):

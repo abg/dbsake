@@ -105,6 +105,9 @@ def format_paras(paras, width, indent=0, lstripline=None):
         if lines:
             for line in lines:
                 output.append((" " * indent) + line)
+            if len(paras) > 1:
+                # inject newline between paragraphs
+                output.append("")
     for i in (lstripline or []):
         output[i] = output[i].lstrip()
     return output
@@ -554,7 +557,8 @@ class Baker(object):
                     len(head))
 
         ret.append("")
-        if any(cmd.keywords.get(a) is None for a in cmd.argnames):
+        missing = object() # simple sentinel
+        if any(cmd.keywords.get(a, missing) is missing for a in cmd.argnames):
             ret.append("(specifying a double hyphen (--) in the argument"
                        " list means all")
             ret.append("subsequent arguments are treated as bare "
@@ -663,7 +667,7 @@ class Baker(object):
                 else:
                     # The argument was not specified with an equals sign...
                     name = arg[2:]
-                    default = keywords.get(name)
+                    default = keywords.get(name.replace('-', '_'))
 
                     if type(default) is bool:
                         # If this option is a boolean, it doesn't need a value;

@@ -1,6 +1,64 @@
 dbsake changelog
 ================
 
+Version 1.0.6
+-------------
+:released: Monday, February 17th 2014
+
+[dbsake]
+- Fixed option parsing bug with boolean options would incorrectly consume
+  a command line argument.  This affects commands such as frm-to-schema
+  where "frm-to-schema --raw-types foo.frm bar.frm" would result in
+  only bar.frm being parsed. (issue #8)
+
+[dbsake/split-mysqldump]
+- indexes defined with an algorithm (i.e. USING BTREE) are now handled by
+  split-mysqldump's index deferring logic.  Previously these indexes were
+  left alone and never deferred due to a restrictive regular expression
+  not matching the "USING <algorithm>" clause.
+  (issue #10)
+- split-mysqldump now aborts early if it detects an invalid mysqldump header.
+  Previously this command had pathological behavior of queuing up input
+  lines until it found the end of a header section and consuming possibly
+  large amounts of memory.  This could occur in simple cases where a
+  compressed .sql file was input. (issue #17)
+
+
+[dbsake/frm-to-schema]
+- default values are now handled correctly for blob types. Previously
+  certain .frm files did not set the NO_DEFAULT fieldflag for text/blob
+  columns which might cause the column to incorrectly consume default
+  values and would sometimes result in later columns getting a NULL
+  default.
+  (issue #9)
+- integer defaults are now quoted.  Previously these were bare numbers and
+  there was a bug where a default of '0' was interpreted the same as having
+  no default. (issue #11)
+- .frm files created by MySQL 5.0 should now be handled correctly. Previously
+  decoding such files would result in an uncaught exception (issue #14)
+
+[dbsake/mysql-sandbox]
+- innodb-data-file-path is now set based on existing ibdata* files when
+  --data-source is used. This resolves issues when using multiple shared
+  tablespaces from a backup file, or when MySQL 5.6's higher default for
+  innodb-data-file-path causes innodb initialize to fail when reading
+  particularly small ibdata files.
+  (issue #12)
+- non-executable mysqld binaries are now reported more clearly. This can
+  occur if i686 is deployed on a x86_64 platform without 32-bit support
+  for instance. Previously this case resulted in an uncaught exception.
+  (issue #13)
+- relative --sandbox-directory paths are now handled correctly. Previously
+  these would be passed to mysql directly and result in incorrect paths
+  as mysql reinterprets the relative paths against various internal base
+  directories.
+  (issue #15)
+- sandbox.sh {start|stop} actions now show progress more visibly. Similar to
+  the mysql.server initscript, a "." is now output once per second until the
+  action finishes (either with success or failure).
+  (issue #18)
+
+
 Version 1.0.5
 -------------
 :released: Friday, January 31st 2014

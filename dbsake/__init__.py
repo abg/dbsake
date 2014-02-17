@@ -3,7 +3,7 @@ dbsake
 ~~~~~~
 
 """
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 import codecs
 import functools
@@ -29,15 +29,14 @@ except ImportError:
         emit = handle
         def createLock(self): self.lock = None
 
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 
 def handle_uncaught_exception():
-    logging.fatal(('Uncaught exception.  (\xe2\x95\xaf\xc2\xb0\xe2\x96\xa1\xc2'
-                  '\xb0\xef\xbc\x89\xe2\x95\xaf\xef\xb8\xb5 \xe2\x94\xbb\xe2'
-                  '\x94\x81\xe2\x94\xbb').decode('utf8'), exc_info=True)
-    logging.fatal(("It's okay. \xe2\x94\xac\xe2\x94\x80\xe2\x94\xac\xe3\x83\x8e( \xc2\xba"
-                  '_ \xc2\xba\xe3\x83\x8e)').decode('utf8'))
+    logging.fatal('Uncaught exception! '
+                  '(\u256f\xb0\u25a1\xb0)\u256f \ufe35 \u253b\u2501\u253b',
+                  exc_info=True)
+    logging.fatal("It's okay. \u252c\u2500\u252c\u30ce( \xba_ \xba\u30ce)")
     logging.fatal("Consider filing a bug report at https://github.com/abg/dbsake/issues")
 
 def discover_commands():
