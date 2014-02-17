@@ -20,7 +20,7 @@ def extract_create_table(table_structure):
                 break
     return ''.join(result)
 
-KEY_CRE = re.compile(r'\s*KEY (?P<name>`.+`) \((?P<columns>.+)\),?$')
+KEY_CRE = re.compile(r'\s*KEY (?P<name>`.+`) \((?P<columns>.+)\)(?: USING (?:BTREE|HASH))?,?$')
 
 def extract_indexes(table_ddl):
     result = []
