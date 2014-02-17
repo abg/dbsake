@@ -71,6 +71,9 @@ myisam-recover-options          = DEFAULT
 
 ## InnoDB
 innodb-buffer-pool-size         = 64M
+{{if innodb_data_file_path}}
+innodb-data-file-path           = {{innodb_data_file_path}}
+{{endif}}
 {{if innodb_log_file_size}}
 innodb-log-file-size            = {{innodb_log_file_size}}
 {{else}}

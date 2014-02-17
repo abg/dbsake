@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import codecs
 import collections
+import glob
 import logging
 import os
 import random
@@ -140,6 +141,17 @@ def generate_defaults(options, **kwargs):
     except OSError as exc:
         # ignore errors here
         pass
+
+    ibdata = []
+    ibdata_pattern = os.path.join(options.basedir, 'data', 'ibdata*')
+    for path in sorted(glob.glob(ibdata_pattern)):
+        rpath = os.path.basename(path)
+        ibdata.append(rpath + ':' + _format_logsize(os.stat(path).st_size))
+    if ibdata:
+        kwargs['innodb_data_file_path'] = ';'.join(ibdata) + ':autoextend'
+        info("    ! Found existing shared innodb tablespace: %s", ';'.join(ibdata) + ':autoextend')
+    else:
+        kwargs['innodb_data_file_path'] = None
 
     # Check for innodb_log_files_in_group
     try:
