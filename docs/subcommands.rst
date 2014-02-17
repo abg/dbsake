@@ -159,6 +159,9 @@ Options
    Specify the path under which to create the sandbox. This defaults
    to ~/sandboxes/sandbox_$(date +%Y%m%d_%H%M%S)
 
+.. versionchanged:: 1.0.6
+   --sandbox-directory supports relative paths
+
 .. option:: -m, --mysql-distribution <name>
 
    Specify the source for the mysql distribution.  This can be one of:

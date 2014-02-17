@@ -3,7 +3,7 @@ dbsake changelog
 
 Version 1.0.6
 -------------
-:released: Not yet
+:released: Monday, February 17th 2014
 
 [dbsake]
 - Fixed option parsing bug with boolean options would incorrectly consume
