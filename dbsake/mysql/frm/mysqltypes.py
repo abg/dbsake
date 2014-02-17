@@ -213,7 +213,13 @@ def unpack_default(defaults, context):
                         null_map - bit string of nullable column bits
     :returns: string of default value
     """
-    if context.flags.NO_DEFAULT or context.unireg_check == constants.Utype.NEXT_NUMBER:
+    # Utype.NEXT_NUMBER (AUTO_INCREMENT) columns will never have a default
+    # blob fields also never have a default in any current MySQL version but
+    # some mysql forks don't set the NO_DEFAULT field flag, so default
+    # processing is special cased here to handle these cases
+    if (context.flags.NO_DEFAULT or
+        context.unireg_check in (constants.Utype.NEXT_NUMBER,
+                                 constants.Utype.BLOB_FIELD)):
         return None
 
     if context.flags.MAYBE_NULL:
