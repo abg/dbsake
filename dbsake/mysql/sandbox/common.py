@@ -218,6 +218,8 @@ def mysql_install_db(distribution, **kwargs):
 
     sharedir = distribution.sharedir
     mysql_system_tables = cat(join(sharedir, 'mysql_system_tables.sql'))
+    if os.path.exists(join(sharedir, 'mysql_performance_tables.sql')):
+        mysql_system_tables += cat(join(sharedir, 'mysql_performance_tables.sql'))
     mysql_system_tables_data = cat(join(sharedir,
                                         'mysql_system_tables_data.sql'))
     fill_help_tables = cat(join(sharedir, 'fill_help_tables.sql'))
