@@ -354,10 +354,12 @@ def unpack_type_longlong(defaults, context):
 
 ## Floating point types
 def unpack_type_float(defaults, context):
-    return "'%s'" % str(defaults.float()).rstrip('0')
+    # TODO: handle (M, D) specifications
+    return "'%.6g'" % defaults.float()
 
 def unpack_type_double(defaults, context):
-    return "'%s'" % str(defaults.double()).rstrip('0')
+    # TODO: handle (M, D) specifications
+    return "'%.16g'" % defaults.double()
 
 ## Null type
 def unpack_type_null(defaults, context):
