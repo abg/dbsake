@@ -180,9 +180,18 @@ def distribution_from_system(options):
     info("    - MySQL --basedir %s", basedir)
     # sharedir is absolutely required as we need it to bootstrap mysql
     # and mysql will fail to start withtout it
+    join = os.path.join
+    exists = os.path.exists
     sharedir = first_subdir(basedir, 'share/mysql', 'share')
     if not sharedir:
         raise common.SandboxError("/usr/share/mysql not found")
+
+    for script in ('fill_help_tables.sql',
+                   'mysql_system_tables_data.sql',
+                   'mysql_system_tables.sql'):
+        if not exists(join(sharedir, script)):
+            raise common.SandboxError("Found %s, but %s does not exist" %
+                                      (sharedir, script))
 
     info("    - MySQL share found in %s", sharedir)
     # Note: plugindir may be None, if using mysql < 5.1
