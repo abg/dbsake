@@ -317,6 +317,9 @@ def unpack_type_newdecimal(defaults, context):
     if int_length:
         integer_part = _decode_decimal(data[0:int_length],
                                        invert=bool(sign))
+        # remove insignificant zeros but ensure we have
+        # at least one digit
+        integer_part = integer_part.lstrip('0') or '0'
         parts.append(sign + integer_part)
     else:
         parts.append(sign + '0')
