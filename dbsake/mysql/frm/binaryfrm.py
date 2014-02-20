@@ -35,14 +35,38 @@ PackedColumnData = collections.namedtuple('PackedColumnInfo',
 _TableOptions = collections.namedtuple('TableOptions',
                                        'connection engine charset '
                                        'min_rows max_rows avg_row_length '
-                                       'pack_keys delay_key_write checksum '
                                        'row_format key_block_size '
-                                       'stats_persistent '
-                                       'comment partitions')
+                                       'comment partitions handler_options')
 
 class TableOptions(_TableOptions):
     def __str__(self):
         return ' '.join(self.attributes())
+
+    @property
+    def checksum(self):
+        return bool(self.handler_options.CHECKSUM)
+
+    @property
+    def delay_key_write(self):
+        return bool(self.handler_options.DELAY_KEY_WRITE)
+
+    @property
+    def pack_keys(self):
+        if self.handler_options.PACK_KEYS:
+            return 1
+        elif self.handler_options.NO_PACK_KEYS:
+            return 0
+        else:
+            return None
+
+    @property
+    def stats_persistent(self):
+        if self.handler_options.STATS_PERSISTENT:
+            return 1
+        elif self.handler_options.NO_STATS_PERSISTENT:
+            return 0
+        else:
+            return None
 
     def attributes(self):
         if self.connection:
@@ -127,21 +151,6 @@ class Table(_Table):
             # this is underlying storage engine of the partitioned table
             engine = constants.LegacyDBType(data.uint8_at(0x003d)).name
 
-        pack_keys = None
-        if handler_options.PACK_KEYS:
-            pack_keys = 1
-        elif handler_options.NO_PACK_KEYS:
-            pack_keys = 0
-
-        stats_persistent = None
-        if handler_options.STATS_PERSISTENT:
-            stats_persistent = 1
-        elif handler_options.NO_STATS_PERSISTENT:
-            stats_persistent = 0
-
-        checksum = True if handler_options.CHECKSUM else False
-        delay_key_write = bool(handler_options.DELAY_KEY_WRITE)
-
         return cls(
             name=tablename.filename_to_tablename(name),
             mysql_version=mysql_version,
@@ -153,10 +162,7 @@ class Table(_Table):
                         min_rows=min_rows,
                         max_rows=max_rows,
                         avg_row_length=avg_row_length,
-                        pack_keys=pack_keys,
-                        stats_persistent=stats_persistent,
-                        checksum=checksum,
-                        delay_key_write=delay_key_write,
+                        handler_options=handler_options,
                         row_format=row_format,
                         key_block_size=key_block_size,
                         comment=None,
@@ -251,7 +257,11 @@ def unpack_columns(packed_columns, table):
     comments = util.ByteReader(packed_columns.comments)
 
     null_map = map(ord, defaults.read((packed_columns.null_count + 1 + 7) // 8))
-    context = Bunch(null_map=null_map, null_bit=1, table=table)
+    if table.options.handler_options.PACK_RECORD:
+        null_bit = 0
+    else:
+        null_bit = 1
+    context = Bunch(null_map=null_map, null_bit=null_bit, table=table)
 
     for fieldnr, name in enumerate(names):
         context.update(name=name,
