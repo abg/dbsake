@@ -346,7 +346,7 @@ def unpack_type_long(defaults, context):
 
 def unpack_type_longlong(defaults, context):
     value = defaults.sint64() if context.flags.DECIMAL else defaults.uint64()
-    return _format_integer_default(vaue)
+    return _format_integer_default(value)
 
 ## Floating point types
 def unpack_type_float(defaults, context):
