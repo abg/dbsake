@@ -96,7 +96,7 @@ class TableOptions(_TableOptions):
         if self.key_block_size:
             yield 'KEY_BLOCK_SIZE={0}'.format(self.key_block_size)
         if self.comment:
-            yield "COMMENT '{0}'".format(self.comment)
+            yield "COMMENT='{0}'".format(self.comment)
         if self.partitions:
             # Patch any comments in partition_clause so we still have valid SQL
             # This was a fairly recent feature introduced into MySQL to tweak
