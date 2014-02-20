@@ -218,8 +218,7 @@ def unpack_default(defaults, context):
     # some mysql forks don't set the NO_DEFAULT field flag, so default
     # processing is special cased here to handle these cases
     if (context.flags.NO_DEFAULT or
-        context.unireg_check in (constants.Utype.NEXT_NUMBER,
-                                 constants.Utype.BLOB_FIELD)):
+        context.unireg_check == constants.Utype.NEXT_NUMBER):
         return None
 
     if context.flags.MAYBE_NULL:
@@ -228,8 +227,13 @@ def unpack_default(defaults, context):
         null_byte = null_map[context.null_bit // 8]
         null_bit = context.null_bit % 8
         context.null_bit += 1
-        if null_byte & (1 << null_bit):
+        if null_byte & (1 << null_bit) and \
+                not context.unireg_check == constants.Utype.BLOB_FIELD:
             return 'NULL'
+
+    if context.unireg_check == constants.Utype.BLOB_FIELD:
+        # suppress default for blob types
+        return None
     
     type_name = context.type_code.name.lower()
     try:
