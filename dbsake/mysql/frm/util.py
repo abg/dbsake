@@ -67,9 +67,9 @@ class ByteReader(io.BytesIO):
         #    pad = b'\x00'
         #return struct.unpack('<i', data + pad)[0]
         if endian == '<':
-            value, = struct.unpack('<i', data + b'\x00')[0]
+            value = struct.unpack('<i', data + b'\x00')[0]
         else:
-            value, = struct.unpack('>i', b'\x00' + data)[0]
+            value = struct.unpack('>i', b'\x00' + data)[0]
 
         if value & 0x800000:
             value = ~value
