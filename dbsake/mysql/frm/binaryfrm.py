@@ -257,7 +257,11 @@ def unpack_columns(packed_columns, table):
     comments = util.ByteReader(packed_columns.comments)
 
     null_map = map(ord, defaults.read((packed_columns.null_count + 1 + 7) // 8))
-    context = Bunch(null_map=null_map, null_bit=1, table=table)
+    if table.options.handler_options.PACK_RECORD:
+        null_bit = 0
+    else:
+        null_bit = 1
+    context = Bunch(null_map=null_map, null_bit=null_bit, table=table)
 
     for fieldnr, name in enumerate(names):
         context.update(name=name,
