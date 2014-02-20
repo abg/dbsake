@@ -60,20 +60,13 @@ class ByteReader(io.BytesIO):
 
     def sint24(self, endian="<"):
         data = self.read(3)
-        #high_byte, = struct.unpack_from("B", data, 2)
-        #if high_byte & 0x80:
-        #    pad = b'\xff'
-        #else:
-        #    pad = b'\x00'
-        #return struct.unpack('<i', data + pad)[0]
+        offset = endian = '>' and -1 or 0
+        msb = struct.unpack_from('B', data)[offset]
+        pad = (msb & 0x80) and b'\xff' or b'\x00'
         if endian == '<':
-            value = struct.unpack('<i', data + b'\x00')[0]
+            return struct.unpack('<i', data + pad)[0]
         else:
-            value = struct.unpack('>i', b'\x00' + data)[0]
-
-        if value & 0x800000:
-            value = ~value
-        return value
+            return struct.unpack('>i', pad + data)[0]
 
     def uint32(self):
         return struct.unpack('<I', self.read(4))[0]
