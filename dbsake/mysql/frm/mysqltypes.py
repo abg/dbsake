@@ -276,10 +276,13 @@ def  _decode_decimal(data, invert=False):
          b'\x63' -> '99'
          b'\x3b\x9a\xc9\xff' -> '999999999'
     """
-    if len(data) % 4:
-        pad = 4 - len(data) % 4
+    modcheck = len(data) % 4
+    if modcheck != 0:
+        pad = 4 - modcheck
         pad_char = b'\xff' if invert else b'\x00'
-        data = pad_char*pad + data
+        whole = data[:-modcheck]
+        frac = pad*pad_char + data[-modcheck:]
+        data = whole + frac
     groups = struct.unpack('>' + 'i'*(len(data) // 4), data)
     if invert:
         groups = map(operator.invert, groups)
