@@ -218,8 +218,7 @@ def unpack_default(defaults, context):
     # some mysql forks don't set the NO_DEFAULT field flag, so default
     # processing is special cased here to handle these cases
     if (context.flags.NO_DEFAULT or
-        context.unireg_check in (constants.Utype.NEXT_NUMBER,
-                                 constants.Utype.BLOB_FIELD)):
+        context.unireg_check == constants.Utype.NEXT_NUMBER):
         return None
 
     if context.flags.MAYBE_NULL:
@@ -228,8 +227,13 @@ def unpack_default(defaults, context):
         null_byte = null_map[context.null_bit // 8]
         null_bit = context.null_bit % 8
         context.null_bit += 1
-        if null_byte & (1 << null_bit):
+        if null_byte & (1 << null_bit) and \
+                not context.unireg_check == constants.Utype.BLOB_FIELD:
             return 'NULL'
+
+    if context.unireg_check == constants.Utype.BLOB_FIELD:
+        # suppress default for blob types
+        return None
     
     type_name = context.type_code.name.lower()
     try:
@@ -272,10 +276,13 @@ def  _decode_decimal(data, invert=False):
          b'\x63' -> '99'
          b'\x3b\x9a\xc9\xff' -> '999999999'
     """
-    if len(data) % 4:
-        pad = 4 - len(data) % 4
+    modcheck = len(data) % 4
+    if modcheck != 0:
+        pad = 4 - modcheck
         pad_char = b'\xff' if invert else b'\x00'
-        data = pad_char*pad + data
+        whole = data[:-modcheck]
+        frac = pad*pad_char + data[-modcheck:]
+        data = whole + frac
     groups = struct.unpack('>' + 'i'*(len(data) // 4), data)
     if invert:
         groups = map(operator.invert, groups)
@@ -310,6 +317,9 @@ def unpack_type_newdecimal(defaults, context):
     if int_length:
         integer_part = _decode_decimal(data[0:int_length],
                                        invert=bool(sign))
+        # remove insignificant zeros but ensure we have
+        # at least one digit
+        integer_part = integer_part.lstrip('0') or '0'
         parts.append(sign + integer_part)
     else:
         parts.append(sign + '0')
@@ -346,14 +356,16 @@ def unpack_type_long(defaults, context):
 
 def unpack_type_longlong(defaults, context):
     value = defaults.sint64() if context.flags.DECIMAL else defaults.uint64()
-    return _format_integer_default(vaue)
+    return _format_integer_default(value)
 
 ## Floating point types
 def unpack_type_float(defaults, context):
-    return "'%s'" % str(defaults.float()).rstrip('0')
+    # TODO: handle (M, D) specifications
+    return "'%.6g'" % defaults.float()
 
 def unpack_type_double(defaults, context):
-    return "'%s'" % str(defaults.double()).rstrip('0')
+    # TODO: handle (M, D) specifications
+    return "'%.16g'" % defaults.double()
 
 ## Null type
 def unpack_type_null(defaults, context):

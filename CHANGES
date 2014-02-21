@@ -1,6 +1,53 @@
 dbsake changelog
 ================
 
+Version 1.0.7
+-------------
+:released: Thursday, February 20th, 2014
+
+[dbsake/frm-to-schema]
+- Fixed a bug where default values for signed 24-bit integers (MEDIUMINT)
+  would cause frm-to-schema to abort with an uncaught exception
+  (issue #19)
+- Fixed a bug where negative signed 24-bit integers (MEDIUMINT) would not
+  display the correct value
+  (issue #23)
+- Fixed a bug formatting default values for BIGINT types. This was caused
+  by a typo introduced in dbsake v1.0.6
+  (issue #20)
+- Fixed an issue with detecting null default values.  Previously
+  dbsake wasn't honoring all the table flags and so would not
+  interpret the bits signifying a null value correctly resulting
+  in null default values where a value should be present
+  (issue #21)
+- Improved the output for float/double column default values. Previously dbsake
+  used python's internal precision which was inaccurate for float precision and
+  didn't match MySQL's display behavior.  Now float uses precision of 6 and
+  double uses a precision of 16 which should be identical to SHOW CREATE TABLE
+  output.
+  (issue #22)
+- Table comments now are display with an '=' separator (COMMENT='value') rather
+  than the previous space separator
+  (issue #24)
+- Fixed a bug where decimal default values would display incorrectly.  This was
+  caused by incorrectly padding decimal bytes to 4-byte boundaries internally.
+  (issue #26)
+- Fixed a bug where excessive leading zeros were displayed for decimal column
+  default values.  I.e. DECIMAL(19, 0) DEFAULT '0' would be displayed as
+  DECIMAL(19, 0) DEFAULT '000'.  While this was syntactically valid in MySQL
+  the output did not follow MySQL behavior.
+  (issue #27)
+
+[dbsake/mysql-sandbox]
+- Fixed a bug where mysql bootstrap files were not being checked for when using
+  --mysql-distribution=system (the default).  This could cause an uncaught
+  exception if /usr/share/mysql was present, but the *.sql scripts were missing
+  (issue #25)
+- Fixed a bug where bootstrapping a MariaDB instance would not create the
+  performance_schema database
+  (issue #28)
+
+
 Version 1.0.6
 -------------
 :released: Monday, February 17th 2014
