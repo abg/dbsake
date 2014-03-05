@@ -166,7 +166,7 @@ def split_mysqldump(target='5.5',
             logging.debug("Skipping section type: %s", section_type)
             # drain iterator, so we can continue
             for line in iterator:
-                continue
+                logging.debug("  -> %s", line.rstrip())
     logging.info("Split input into %d database(s) %d table(s) and %d view(s)",
                  database_count, table_count, view_count)
     return 0
