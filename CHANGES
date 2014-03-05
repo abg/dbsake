@@ -1,6 +1,16 @@
 dbsake changelog
 ================
 
+Version 1.0.8
+-------------
+:unreleased:
+
+[dbsake/split-mysqldump]
+- Fix a bug where split-mysqldump generated incorrect output from
+  mysqldump --flush-privileges (issue #33)
+- Fix a bug where split-mysqldump did not handle mysqldump --master-data=2,
+  where CHANGE MASTER was commented out. (issue #33)
+
 Version 1.0.7
 -------------
 :released: Thursday, February 20th, 2014
