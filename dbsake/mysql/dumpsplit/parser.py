@@ -39,6 +39,8 @@ def categorize_section(line):
         section_type = 'view_definition'
     elif line.startswith('/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;'):
         section_type = 'footer'
+    elif line.startswith('-- Flush Grant Tables'):
+        section_type = 'flush_privileges'
     elif line.startswith('-- Dump completed'):
         section_type = 'dump_completed'
     else:
