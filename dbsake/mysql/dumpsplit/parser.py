@@ -13,6 +13,9 @@ def extract_identifier(value):
     # and unquote the contents remaining
     idx0 = value.find('`')
     idx1 = value.rfind('`')
+    # verify we actually found identifier markers
+    if -1 in (idx0, idx1):
+        raise ValueError("%r does not contain a valid identifier" % value)
     identifier = value[idx0+1:idx1]
     return identifier.replace('``', '`')
 
