@@ -59,7 +59,7 @@ def parse_section(parser):
     yield next(parser) # -- Table structure for table `...`
     yield next(parser) # --
     for line in parser:
-        if line.startswith('--'):
+        if line.rstrip() == '--':
             # read too far, requeue and abort
             parser.push(line)
             break
