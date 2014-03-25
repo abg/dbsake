@@ -211,25 +211,37 @@ def generate_sandbox_user_grant(datadir):
     )
 
 def mysql_install_db(distribution, **kwargs):
-    join = os.path.join
-    def cat(path):
-        with codecs.open(path, 'r', 'utf8') as fileobj:
-            return fileobj.read()
-
     sharedir = distribution.sharedir
-    mysql_system_tables = cat(join(sharedir, 'mysql_system_tables.sql'))
-    if os.path.exists(join(sharedir, 'mysql_performance_tables.sql')):
-        mysql_system_tables += cat(join(sharedir, 'mysql_performance_tables.sql'))
-    mysql_system_tables_data = cat(join(sharedir,
-                                        'mysql_system_tables_data.sql'))
-    fill_help_tables = cat(join(sharedir, 'fill_help_tables.sql'))
+    bootstrap_files = [
+        'mysql_system_tables.sql',
+        'mysql_performance_tables.sql',
+        'mysql_system_tables_data.sql',
+        'fill_help_tables.sql',
+    ]
+
+    for name in bootstrap_files:
+        # this this the variable we will set in the template
+        varname = os.path.splitext(name)[0]
+        cpath = os.path.join(sharedir, name)
+
+        try:
+            with codecs.open(cpath, 'r', encoding='utf-8') as fileobj:
+                data = fileobj.read()
+        except IOError as exc:
+            # ignore ENOENT errors for mysql_performance_tables.sql
+            # This is used specifically for MariaDB
+            if name != 'mysql_performance_tables.sql':
+                raise SandboxError("Failed to read %s" % cpath)
+            else:
+                data = ''
+        except UnicodeError as exc:
+            raise SandboxError("Invalid utf-8 data in %s" % cpath)
+        kwargs[varname] = data
 
     sql = render_template('bootstrap.sql',
                           distribution=distribution,
-                          mysql_system_tables=mysql_system_tables,
-                          mysql_system_tables_data=mysql_system_tables_data,
-                          fill_help_tables=fill_help_tables,
                           **kwargs)
+
     for line in sql.splitlines():
         yield line
 
