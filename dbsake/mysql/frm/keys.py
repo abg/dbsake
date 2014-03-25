@@ -5,6 +5,7 @@ dbsake.mysql.frm.keys
 Support for decoding index data from a .frm
 
 """
+from __future__ import unicode_literals
 
 import collections
 from . import util
@@ -67,7 +68,7 @@ class Key(_Key):
 
     def _format_key_part(self, part):
         # format the basic column name being indexed
-        value = str(part)
+        value = part.format()
         if self.index_type in ('FULLTEXT', 'SPATIAL'):
             # FULLTEXT / SPATIAL may never have an index prefix
             return value
@@ -78,7 +79,7 @@ class Key(_Key):
                 value += '({0})'.format(prefix_length)
         return value
 
-    def __str__(self):
+    def format(self):
         components = []
         if self.name == 'PRIMARY':
             components.append('PRIMARY KEY')
@@ -113,7 +114,7 @@ _KeyPart = collections.namedtuple('KeyPart', 'column length')
 
 class KeyPart(_KeyPart):
     
-    def __str__(self):
+    def format(self):
         return "`{0}`".format(self.column.name)
 
 
