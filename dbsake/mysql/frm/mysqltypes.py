@@ -532,11 +532,9 @@ def unpack_type_varchar(defaults, context):
 # so we use the same logic as unpack_type_varchar, but then
 # strip the trailing whitespace
 def unpack_type_var_string(defaults, context):
-    if context.length < 256:
-        length = defaults.uint8()
-    else:
-        length = defaults.uint16()
-    return "'%s'" % defaults.read(length).rstrip(' ').encode("string_escape")
+    """Unpack a MySQL 4.1 VARCHAR(N) default value"""
+    data = defaults.read(context.length)
+    return "'%s'" % data.rstrip(' ').decode(context.charset.name)
 
 def unpack_type_string(defaults, context):
     """Unpack a CHAR(N) fixed length string"""
