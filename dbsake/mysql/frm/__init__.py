@@ -7,10 +7,13 @@ MySQL .frm manipulation utilities
 """
 from __future__ import print_function
 
+import logging
 import sys
 
 from dbsake import baker
 
+
+debug = logging.debug
 
 def parse(path):
     """Parse a .frm file"""
@@ -47,6 +50,7 @@ def frm_to_schema(raw_types=False, replace=False, *paths):
                 options['include_raw_types'] = raw_types
             print(table_or_view.format(**options), file=sys.stdout)
         except (ValueError, IOError) as exc:
+            debug("Traceback of .frm parsing failure:", exc_info=True)
             print("Failed to parse '%s': %s" % (name, exc), file=sys.stderr)
             failures += 1
             continue
