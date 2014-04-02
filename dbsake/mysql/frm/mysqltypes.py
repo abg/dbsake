@@ -83,7 +83,7 @@ def _format_real(name, context):
         precision = context.length
         scale = (int(context.flags) >> 8) & 31
         # if scale is way out of range, this probably means
-        # we shouldn't format the <type>(M,D) syntax 
+        # we shouldn't format the <type>(M,D) syntax
         if scale > 30:
             value = name
         else:
@@ -107,6 +107,7 @@ def _format_charset(context):
     value = ''
     if context.table.charset != context.charset:
         value += ' CHARACTER SET {0}'.format(context.charset.name)
+
     if not context.charset.is_default:
         value += ' COLLATE {0}'.format(context.charset.collation)
     return value
@@ -140,25 +141,25 @@ def format_type_tiny_blob(context):
     if context.charset.name == 'binary':
         return 'tinyblob'
     else:
-        return 'tinytext'
+        return 'tinytext' + _format_charset(context)
 
 def format_type_blob(context):
     if context.charset.name == 'binary':
         return 'blob'
     else:
-        return 'text'
+        return 'text' + _format_charset(context)
 
 def format_type_medium_blob(context):
     if context.charset.name == 'binary':
         return 'mediumblob'
     else:
-        return 'mediumtext'
+        return 'mediumtext' + _format_charset(context)
 
 def format_type_long_blob(context):
     if context.charset.name == 'binary':
         return 'longblob'
     else:
-        return 'longtext'
+        return 'longtext' + _format_charset(context)
 
 def format_type_bit(context):
     return 'bit({0})'.format(context.length)
@@ -234,7 +235,7 @@ def unpack_default(defaults, context):
     if context.unireg_check == constants.Utype.BLOB_FIELD:
         # suppress default for blob types
         return None
-    
+
     type_name = context.type_code.name.lower()
     try:
         dispatch = globals()['unpack_type_{0}'.format(type_name)]
@@ -567,7 +568,7 @@ def unpack_type_set(defaults, context):
     n_bytes = (elt_count + 7) // 8
     if n_bytes > 4:
         n_bytes = 8
- 
+
     if n_bytes == 1:
         value = defaults.uint8()
     elif n_bytes == 2:
