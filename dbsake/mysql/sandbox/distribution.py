@@ -154,7 +154,7 @@ def deploy(options):
         else:
             return distribution_from_download(options)
     finally:
-        info("    * Deployed MySQL distribution to sandbox in %.2f seconds", time.time() - start)
+        info("    * Deployed MySQL distribution in %.2f seconds", time.time() - start)
 
 def distribution_from_system(options):
     """Deploy a MySQL distribution already installed on the system
@@ -168,16 +168,16 @@ def distribution_from_system(options):
 
     if None in (mysqld, mysql, mysqld_safe):
         raise common.SandboxError("Unable to find MySQL binaries")
-    info("    - Found mysqld: %s", mysqld)
-    info("    - Found mysqld_safe: %s", mysqld_safe)
-    info("    - Found mysql: %s", mysql)
+    debug("    # Found mysqld: %s", mysqld)
+    debug("    # Found mysqld_safe: %s", mysqld_safe)
+    debug("    # Found mysql: %s", mysql)
     version = mysqld_version(mysqld)
-    info("    - MySQL server version: %s", version)
+    debug("    # MySQL server version: %s", version)
     # XXX: we might be able to look this up from mysqld --help --verbose,
     #      but I really want to avoid that.  This shold cover 99% of local
     #      cases and I think it's fine to abort if this doesn't exist
     basedir = '/usr'
-    info("    - MySQL --basedir %s", basedir)
+    debug("    # MySQL --basedir %s", basedir)
     # sharedir is absolutely required as we need it to bootstrap mysql
     # and mysql will fail to start withtout it
     join = os.path.join
@@ -198,11 +198,11 @@ def distribution_from_system(options):
             raise common.SandboxError("MySQL bootstrap script '%s' not found." %
                                       os.path.join(sharedir, script))
 
-    info("    - MySQL share found in %s", sharedir)
+    debug("    # MySQL share found in %s", sharedir)
     # Note: plugindir may be None, if using mysql < 5.1
     plugindir = first_subdir(basedir, 'lib64/mysql/plugin', 'lib/mysql/plugin')
     if plugindir:
-        info("    - Found MySQL plugin directory: %s", plugindir)
+        debug("    # Found MySQL plugin directory: %s", plugindir)
 
     # now copy mysqld, mysql, mysqld_safe to sandbox_dir/bin
     # then return an appropriate MySQLDistribution instance
@@ -210,7 +210,7 @@ def distribution_from_system(options):
     dbsake_path.makedirs(bindir, 0770, exist_ok=True)
     for name in [mysqld]:
         shutil.copy2(name, bindir)
-    info("    - Copied minimal MySQL commands to %s", bindir)
+    debug("    # Copied minimal MySQL commands to %s", bindir)
     return MySQLDistribution(
         version=version,
         mysqld=os.path.join(bindir, os.path.basename(mysqld)),
@@ -274,8 +274,8 @@ def unpack_tarball_distribution(stream, destdir):
     finally:
         tar.close()
         from dbsake.util import format_filesize
-        info("    * Total tarball size: %s Extracted size: %s",
-             format_filesize(total_size), format_filesize(extracted_size))
+        debug("    # Uncompressed tarball size: %s Extracted size: %s",
+              format_filesize(total_size), format_filesize(extracted_size))
 
 def distribution_from_tarball(options):
     """Deploy a MySQL distribution from a binary tarball
@@ -536,7 +536,7 @@ def check_for_libaio(options):
     version = MySQLVersion.from_string(options.distribution)
     if version < (5, 5, 4):
         return
-    info("    - Checking for required libraries...")
+    debug("    # Checking for required libraries...")
     import ctypes.util
 
     if ctypes.util.find_library("aio") is None:
@@ -570,7 +570,7 @@ def download_tarball_asc(options):
     dbsake_path.makedirs(os.path.dirname(asc_path), exist_ok=True)
     with open(asc_path, 'wb') as fileobj:
         fileobj.write(stream.read())
-        info("    - Wrote %s", fileobj.name)
+        debug("    # Wrote %s", fileobj.name)
         return fileobj.name
 
 def initialize_gpg():
@@ -642,13 +642,15 @@ def distribution_from_download(options):
     """
     version = options.distribution # the --mysql-distribution option
     check_for_libaio(options)
-    info("    - Attempting to deploy distribution for MySQL %s", version)
+    debug("    # Attempting to deploy distribution for MySQL %s", version)
     checksum = hashlib.new('md5')
 
     if not options.skip_gpgcheck:
         initialize_gpg()
         signature = download_tarball_asc(options)
+    info("    - Deploying MySQL %s from download", version)
     with download_mysql(version, 'x86_64', options.cache_policy) as stream:
+        debug("    # Streaming from %s", stream.geturl())
         managers = []
         stream.add(checksum.update)
         if os.isatty(sys.stderr.fileno()):
@@ -656,7 +658,7 @@ def distribution_from_download(options):
             stream.add(util.progressbar(max=stream_size))
         if options.cache_policy != 'never' and stream.headers['x-dbsake-cache']:
             managers.append(cache_download(stream.headers['x-dbsake-cache']))
-            info("    - Caching download: %s", stream.headers['x-dbsake-cache'])
+            debug("    # Caching download: %s", stream.headers['x-dbsake-cache'])
         else:
             debug("    # Not caching download")
 
@@ -685,14 +687,15 @@ def distribution_from_download(options):
     bindir = os.path.join(options.basedir, 'bin')
     version = mysqld_version(os.path.join(bindir, 'mysqld'))
 
-    info("    - Using mysqld (v%s): %s", version, os.path.join(bindir, 'mysqld'))
-    info("    - Using mysqld_safe: %s", os.path.join(bindir, 'mysqld_safe'))
-    info("    - Using mysql: %s", os.path.join(bindir, 'mysql'))
-    info("    - Using share directory: %s", os.path.join(options.basedir, 'share'))
-    info("    - Using mysqld --basedir: %s", options.basedir)
+    debug("    # Using mysqld (v%s): %s", version, os.path.join(bindir, 'mysqld'))
+    debug("    # Using mysqld_safe: %s", os.path.join(bindir, 'mysqld_safe'))
+    debug("    # Using mysql: %s", os.path.join(bindir, 'mysql'))
+    debug("    # Using share directory: %s", os.path.join(options.basedir, 'share'))
+    debug("    # Using mysqld --basedir: %s", options.basedir)
     plugin_dir = os.path.join(options.basedir, 'lib', 'plugin')
     if os.path.exists(plugin_dir):
-        info("    - Using MySQL plugin directory: %s", os.path.join(options.basedir, 'lib', 'plugin'))
+        debug("    # Using MySQL plugin directory: %s",
+              os.path.join(options.basedir, 'lib', 'plugin'))
 
     return MySQLDistribution(
         version=version,

@@ -84,10 +84,10 @@ def prepare_sandbox_paths(sbopts):
     try:
         for name in ('data', 'tmp'):
             if path.makedirs(os.path.join(sbopts.basedir, name)):
-                info("    - Created %s/%s", sbopts.basedir, name)
+                debug("    # Created %s/%s", sbopts.basedir, name)
     except OSError as exc:
         raise SandboxError("%s" % exc)
-    info("    * Prepared sandbox in %.2f seconds", time.time() - start)
+    info("    * Created directories in %.2f seconds", time.time() - start)
 
 # Template renderer that can load + render templates in the templates
 # directory located in this package
@@ -266,7 +266,7 @@ def bootstrap(options, dist, password, additional_options=()):
         debug("    # DML: %s", user_dml)
         bootstrap_data = False
     else:
-        info("    - Will bootstrap the mysql database")
+        debug("    # Missing mysql/user.frm - bootstrapping sandbox")
         bootstrap_data = True # at least no user table
 
     bootstrap_sql = os.path.join(options.basedir, 'bootstrap.sql')
@@ -278,8 +278,8 @@ def bootstrap(options, dist, password, additional_options=()):
                                      user_dml=user_dml):
             print(line, file=fileobj)
     with open(logfile, 'wb') as stderr:
-            info("    - Generated bootstrap SQL")
-            info("    - Running %s", cmd)
+            debug("    # Generated bootstrap SQL script")
+            debug("    # Executing %s", cmd)
             with open(bootstrap_sql, 'rb') as fileobj:
                 pipeline = sarge.run(cmd,
                                      input=fileobj.fileno(),
