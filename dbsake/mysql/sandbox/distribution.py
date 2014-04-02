@@ -182,16 +182,21 @@ def distribution_from_system(options):
     # and mysql will fail to start withtout it
     join = os.path.join
     exists = os.path.exists
-    sharedir = first_subdir(basedir, 'share/mysql', 'share')
+    share_search_path = ['share/mysql']
+    if 'Percona Server' in version.comment:
+        share_search_path = ['share/percona-server'] + share_search_path
+    sharedir = first_subdir(basedir, *share_search_path)
     if not sharedir:
-        raise common.SandboxError("/usr/share/mysql not found")
+        raise common.SandboxError("MySQL share directory not found (%s)" %
+                                  ','.join(os.path.join(os.sep, 'usr', path)
+                                           for path in share_search_path))
 
     for script in ('fill_help_tables.sql',
                    'mysql_system_tables_data.sql',
                    'mysql_system_tables.sql'):
         if not exists(join(sharedir, script)):
-            raise common.SandboxError("Found %s, but %s does not exist" %
-                                      (sharedir, script))
+            raise common.SandboxError("MySQL bootstrap script '%s' not found." %
+                                      os.path.join(sharedir, script))
 
     info("    - MySQL share found in %s", sharedir)
     # Note: plugindir may be None, if using mysql < 5.1
