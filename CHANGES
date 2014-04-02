@@ -3,7 +3,7 @@ dbsake changelog
 
 Version 1.0.8
 -------------
-:unreleased:
+:released: Wednesday, April 2nd, 2014
 
 [dbsake/mysql-sandbox]
 - mysql-sandbox now fails more gracefully if bootstrap files are
