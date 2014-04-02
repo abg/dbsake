@@ -43,7 +43,7 @@ class ViewCheckOption(enum.IntEnum):
 
 
 class MySQLDefiner(collections.namedtuple('MySQLDefiner', 'user host')):
-    def __str__(self):
+    def format(self):
         return "`{0}`@`{1}`".format(self.user, self.host)
 
 
@@ -73,7 +73,7 @@ class MySQLView(collections.namedtuple('MySQLView',
         else:
             parts.append('CREATE')
         parts.append('ALGORITHM=' + self.algorithm.name)
-        parts.append('DEFINER=' + str(self.definer))
+        parts.append('DEFINER=' + self.definer.format())
         security = 'INVOKER' if self.suid.name == 'DEFAULT' else self.suid.name
         parts.append('SQL SECURITY ' + security)
         parts.append('VIEW')

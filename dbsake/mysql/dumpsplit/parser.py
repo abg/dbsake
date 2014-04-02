@@ -13,6 +13,9 @@ def extract_identifier(value):
     # and unquote the contents remaining
     idx0 = value.find('`')
     idx1 = value.rfind('`')
+    # verify we actually found identifier markers
+    if -1 in (idx0, idx1):
+        raise ValueError("%r does not contain a valid identifier" % value)
     identifier = value[idx0+1:idx1]
     return identifier.replace('``', '`')
 
@@ -36,6 +39,8 @@ def categorize_section(line):
         section_type = 'view_definition'
     elif line.startswith('/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;'):
         section_type = 'footer'
+    elif line.startswith('-- Flush Grant Tables'):
+        section_type = 'flush_privileges'
     elif line.startswith('-- Dump completed'):
         section_type = 'dump_completed'
     else:
@@ -54,7 +59,7 @@ def parse_section(parser):
     yield next(parser) # -- Table structure for table `...`
     yield next(parser) # --
     for line in parser:
-        if line.startswith('--'):
+        if line.rstrip() == '--':
             # read too far, requeue and abort
             parser.push(line)
             break

@@ -5,6 +5,7 @@ dbsake.mysql.frm.binaryfrm
 Parse binary .frm files
 
 """
+from __future__ import unicode_literals
 
 import collections
 import datetime
@@ -39,7 +40,7 @@ _TableOptions = collections.namedtuple('TableOptions',
                                        'comment partitions handler_options')
 
 class TableOptions(_TableOptions):
-    def __str__(self):
+    def format(self):
         return ' '.join(self.attributes())
 
     @property
@@ -173,23 +174,19 @@ class Table(_Table):
         )
             
     def format(self, include_raw_types=False):
-        def _fmt_column(column):
-            value = str(column)
-            if include_raw_types:
-                value += ' /* MYSQL_TYPE_%s */' % column.type_code.name
-            return value
-
-        g = itertools.chain((_fmt_column(c) for c in self.columns), self.keys)
+        columns = (c.format(include_raw_types) for c in self.columns)
+        keys = (k.format() for k in self.keys)
+        table_elements = itertools.chain(columns, keys)
         parts = [
-            u"--",
-            u"-- Table structure for table `%s`" % self.name,
-            u"-- Created with MySQL Version {0}".format(self.mysql_version),
-            u"--",
-            u"",
-            u"CREATE TABLE `%s` (" % self.name,
-            u",\n".join("  %s" % str(name) for name in g),
-            u") {0};".format(self.options),
-            u""
+            "--",
+            "-- Table structure for table `%s`" % self.name,
+            "-- Created with MySQL Version %s" % self.mysql_version.format(),
+            "--",
+            "",
+            "CREATE TABLE `%s` (" % self.name,
+            ",\n".join("  %s" % elt for elt in table_elements),
+            ") %s;" % self.options.format(),
+            ""
         ]
 
         return os.linesep.join(parts)
@@ -199,14 +196,20 @@ _Column = collections.namedtuple('Column',
                                 'default comment charset')
 
 class Column(_Column):
-    def __str__(self):
+    def format(self, include_raw_types=False):
         components = []
+
         components.append("`%s`" % self.name.replace('`', '``'))
         components.append(self.type_name)
+
         if self.default:
             components.append('DEFAULT %s' % self.default)
+
         if self.comment:
             components.append("COMMENT '%s'" % self.comment.replace("'", "\\'"))
+
+        if include_raw_types:
+            components.append(' /* MYSQL_TYPE_%s */' % column.type_code.name)
 
         return ' '.join(components)
 
@@ -224,11 +227,11 @@ class MySQLVersion(collections.namedtuple('MySQLVersion',
                    minor=value % 1000 // 100,
                    release=value % 100)
 
-    def __str__(self):
+    def format(self):
         if self == (0, 0, 0):
             return "< 5.0"
         else:
-            return '.'.join(map(str, self))
+            return '.'.join("%s" % digit for digit in self)
 
 ### Column handling
 def unpack_column_attributes(*args, **kwargs):
@@ -244,14 +247,13 @@ def unpack_column_labels(labels):
     Returns a tuple of tuples
     """
     return tuple(
-        tuple(name.decode('utf8') for name in group[1:-1].split(b'\xff'))
+        tuple(name.decode('utf-8') for name in group[1:-1].split(b'\xff'))
         for group in labels[:-1].split(b'\x00')
     )
 
 def unpack_columns(packed_columns, table):
     names   = unpack_column_names(packed_columns.names)
     labels  = unpack_column_labels(packed_columns.labels)
-
     metadata = util.ByteReader(packed_columns.metadata)
     defaults = util.ByteReader(packed_columns.defaults)
     comments = util.ByteReader(packed_columns.comments)
@@ -300,7 +302,7 @@ def unpack_columns(packed_columns, table):
 
         with defaults.offset(defaults_offset):
             default = mysqltypes.unpack_default(defaults, context)
-        comment = comments.read(comment_length)
+        comment = comments.read(comment_length).decode('utf-8')
         attributes = unpack_column_attributes(context)
 
         yield Column(name=name,
@@ -393,7 +395,7 @@ def parse(path):
     else:
         table_comment = packed_frm_data.extrainfo.bytes_prefix16()
     if table_comment:
-        table_comment = table_comment.decode(table.charset.name)
+        table_comment = table_comment.decode('utf-8')
         table = table._replace(options=table.options._replace(comment=table_comment))
     table = table._replace(columns=columns,
                            keys=indexes)

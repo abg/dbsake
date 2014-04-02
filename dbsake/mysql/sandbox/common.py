@@ -84,10 +84,10 @@ def prepare_sandbox_paths(sbopts):
     try:
         for name in ('data', 'tmp'):
             if path.makedirs(os.path.join(sbopts.basedir, name)):
-                info("    - Created %s/%s", sbopts.basedir, name)
+                debug("    # Created %s/%s", sbopts.basedir, name)
     except OSError as exc:
         raise SandboxError("%s" % exc)
-    info("    * Prepared sandbox in %.2f seconds", time.time() - start)
+    info("    * Created directories in %.2f seconds", time.time() - start)
 
 # Template renderer that can load + render templates in the templates
 # directory located in this package
@@ -211,25 +211,37 @@ def generate_sandbox_user_grant(datadir):
     )
 
 def mysql_install_db(distribution, **kwargs):
-    join = os.path.join
-    def cat(path):
-        with codecs.open(path, 'r', 'utf8') as fileobj:
-            return fileobj.read()
-
     sharedir = distribution.sharedir
-    mysql_system_tables = cat(join(sharedir, 'mysql_system_tables.sql'))
-    if os.path.exists(join(sharedir, 'mysql_performance_tables.sql')):
-        mysql_system_tables += cat(join(sharedir, 'mysql_performance_tables.sql'))
-    mysql_system_tables_data = cat(join(sharedir,
-                                        'mysql_system_tables_data.sql'))
-    fill_help_tables = cat(join(sharedir, 'fill_help_tables.sql'))
+    bootstrap_files = [
+        'mysql_system_tables.sql',
+        'mysql_performance_tables.sql',
+        'mysql_system_tables_data.sql',
+        'fill_help_tables.sql',
+    ]
+
+    for name in bootstrap_files:
+        # this this the variable we will set in the template
+        varname = os.path.splitext(name)[0]
+        cpath = os.path.join(sharedir, name)
+
+        try:
+            with codecs.open(cpath, 'r', encoding='utf-8') as fileobj:
+                data = fileobj.read()
+        except IOError as exc:
+            # ignore ENOENT errors for mysql_performance_tables.sql
+            # This is used specifically for MariaDB
+            if name != 'mysql_performance_tables.sql':
+                raise SandboxError("Failed to read %s" % cpath)
+            else:
+                data = ''
+        except UnicodeError as exc:
+            raise SandboxError("Invalid utf-8 data in %s" % cpath)
+        kwargs[varname] = data
 
     sql = render_template('bootstrap.sql',
                           distribution=distribution,
-                          mysql_system_tables=mysql_system_tables,
-                          mysql_system_tables_data=mysql_system_tables_data,
-                          fill_help_tables=fill_help_tables,
                           **kwargs)
+
     for line in sql.splitlines():
         yield line
 
@@ -254,7 +266,7 @@ def bootstrap(options, dist, password, additional_options=()):
         debug("    # DML: %s", user_dml)
         bootstrap_data = False
     else:
-        info("    - Will bootstrap the mysql database")
+        debug("    # Missing mysql/user.frm - bootstrapping sandbox")
         bootstrap_data = True # at least no user table
 
     bootstrap_sql = os.path.join(options.basedir, 'bootstrap.sql')
@@ -266,8 +278,8 @@ def bootstrap(options, dist, password, additional_options=()):
                                      user_dml=user_dml):
             print(line, file=fileobj)
     with open(logfile, 'wb') as stderr:
-            info("    - Generated bootstrap SQL")
-            info("    - Running %s", cmd)
+            debug("    # Generated bootstrap SQL script")
+            debug("    # Executing %s", cmd)
             with open(bootstrap_sql, 'rb') as fileobj:
                 pipeline = sarge.run(cmd,
                                      input=fileobj.fileno(),

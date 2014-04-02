@@ -7,6 +7,9 @@ USE mysql;
 
 -- mysql_system_tables.sql start --
 {{mysql_system_tables}}
+
+{{mysql_performance_tables}}
+
 -- mysql_system_tables.sql end --
 {{if bootstrap_data}}
 -- mysql_system_tables_data.sql start --
