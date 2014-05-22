@@ -209,7 +209,7 @@ class Column(_Column):
             components.append("COMMENT '%s'" % self.comment.replace("'", "\\'"))
 
         if include_raw_types:
-            components.append(' /* MYSQL_TYPE_%s */' % column.type_code.name)
+            components.append(' /* MYSQL_TYPE_%s */' % self.type_code.name)
 
         return ' '.join(components)
 
