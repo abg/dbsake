@@ -9,12 +9,14 @@ from __future__ import print_function
 import codecs
 import collections
 import errno
+import getpass
 import glob
 import logging
 import os
 import random
 import re
 import string
+import sys
 import tempfile
 import time
 
@@ -35,7 +37,7 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                          'tables', 'exclude_tables',
                                          'cache_policy',
                                          'skip_libcheck', 'skip_gpgcheck',
-                                         'force'
+                                         'force', 'password',
                                         ])
 
 
@@ -69,6 +71,15 @@ def check_options(**kwargs):
         raise SandboxError("Unknown --cache-policy '%s'" %
                            kwargs['cache_policy'])
 
+    if kwargs['prompt_password']:
+        if sys.stdin.isatty():
+            password = getpass.getpass()
+        else:
+            password = sys.stdin.readline().rstrip(os.linesep)
+    else:
+        password = None
+
+
     return SandboxOptions(
         basedir=basedir,
         distribution=dist,
@@ -79,6 +90,7 @@ def check_options(**kwargs):
         skip_libcheck=kwargs['skip_libcheck'],
         skip_gpgcheck=kwargs['skip_gpgcheck'],
         force=bool(kwargs['force']),
+        password=password,
     )
 
 

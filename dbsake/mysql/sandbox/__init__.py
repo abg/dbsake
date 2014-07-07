@@ -22,7 +22,8 @@ error = logging.error
                            'data_source'        : 'D',
                            'table'              : 't',
                            'exclude_table'      : 'T',
-                           'cache_policy'       : 'c'},
+                           'cache_policy'       : 'c',
+                           'prompt_password'    : 'p'},
                multiopts=['table', 'exclude_table'])
 def mysql_sandbox(sandbox_directory=None,
                   mysql_distribution='system',
@@ -32,7 +33,8 @@ def mysql_sandbox(sandbox_directory=None,
                   cache_policy='always',
                   skip_libcheck=False,
                   skip_gpgcheck=False,
-                  force=False):
+                  force=False,
+                  prompt_password=False):
     """Create a temporary MySQL instance
 
     This command installs a new MySQL instance under the
@@ -68,6 +70,9 @@ def mysql_sandbox(sandbox_directory=None,
 
     :param force: create sandbox, even if sandbox directory already exists
                   This may overwrite files in the sandbox directory.
+
+    :param prompt_password: prompt for the root@localhost password rather than
+                            generating a random password.
     """
     from dbsake.util import format_filesize
     from dbsake.util.path import disk_usage, resolve_mountpoint
@@ -115,8 +120,12 @@ def create_sandbox(sbopts):
     info("  Deploying MySQL distribution")
     dist = distribution.deploy(sbopts)
     info("  Generating my.sandbox.cnf")
-    password = common.mkpassword()
-    info("    - Generated random password for sandbox user root@localhost")
+    if sbopts.password is None:
+        password = common.mkpassword()
+        info("    - Generated random password for sandbox user root@localhost")
+    else:
+        password = sbopts.password
+        info("    - Using user supplied password for sandbox user root@localhost")
     common.generate_defaults(sbopts,
                              user='root',
                              password=password,
