@@ -4,6 +4,9 @@
 {{default open_files_limit = 1024}}
 {{default innodb_log_files_in_group = 2}}
 
+[mysql]
+no-auto-rehash
+
 [client]
 {{if user}}
 user                            = "{{user|escape}}"
