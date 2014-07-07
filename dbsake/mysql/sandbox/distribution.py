@@ -95,11 +95,20 @@ def mysqld_version(mysqld):
     try:
         result = sarge.capture_stdout(cmd)
     except OSError as exc:
-        if os.path.exists(mysqld) and exc.errno == errno.ENOENT:
-            error("    !! mysqld is not executable. "
-                  "You may have a tarball not compatible with this system")
-        raise common.SandboxError("%s Failed (errno: %d[%s])" %
-                                  (cmd, exc.errno, errno.errorcode[exc.errno]))
+        if exc.errno == errno.ENOENT:
+            if os.path.exists(mysqld):
+                raise common.SandboxError(("%s is not executable. You may have "
+                                           "a tarball not compatible with "
+                                           "this system") % mysqld)
+            else:
+                raise common.SandboxError(("%s does not exist. Be sure you "
+                                           "use a precompiled binary tarball, "
+                                           "not a source tarball.") % mysqld)
+        else:
+            raise common.SandboxError("%s Failed (errno: %d[%s])" %
+                                      (cmd,
+                                       exc.errno,
+                                       errno.errorcode[exc.errno]))
 
     if result.returncode != 0:
         raise common.SandboxError("%s failed (exit status: %d)" %
