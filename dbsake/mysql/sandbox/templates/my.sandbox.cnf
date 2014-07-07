@@ -93,8 +93,8 @@ plugin-load                     = ha_innodb_plugin.so
 
 ## Replication
 server-id                       = 1
-#log-bin                        = /var/lib/mysqllogs/bin-log
-#relay-log                      = /var/lib/mysqllogs/relay-log
+#log-bin                        = bin-log
+#relay-log                      = relay-log
 relay-log-space-limit           = 16G
 expire-logs-days                = 7
 #read-only                      = 1
