@@ -250,8 +250,12 @@ def bootstrap(options, dist, password, additional_options=()):
     defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
     logfile = os.path.join(options.basedir, 'bootstrap.log')
     info("    - Logging bootstrap output to %s", logfile)
-    cmd = sarge.shell_format("{0} --defaults-file={1} --bootstrap",
-                             dist.mysqld, defaults_file)
+
+    cmd = sarge.shell_format("{mysqld} --defaults-file={defaults_file}",
+                             mysqld=dist.mysqld, defaults_file=defaults_file)
+    additional_options = ('--bootstrap',
+                          '--default-storage-engine=myisam') + \
+                         additional_options
     additional = ' '.join(map(sarge.shell_format, additional_options))
     if additional:
         cmd += ' ' + additional
