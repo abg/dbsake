@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import codecs
 import collections
+import errno
 import glob
 import logging
 import os
@@ -34,6 +35,7 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                          'tables', 'exclude_tables',
                                          'cache_policy',
                                          'skip_libcheck', 'skip_gpgcheck',
+                                         'force'
                                         ])
 
 
@@ -76,6 +78,7 @@ def check_options(**kwargs):
         cache_policy=kwargs['cache_policy'],
         skip_libcheck=kwargs['skip_libcheck'],
         skip_gpgcheck=kwargs['skip_gpgcheck'],
+        force=bool(kwargs['force']),
     )
 
 
@@ -86,7 +89,8 @@ def prepare_sandbox_paths(sbopts):
             if path.makedirs(os.path.join(sbopts.basedir, name)):
                 debug("    # Created %s/%s", sbopts.basedir, name)
     except OSError as exc:
-        raise SandboxError("%s" % exc)
+        if exc.errno != errno.EEXIST or not sbopts.force:
+            raise SandboxError("%s" % exc)
     info("    * Created directories in %.2f seconds", time.time() - start)
 
 # Template renderer that can load + render templates in the templates
