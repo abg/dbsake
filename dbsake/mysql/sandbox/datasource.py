@@ -115,7 +115,9 @@ def datasource_from_directory(options):
     except IOError as exc:
         if exc.errno == errno.EAGAIN:
             raise common.SandboxError("Directory '%s' seems to be in active use (ib_logfile0 locked)" % datadir)
-        raise
+        # capture permissions issue here, but ignore errors from missing ib_logfile*
+        if exc.errno != errno.ENOENT:
+            raise
 
     # otherwise:
     # 1) Remove the empty datadir
