@@ -53,6 +53,9 @@ class MySQLVersion(collections.namedtuple('MySQLVersion',
             version += '-' + self.tag
         return version
 
+    def as_int(self):
+        return ''.join(str(part) for part in self[0:3])
+
     @classmethod
     def from_string(cls, value):
         m = re.search(r'(?P<version>\d+[.]\d+[.]\d+(?:-\S+)?)' # match a version string

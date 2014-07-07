@@ -51,6 +51,7 @@ query-cache-type                = 0
 ## Networking
 {{if not networking}}
 skip-networking
+#port                           = {{port}}
 {{else}}
 port                            = {{port}}
 bind-address                    = {{bind_address}}
