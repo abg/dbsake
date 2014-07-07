@@ -188,7 +188,14 @@ def generate_defaults(options, **kwargs):
     info("    * Generated %s in %.2f seconds", defaults_file, time.time() - start)
     return defaults_file
 
-def generate_sandbox_user_grant(datadir):
+def generate_sandbox_user_grant(datadir, dist):
+    """Generate SQL to add a user to mysql.user table
+
+    :param datadir: location of the datadir
+    :param dist: MySQLDistribution instance containing metadata about target
+                 instance
+    :returns: SQL to inject a root@localhost user to this instance
+    """
     from dbsake.mysql.frm import binaryfrm
 
     user_frm = os.path.join(datadir, 'mysql', 'user.frm')
@@ -212,10 +219,16 @@ def generate_sandbox_user_grant(datadir):
             # does not work
             values.append("'_invalid'")
         elif column.name == 'plugin':
-            # add this to satisfy MySQL 5.7 in cases
-            # where we're loading a 5.5+ tarball into a newer
-            # version
-            values.append("'mysql_native_password'")
+            if dist.version[0:2] == (5, 7):
+                # set mysql.user.plugin to mysql_native_password
+                # when the target instance is MySQL 5.7.
+                # Note: MariaDB is particularly buggy here and
+                #       a plugin value must never be set, so we
+                #       set to this to the empty string for other
+                #       cases.
+                values.append("'mysql_native_password'")
+            else:
+                values.append("''")
         elif column.default is not None:
             values.append(column.default)
         else:
@@ -282,7 +295,7 @@ def bootstrap(options, dist, password, additional_options=()):
         info("    - User supplied mysql.user table detected.")
         info("    - Skipping normal load of system table data")
         info("    - Ensuring root@localhost exists")
-        user_dml = generate_sandbox_user_grant(datadir)
+        user_dml = generate_sandbox_user_grant(datadir, dist)
         debug("    # DML: %s", user_dml)
         bootstrap_data = False
     else:
