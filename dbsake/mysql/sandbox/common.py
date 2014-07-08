@@ -38,6 +38,7 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                          'cache_policy',
                                          'skip_libcheck', 'skip_gpgcheck',
                                          'force', 'password',
+                                         'innobackupex_options',
                                         ])
 
 
@@ -91,6 +92,7 @@ def check_options(**kwargs):
         skip_gpgcheck=kwargs['skip_gpgcheck'],
         force=bool(kwargs['force']),
         password=password,
+        innobackupex_options=kwargs['innobackupex_options'],
     )
 
 

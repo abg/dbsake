@@ -17,13 +17,14 @@ info = logging.info
 error = logging.error
 
 @baker.command(name='mysql-sandbox',
-               shortopts={ 'sandbox_directory'  : 'd',
-                           'mysql_distribution' : 'm',
-                           'data_source'        : 'D',
-                           'table'              : 't',
-                           'exclude_table'      : 'T',
-                           'cache_policy'       : 'c',
-                           'prompt_password'    : 'p'},
+               shortopts={ 'sandbox_directory'    : 'd',
+                           'mysql_distribution'   : 'm',
+                           'data_source'          : 'D',
+                           'table'                : 't',
+                           'exclude_table'        : 'T',
+                           'cache_policy'         : 'c',
+                           'prompt_password'      : 'p',
+                           'innobackupex_options' : 'x'},
                multiopts=['table', 'exclude_table'])
 def mysql_sandbox(sandbox_directory=None,
                   mysql_distribution='system',
@@ -34,7 +35,8 @@ def mysql_sandbox(sandbox_directory=None,
                   skip_libcheck=False,
                   skip_gpgcheck=False,
                   force=False,
-                  prompt_password=False):
+                  prompt_password=False,
+                  innobackupex_options=''):
     """Create a temporary MySQL instance
 
     This command installs a new MySQL instance under the
