@@ -65,7 +65,7 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake mysql-sandbox [<sandbox_directory>] [<mysql_distribution>] [<data_source>] [<table>] [<exclude_table>] [<cache_policy>]
+   Usage: dbsake mysql-sandbox [<sandbox_directory>] [<mysql_distribution>] [<data_source>] [<table>] [<exclude_table>] [<cache_policy>] [<skip_libcheck>] [<skip_gpgcheck>] [<force>] [<prompt_password>] [<innobackupex_options>]
    
    Create a temporary MySQL instance
    
@@ -74,23 +74,34 @@ Usage
    
    Options:
    
-      -d --sandbox-directory   base directory where sandbox will be installed
-                               default: ~/sandboxes/sandbox_<datetime>
-      -m --mysql-distribution  what mysql distribution to use for the sandbox;
-                               system|<major.minor.release>|<tarball>; default:
-                               "system"
-      -D --data-source         how to populate the sandbox; this defaults to
-                               bootstrapping an empty mysql instance similar to
-                               running mysql_install_db
-      -t --table               glob pattern include from --data-source; This option
-                               should be in database.table format and may be
-                               specified multiple times
-      -T --exclude-table       glob pattern to exclude from --data-source; This option
-                               should be in database.table format and may be
-                               specified multiple times
-      -c --cache-policy        the cache policy to use when downloading an mysql
-                               distribution. One of: always,never,refresh,local
-                               Default: always
+      -d --sandbox-directory     base directory where sandbox will be installed
+                                 default: ~/sandboxes/sandbox_<datetime>
+      -m --mysql-distribution    what mysql distribution to use for the sandbox;
+                                 system|<major.minor.release>|<tarball>; default:
+                                 "system"
+      -D --data-source           how to populate the sandbox; this defaults to
+                                 bootstrapping an empty mysql instance similar to
+                                 running mysql_install_db
+      -t --table                 glob pattern include from --data; This option
+                                 should be in database.table format and may be
+                                 specified multiple times
+      -T --exclude-table         glob pattern to exclude from --data; This option
+                                 should be in database.table format and may be
+                                 specified multiple times
+      -c --cache-policy          the cache policy to use when downloading an
+                                 mysql distribution. One of:
+                                 always,never,refresh,local Default: always
+      --skip-libcheck            skip a check for required libraries. This avoids
+                                 aborting the sandbox setup process if libaio is
+                                 not found.
+      --skip-gpgcheck
+      --force                    create sandbox, even if sandbox directory
+                                 already exists This may overwrite files in the
+                                 sandbox directory.
+      -p --prompt-password       prompt for the root@localhost password rather
+                                 than generating a random password.
+      -x --innobackupex-options
+
 
 
 Example
@@ -259,6 +270,31 @@ Options
    distributions.
 
 .. versionadded:: 1.0.5
+
+.. option:: --force
+
+   Forces overwriting the path specified by ``--sandbox-directory`` if
+   it already exists
+
+.. versionadded:: 1.0.9
+
+.. option:: -p, --prompt-password
+
+   Prompt for the root@localhost password instead of generating a random
+   password (the default behavior).  The password will be read from stdin
+   if this option is specified and stdin is not a TTY
+
+.. versionadded:: 1.0.9
+
+.. option:: -x, --innobackupex-options <options>
+
+   Add additional options to the "innobackupex --apply-log {extra options} ."
+   commandline that the sandbox command uses to prepare a datadir created
+   from an xtrabackup tarball image provided via the ``--data-source``
+   opton.
+
+.. versionadded:: 1.0.9
+
 
 Using the sandbox.sh control script
 ...................................
