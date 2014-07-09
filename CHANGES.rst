@@ -1,6 +1,44 @@
 dbsake changelog
 ================
 
+Version 1.0.9
+-------------
+:released: Wednesday, July 9th, 2014
+
+[dbsake/mysql-sandbox]
+- Generated sandbox.sh script now includes a comment indicating
+  the version of dbsake that generated it (issue #42)
+- Better error messages are now reported if mysql-sandbox cannot
+  find a source to download a MySQL tarball distributions (issue #44)
+- Bad binary tarballs now report more extensive errors about
+  what went wrong (issue #46)
+- Added mysql-sandbox --force option to force sandbox installation
+  into an existing sandbox directory (issue #47)
+- mysql-sandbox no longer stacktraces when --data-source specifies
+  a datadir without an ib_logfile (issue #49)
+- TokuDB enabled binary tarball distributions are now handled properly.
+  Previously this would cause a bootstrapping error and the sandbox
+  deployment would fail (issue #50)
+- Generated my.sandbox.cnf now uses relative relay-log / bin-log paths
+  rather than suggesting /var/lib/mysqllogs/.  These are still commented
+  out by default (issue #51)
+- Set mysql --no-auto-rehash in my.sandbox.cnf (issue #52)
+- Added mysql-sandbox --prompt-password option to allow specifying the
+  password set for the root@localhost user when creating a sandbox
+  (issue #53)
+- pluggable authentication is not set to 'mysql_native_password' for
+  any distribution < MySQL 5.7.  This was causing issues with MariaDB
+  when bootstrapping MySQL 5.6+ data. (issue #54)
+- A sample "# port = <integer-version>" is now added to the generated
+  my.sandbox.cnf (e.g. "#port = 5538") (issue #55)
+- Add --innobackupex-options/-x option to allow passing options when
+  dbsake runs innobackupex --apply-log when bootstraping from an
+  xtrabackup tarball image (issue #56)
+
+[dbsake/frm-to-schema]
+- Fixed a bug introduced in v1.0.8 that broke --raw-types option
+  (issue #45)
+
 Version 1.0.8
 -------------
 :released: Wednesday, April 2nd, 2014
