@@ -27,8 +27,12 @@ def loader(package, prefix):
     :param prefix: relative prefix to load resources from
     :returns: template renderer
     """
+    from dbsake import __version__ as __dbsake_version__
+
     def render(name, **kwargs):
         data = pkgutil.get_data(package, '/'.join([prefix, name]))
+        namespace = dict(escape=escape,
+                         __dbsake_version__=__dbsake_version__)
         return tempita.Template(data.decode('utf8'),
-                                namespace=dict(escape=escape)).substitute(**kwargs)
+                                namespace=namespace).substitute(**kwargs)
     return render

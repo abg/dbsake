@@ -8,12 +8,15 @@ from __future__ import print_function
 
 import codecs
 import collections
+import errno
+import getpass
 import glob
 import logging
 import os
 import random
 import re
 import string
+import sys
 import tempfile
 import time
 
@@ -34,6 +37,8 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                          'tables', 'exclude_tables',
                                          'cache_policy',
                                          'skip_libcheck', 'skip_gpgcheck',
+                                         'force', 'password',
+                                         'innobackupex_options',
                                         ])
 
 
@@ -67,6 +72,15 @@ def check_options(**kwargs):
         raise SandboxError("Unknown --cache-policy '%s'" %
                            kwargs['cache_policy'])
 
+    if kwargs['prompt_password']:
+        if sys.stdin.isatty():
+            password = getpass.getpass()
+        else:
+            password = sys.stdin.readline().rstrip(os.linesep)
+    else:
+        password = None
+
+
     return SandboxOptions(
         basedir=basedir,
         distribution=dist,
@@ -76,6 +90,9 @@ def check_options(**kwargs):
         cache_policy=kwargs['cache_policy'],
         skip_libcheck=kwargs['skip_libcheck'],
         skip_gpgcheck=kwargs['skip_gpgcheck'],
+        force=bool(kwargs['force']),
+        password=password,
+        innobackupex_options=kwargs['innobackupex_options'],
     )
 
 
@@ -86,7 +103,8 @@ def prepare_sandbox_paths(sbopts):
             if path.makedirs(os.path.join(sbopts.basedir, name)):
                 debug("    # Created %s/%s", sbopts.basedir, name)
     except OSError as exc:
-        raise SandboxError("%s" % exc)
+        if exc.errno != errno.EEXIST or not sbopts.force:
+            raise SandboxError("%s" % exc)
     info("    * Created directories in %.2f seconds", time.time() - start)
 
 # Template renderer that can load + render templates in the templates
@@ -172,7 +190,14 @@ def generate_defaults(options, **kwargs):
     info("    * Generated %s in %.2f seconds", defaults_file, time.time() - start)
     return defaults_file
 
-def generate_sandbox_user_grant(datadir):
+def generate_sandbox_user_grant(datadir, dist):
+    """Generate SQL to add a user to mysql.user table
+
+    :param datadir: location of the datadir
+    :param dist: MySQLDistribution instance containing metadata about target
+                 instance
+    :returns: SQL to inject a root@localhost user to this instance
+    """
     from dbsake.mysql.frm import binaryfrm
 
     user_frm = os.path.join(datadir, 'mysql', 'user.frm')
@@ -196,10 +221,16 @@ def generate_sandbox_user_grant(datadir):
             # does not work
             values.append("'_invalid'")
         elif column.name == 'plugin':
-            # add this to satisfy MySQL 5.7 in cases
-            # where we're loading a 5.5+ tarball into a newer
-            # version
-            values.append("'mysql_native_password'")
+            if dist.version[0:2] == (5, 7):
+                # set mysql.user.plugin to mysql_native_password
+                # when the target instance is MySQL 5.7.
+                # Note: MariaDB is particularly buggy here and
+                #       a plugin value must never be set, so we
+                #       set to this to the empty string for other
+                #       cases.
+                values.append("'mysql_native_password'")
+            else:
+                values.append("''")
         elif column.default is not None:
             values.append(column.default)
         else:
@@ -250,8 +281,12 @@ def bootstrap(options, dist, password, additional_options=()):
     defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
     logfile = os.path.join(options.basedir, 'bootstrap.log')
     info("    - Logging bootstrap output to %s", logfile)
-    cmd = sarge.shell_format("{0} --defaults-file={1} --bootstrap",
-                             dist.mysqld, defaults_file)
+
+    cmd = sarge.shell_format("{mysqld} --defaults-file={defaults_file}",
+                             mysqld=dist.mysqld, defaults_file=defaults_file)
+    additional_options = ('--bootstrap',
+                          '--default-storage-engine=myisam') + \
+                         additional_options
     additional = ' '.join(map(sarge.shell_format, additional_options))
     if additional:
         cmd += ' ' + additional
@@ -262,7 +297,7 @@ def bootstrap(options, dist, password, additional_options=()):
         info("    - User supplied mysql.user table detected.")
         info("    - Skipping normal load of system table data")
         info("    - Ensuring root@localhost exists")
-        user_dml = generate_sandbox_user_grant(datadir)
+        user_dml = generate_sandbox_user_grant(datadir, dist)
         debug("    # DML: %s", user_dml)
         bootstrap_data = False
     else:

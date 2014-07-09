@@ -58,7 +58,7 @@ def _is_sqldump(path):
             return True
     return False
 
-def prepare_datadir(datadir):
+def prepare_datadir(datadir, options):
     from dbsake.util.path import which
 
     innobackupex = which('innobackupex')
@@ -68,8 +68,8 @@ def prepare_datadir(datadir):
     from dbsake.thirdparty import sarge
 
     xb_log = os.path.join(datadir, 'innobackupex.log')
-    cmd = sarge.shell_format('{0} --apply-log . > innobackupex.log 2>&1',
-                             innobackupex)
+    cmd = sarge.shell_format('{0} --apply-log {1!s} . > innobackupex.log 2>&1',
+                             innobackupex, options.innobackupex_options)
     info("    - Running: %s", cmd)
     info("    - (cwd: %s)", datadir)
     result = sarge.run(cmd, cwd=datadir)
@@ -99,7 +99,7 @@ def preload(options):
         xb_logfile = os.path.join(datadir, 'xtrabackup_logfile')
         if not os.path.exists(ib_logfile) and os.path.exists(xb_logfile):
             info("    - Sandbox data appears to be unprepared xtrabackup data")
-            prepare_datadir(datadir)
+            prepare_datadir(datadir, options)
         info("    * Data extracted in %.2f seconds", time.time() - start)
     elif _is_sqldump(options.datasource):
         # nothing to do before the sandbox is started
@@ -115,7 +115,9 @@ def datasource_from_directory(options):
     except IOError as exc:
         if exc.errno == errno.EAGAIN:
             raise common.SandboxError("Directory '%s' seems to be in active use (ib_logfile0 locked)" % datadir)
-        raise
+        # capture permissions issue here, but ignore errors from missing ib_logfile*
+        if exc.errno != errno.ENOENT:
+            raise
 
     # otherwise:
     # 1) Remove the empty datadir

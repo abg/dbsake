@@ -8,7 +8,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name:           dbsake
-Version:        1.0.8
+Version:        1.0.9
 Release:        1%{?dist}
 Summary:        A DBA's (s)wiss-(a)rmy-(k)nif(e) for mysql
 Group:          Applications/Databases
@@ -64,6 +64,9 @@ chmod 0755 %{buildroot}%{_bindir}/dbsake
 %{_mandir}/man1/dbsake.1*
 
 %changelog
+* Wed Jul 09 2014 "Adnrew Garner <andrew.garner@rackspace.com>" - 1.0.9-1
+- New release
+
 * Wed Apr 02 2014 "Andrew Garner <andrew.garner@rackspace.com>" - 1.0.8-1
 - New release
 

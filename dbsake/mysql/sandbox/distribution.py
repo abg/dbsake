@@ -53,6 +53,9 @@ class MySQLVersion(collections.namedtuple('MySQLVersion',
             version += '-' + self.tag
         return version
 
+    def as_int(self):
+        return ''.join(str(part) for part in self[0:3])
+
     @classmethod
     def from_string(cls, value):
         m = re.search(r'(?P<version>\d+[.]\d+[.]\d+(?:-\S+)?)' # match a version string
@@ -95,11 +98,20 @@ def mysqld_version(mysqld):
     try:
         result = sarge.capture_stdout(cmd)
     except OSError as exc:
-        if os.path.exists(mysqld) and exc.errno == errno.ENOENT:
-            error("    !! mysqld is not executable. "
-                  "You may have a tarball not compatible with this system")
-        raise common.SandboxError("%s Failed (errno: %d[%s])" %
-                                  (cmd, exc.errno, errno.errorcode[exc.errno]))
+        if exc.errno == errno.ENOENT:
+            if os.path.exists(mysqld):
+                raise common.SandboxError(("%s is not executable. You may have "
+                                           "a tarball not compatible with "
+                                           "this system") % mysqld)
+            else:
+                raise common.SandboxError(("%s does not exist. Be sure you "
+                                           "use a precompiled binary tarball, "
+                                           "not a source tarball.") % mysqld)
+        else:
+            raise common.SandboxError("%s Failed (errno: %d[%s])" %
+                                      (cmd,
+                                       exc.errno,
+                                       errno.errorcode[exc.errno]))
 
     if result.returncode != 0:
         raise common.SandboxError("%s failed (exit status: %d)" %
@@ -326,7 +338,7 @@ class MySQLCDNInfo(collections.namedtuple("MySQLCDNInfo", "name locations")):
         '5.0' : dict(
             name='mysql-{version}-linux-{arch}-glibc23.tar.gz',
             locations=(
-                'archives/mysql-5.0/',
+                'archives/mysql-5.0',
             )
         ),
         '5.1' : dict(
@@ -507,7 +519,7 @@ def download_mysql(version, arch, cache_policy):
                 break # stream was opened successfully
 
     if stream is None:
-        raise common.SandboxError("No distribution found")
+        raise common.SandboxError("No distribution found for MySQL v%s" % version)
 
     if 'x-dbsake-cache' not in stream.info():
         stream.info()['x-dbsake-cache'] = ''
@@ -645,12 +657,12 @@ def distribution_from_download(options):
     debug("    # Attempting to deploy distribution for MySQL %s", version)
     checksum = hashlib.new('md5')
 
-    if not options.skip_gpgcheck:
-        initialize_gpg()
-        signature = download_tarball_asc(options)
     info("    - Deploying MySQL %s from download", version)
     with download_mysql(version, 'x86_64', options.cache_policy) as stream:
         debug("    # Streaming from %s", stream.geturl())
+        if not options.skip_gpgcheck:
+            initialize_gpg()
+            signature = download_tarball_asc(options)
         managers = []
         stream.add(checksum.update)
         if os.isatty(sys.stderr.fileno()):
