@@ -26,6 +26,7 @@ tasks for MySQL.
       subcommands
       developing
       frm_format
+      history
 
 .. only:: man
 
