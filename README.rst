@@ -18,7 +18,7 @@ dbsake
 dbsake - a (s)wiss-(a)rmy-(k)nif(e) for MySQL
 
 
-.. image::  sake-icon.png
+.. image::  docs/_static/sake-icon.png
    :target: http://docs.dbsake.net
 
 
