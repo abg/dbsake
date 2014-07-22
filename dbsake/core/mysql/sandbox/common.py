@@ -98,10 +98,9 @@ def prepare_sandbox_paths(sbopts):
             raise SandboxError("%s" % exc)
     info("    * Created directories in %.2f seconds", time.time() - start)
 
-# Template renderer that can load + render templates in the templates
-# directory located in this package
-render_template = template.loader(package=__name__.rpartition('.')[0],
-                                       prefix='templates')
+
+# create a jinja2 environment we can load templates from
+template_loader = template.create_environment(__name__.rpartition('.')[0])
 
 
 def mkpassword(length=8):
@@ -112,10 +111,9 @@ def mkpassword(length=8):
 def generate_initscript(sandbox_directory, **kwargs):
     """Generate an init script"""
     start = time.time()
-    content = render_template("sandbox.sh",
-                              sandbox_root=sandbox_directory,
+    template = template_loader.get_template('sandbox.sh')
+    content = template.render(sandbox_root=sandbox_directory,
                               **kwargs)
-
     sandbox_sh_path = os.path.join(sandbox_directory, 'sandbox.sh')
     with codecs.open(sandbox_sh_path, 'w', encoding='utf8') as fileobj:
         # ensure initscript is executable by current user + group
@@ -174,7 +172,9 @@ def generate_defaults(options, **kwargs):
     except OSError as exc:
         pass
 
-    content = render_template('my.sandbox.cnf', **kwargs)
+    template = template_loader.get_template('my.sandbox.cnf')
+    content = template.render(**kwargs)
+
     with codecs.open(defaults_file, 'wb', encoding='utf8') as stream:
         os.fchmod(stream.fileno(), 0o0660)
         stream.write(content)
@@ -260,10 +260,9 @@ def mysql_install_db(distribution, **kwargs):
             raise SandboxError("Invalid utf-8 data in %s" % cpath)
         kwargs[varname] = data
 
-    sql = render_template('bootstrap.sql',
-                          distribution=distribution,
+    template = template_loader.get_template('bootstrap.sql')
+    sql = template.render(distribution=distribution,
                           **kwargs)
-
     for line in sql.splitlines():
         yield line
 
