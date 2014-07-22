@@ -13,7 +13,7 @@ import click
 from dbsake.cli import dbsake
 
 
-@dbsake.command('mysql-sandbox')
+@dbsake.command('sandbox')
 @click.option('-d', '--sandbox-directory',
               metavar='<path>',
               type=click.Path(file_okay=False,
