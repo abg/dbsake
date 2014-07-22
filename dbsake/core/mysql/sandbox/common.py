@@ -273,14 +273,14 @@ def bootstrap(options, dist, password, additional_options=()):
     logfile = os.path.join(options.basedir, 'bootstrap.log')
     info("    - Logging bootstrap output to %s", logfile)
 
-    cmd = cmd.shell_format("{mysqld} --defaults-file={defaults_file}",
-                           mysqld=dist.mysqld, defaults_file=defaults_file)
+    bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1}",
+                                     dist.mysqld, defaults_file)
     additional_options = ('--bootstrap',
                           '--default-storage-engine=myisam') + \
                          additional_options
     additional = ' '.join(map(cmd.shell_format, additional_options))
     if additional:
-        cmd += ' ' + additional
+        bootstrap_cmd += ' ' + additional
 
     datadir = os.path.join(options.basedir, 'data')
     user_dml = None
@@ -305,12 +305,12 @@ def bootstrap(options, dist, password, additional_options=()):
             print(line, file=fileobj)
     with open(logfile, 'wb') as stderr:
             debug("    # Generated bootstrap SQL script")
-            debug("    # Executing %s", cmd)
+            debug("    # Executing %s", bootstrap_cmd)
             with open(bootstrap_sql, 'rb') as fileobj:
-                pipeline = cmd.run(cmd,
-                                   input=fileobj.fileno(),
-                                   stdout=stderr,
-                                   stderr=stderr)
-    if sum(pipeline.returncodes) != 0:
+                returncode = cmd.run(bootstrap_cmd,
+                                     stdin=fileobj,
+                                     stdout=stderr,
+                                     stderr=stderr)
+    if returncode != 0:
         raise SandboxError("Bootstrapping failed. Details in %s" % stderr.name)
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
