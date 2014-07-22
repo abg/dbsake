@@ -3,6 +3,28 @@
 History
 -------
 
+2.0.0 (unreleased)
+------------------
+
+New features:
+
+  * frm-to-schema command has been renamed to frmdump
+  * mysql-sandbox command has been renamed to sandbox
+  * filename-to-tablename command has been renamed to decode
+  * tablename-to-filename command has been renamed to encode
+  * importfrm command has been removed
+  * read-ibbinlog command has been removed
+  * split-mysqldump was rewritten to support many more features
+    and is now renamed to sieve
+  * fincore and uncache no longer fail when no paths are passed.  This usage
+    is now considered a no-op.
+  * dbsake now uses click instead of baker for option parsing, so some previous
+    usage of dbsake may no longer work.
+  * The sandbox command now uses jinja2 to generate templates rather than
+    tempita.
+  * dbsake no longer uses the sarge library internally
+  * dbsake no longer uses the tempita library internally
+
 1.0.9 (2014-07-09)
 ------------------
 
