@@ -43,7 +43,7 @@ def frmdump(path, raw_types, replace):
         sys.exit(1)
     sys.exit(0)
 
-@dbsake.command('filename-to-tablename', options_metavar="[options]")
+@dbsake.command('decode', options_metavar="[options]")
 @click.argument('names', nargs=-1)
 def decode(names):
     """Decode a MySQL tablename as a unicode name."""
@@ -54,7 +54,7 @@ def decode(names):
 
     return 0
 
-@dbsake.command('tablename-to-filename', options_metavar="[options]")
+@dbsake.command('encode', options_metavar="[options]")
 @click.argument('names', nargs=-1)
 def encode(names):
     """Encode a MySQL tablename"""
