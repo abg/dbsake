@@ -10,23 +10,34 @@ Here is the basic dbsake usage:
 
 .. code-block:: bash
 
-   Usage: dbsake [options] [subcommand] [subcommand-options...]
-   
+   Usage: dbsake [options] <command>
+
    Options:
-     -h, --help     show this help message and exit
-     -V, --version  show dbsake version and exit
-     -q, --quiet    Silence logging output
-     -d, --debug    Enable debug messages
+     -d, --debug
+     -q, --quiet
+     -V, --version  Show the version and exit.
+     -?, --help     Show this message and exit.
+
+   Commands:
+     decode         Decode a MySQL tablename as a unicode name.
+     encode         Encode a MySQL tablename
+     fincore        Report cached pages for a file.
+     frmdump        Dump schema from MySQL frm files.
+     help           Show help for a command.
+     sandbox        Create a sandboxed MySQL instance.
+     sieve          Filter a mysqldump plaintext SQL stream
+     uncache        Drop OS cached pages for a file.
+     upgrade-mycnf  Upgrade a MySQL option file
 
 .. program:: dbsake
 
-.. option:: -h, --help
+.. option:: -?, --help
 
    Show the top-level dbsake options
 
 .. note::
 
-   Running dbsake <subcommand> --help instead shows the help for that subcommand.
+   Running dbsake <command> --help instead shows the help for that subcommand.
 
 .. option:: -V, --version
 
@@ -43,12 +54,12 @@ Here is the basic dbsake usage:
    Enable debugging output.  This enables more verbose logs that are typically
    not necessary, but may be helpful for troubleshooting.
 
-mysql-sandbox
-~~~~~~~~~~~~~
+sandbox
+~~~~~~~
 
 .. versionadded:: 1.0.3
 
-Setup a secondary MySQL instance easily.
+Setup a secondary MySQL instance painlessly.
 
 This setups a MySQL under ~/sandboxes/ (by default) with a
 randomly generated password for the root@localhost user
@@ -65,43 +76,35 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake mysql-sandbox [<sandbox_directory>] [<mysql_distribution>] [<data_source>] [<table>] [<exclude_table>] [<cache_policy>] [<skip_libcheck>] [<skip_gpgcheck>] [<force>] [<prompt_password>] [<innobackupex_options>]
+   Usage: dbsake sandbox [OPTIONS]
    
-   Create a temporary MySQL instance
+     Create a sandboxed MySQL instance.
    
-       This command installs a new MySQL instance under the specified sandbox
-       directory, or under ~/sandboxes/sandbox_<datetime> if none is specified.
+     This command installs a new MySQL instance under the specified sandbox
+     directory, or under ~/sandboxes/sandbox_<datetime> if none is specified.
    
    Options:
-   
-      -d --sandbox-directory     base directory where sandbox will be installed
-                                 default: ~/sandboxes/sandbox_<datetime>
-      -m --mysql-distribution    what mysql distribution to use for the sandbox;
-                                 system|<major.minor.release>|<tarball>; default:
-                                 "system"
-      -D --data-source           how to populate the sandbox; this defaults to
-                                 bootstrapping an empty mysql instance similar to
-                                 running mysql_install_db
-      -t --table                 glob pattern include from --data; This option
-                                 should be in database.table format and may be
-                                 specified multiple times
-      -T --exclude-table         glob pattern to exclude from --data; This option
-                                 should be in database.table format and may be
-                                 specified multiple times
-      -c --cache-policy          the cache policy to use when downloading an
-                                 mysql distribution. One of:
-                                 always,never,refresh,local Default: always
-      --skip-libcheck            skip a check for required libraries. This avoids
-                                 aborting the sandbox setup process if libaio is
-                                 not found.
-      --skip-gpgcheck
-      --force                    create sandbox, even if sandbox directory
-                                 already exists This may overwrite files in the
-                                 sandbox directory.
-      -p --prompt-password       prompt for the root@localhost password rather
-                                 than generating a random password.
-      -x --innobackupex-options
-
+     -d, --sandbox-directory <path>  path where sandbox will be installed
+     -m, --mysql-distribution <dist>
+                                     mysql distribution to install
+     -D, --data-source <source>      path to file to populate sandbox
+     -t, --table <glob-pattern>      db.table glob pattern to include from
+                                     --data-source
+     -T, --exclude-table <glob-pattern>
+                                     db.table glob pattern to exclude from
+                                     --data-source
+     -c, --cache-policy <policy>     cache policy to apply when downloading mysql
+                                     distribution
+     --skip-libcheck                 skip check for required system libraries
+     --skip-gpgcheck                 skip gpg verification of download mysql
+                                     distributions
+     --force                         overwrite existing sandbox directory
+     -p, --password                  prompt for password to create root@localhost
+                                     with
+     -x, --innobackupex-options <options>
+                                     additional options to run innobackupex
+                                     --apply-logs
+     -?, --help                      Show this message and exit.
 
 
 Example
@@ -109,61 +112,58 @@ Example
 
 .. code-block:: bash
 
-   $ dbsake mysql-sandbox --sandbox-directory=/opt/mysql-5.6.15 \
-   >                      --mysql-distribution=5.6.15 \
-   >                      --data-source=backup.tar.gz
-   Preparing sandbox instance: /opt/mysql-5.6.15
+   # dbsake sandbox --sandbox-directory=/opt/mysql-5.6.19 \
+   >                --mysql-distribution=5.6.19 \
+   >                --data-source=backup.tar.gz
+   Preparing sandbox instance: /opt/mysql-5.6.19
      Creating sandbox directories
-       - Created /opt/mysql-5.6.15/data
-       - Created /opt/mysql-5.6.15/tmp
-       * Prepared sandbox in 0.00 seconds
-     Preloading sandbox data from backup.tar.gz
+       * Created directories in 0.00 seconds
+     Preloading sandbox data from /root/backup.tar.gz
+   (100.00%)[========================================] 276.0KiB / 276.0KiB
        - Sandbox data appears to be unprepared xtrabackup data
-       - Running: /root/xb/bin/innobackupex --apply-log . > innobackupex.log 2>&1
-       - (cwd: /opt/mysql-5.6.15/data)
+       - Running: /root/xb/bin/innobackupex --apply-log  .
+       - (cwd: /opt/mysql-5.6.19/data)
        - innobackupex --apply-log succeeded. datadir is ready.
-       * Data extracted in 15.72 seconds
+       * Data extracted in 4.46 seconds
      Deploying MySQL distribution
-       - Attempting to deploy distribution for MySQL 5.6.15
-       - Downloading from http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz
-       - Caching download: /root/.dbsake/cache/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz
+       - Deploying MySQL 5.6.19 from download
+       - Downloading from http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.19-linux-glibc2.5-x86_64.tar.gz
+       - Importing mysql public key to /root/.dbsake/gpg
+       - Verifying gpg signature via: /bin/gpg2 --verify /root/.dbsake/cache/mysql-5.6.19-linux-glibc2.5-x86_64.tar.gz.asc -
        - Unpacking tar stream. This may take some time
-       - Stored MD5 checksum for download: /root/.dbsake/cache/mysql-5.6.15-linux-glibc2.5-x86_64.tar.gz.md5
-       - Using mysqld (v5.6.15): /opt/mysql-5.6.15/bin/mysqld
-       - Using mysqld_safe: /opt/mysql-5.6.15/bin/mysqld_safe
-       - Using mysql: /opt/mysql-5.6.15/bin/mysql
-       - Using share directory: /opt/mysql-5.6.15/share
-       - Using mysqld --basedir: /opt/mysql-5.6.15
-       - Using MySQL plugin directory: /opt/mysql-5.6.15/lib/plugin
-       * Deployed MySQL distribution to sandbox in 20.79 seconds
+   (100.00%)[========================================] 291.4MiB / 291.4MiB
+       - GPG signature validated
+       - Stored MD5 checksum for download: /root/.dbsake/cache/mysql-5.6.19-linux-glibc2.5-x86_64.tar.gz.md5
+       * Deployed MySQL distribution in 46.17 seconds
      Generating my.sandbox.cnf
        - Generated random password for sandbox user root@localhost
        ! Existing ib_logfile0 detected. Setting innodb-log-file-size=5M
-       * Generated /opt/mysql-5.6.15/my.sandbox.cnf in 0.01 seconds
+       ! Found existing shared innodb tablespace: ibdata1:18M:autoextend
+       * Generated /opt/mysql-5.6.19/my.sandbox.cnf in 0.03 seconds
      Bootstrapping sandbox instance
-       - Logging bootstrap output to /opt/mysql-5.6.15/bootstrap.log
+       - Logging bootstrap output to /opt/mysql-5.6.19/bootstrap.log
        - User supplied mysql.user table detected.
        - Skipping normal load of system table data
        - Ensuring root@localhost exists
-       - Generated bootstrap SQL
-       - Running /opt/mysql-5.6.15/bin/mysqld --defaults-file=/opt/mysql-5.6.15/my.sandbox.cnf --bootstrap
-       * Bootstrapped sandbox in 1.98 seconds
+       * Bootstrapped sandbox in 2.04 seconds
      Creating sandbox.sh initscript
-       * Generated initscript in 0.00 seconds
-   Sandbox created in 38.50 seconds
+       * Generated initscript in 0.01 seconds
+   Sandbox created in 52.72 seconds
    
    Here are some useful sandbox commands:
-          Start sandbox: /opt/mysql-5.6.15/sandbox.sh start
-           Stop sandbox: /opt/mysql-5.6.15/sandbox.sh stop
-     Connect to sandbox: /opt/mysql-5.6.15/sandbox.sh mysql <options>
-      mysqldump sandbox: /opt/mysql-5.6.15/sandbox.sh mysqldump <options>
-   Install SysV service: /opt/mysql-5.6.15/sandbox.sh install-service
-
+          Start sandbox: /opt/mysql-5.6.19/sandbox.sh start
+           Stop sandbox: /opt/mysql-5.6.19/sandbox.sh stop
+     Connect to sandbox: /opt/mysql-5.6.19/sandbox.sh mysql <options>
+      mysqldump sandbox: /opt/mysql-5.6.19/sandbox.sh mysqldump <options>
+   Install SysV service: /opt/mysql-5.6.19/sandbox.sh install-service
 
 Options
 .......
 
-.. program:: mysql-sandbox
+.. program:: sandbox
+
+.. versionchanged:: 2.0.0
+   mysql-sandbox renamed to sandbox
 
 .. option:: -d, --sandbox-directory <path>
 
@@ -278,13 +278,16 @@ Options
 
 .. versionadded:: 1.0.9
 
-.. option:: -p, --prompt-password
+.. option:: -p, --password
 
    Prompt for the root@localhost password instead of generating a random
    password (the default behavior).  The password will be read from stdin
    if this option is specified and stdin is not a TTY
 
 .. versionadded:: 1.0.9
+
+.. versionchanged:: 2.0.0
+   --prompt-password renamed to --password
 
 .. option:: -x, --innobackupex-options <options>
 
@@ -399,30 +402,25 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake fincore [<verbose>] [<paths>...]
+   Usage: dbsake fincore [OPTIONS] [PATHS]...
    
-   Check if a file is cached by the OS
-   
-       Outputs the cached vs. total pages with a percent.
+     Report cached pages for a file.
    
    Options:
-   
-      --verbose  itemize which pages are cached
-   
-   Variable arguments:
-   
-      *paths   check if these paths are cached
+     -v, --verbose
+     -?, --help     Show this message and exit.
+
 
 Example
 .......
 
 .. code-block:: bash
 
-   $ dbsake fincore /var/lib/mysql/ibdata1
-   /var/lib/mysql/ibdata1: total_pages=37376 cached=0 percent=0.00
-   $ cat /var/lib/mysql/ibdata1 > /dev/null
-   $ dbsake fincore /var/lib/mysql/ibdata1
-   /var/lib/mysql/ibdata1: total_pages=37376 cached=37376 percent=100.00
+   # dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=6656 cached=0 percent=0.00
+   # cat /var/lib/mysql/ibdata1 > /dev/null
+   # dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=6656 cached=6656 percent=100.00
 
 Options
 .......
@@ -457,25 +455,24 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake uncache [<paths>...]
+   Usage: dbsake uncache [OPTIONS] [PATHS]...
 
-   Uncache a file from the OS page cache
+     Drop OS cached pages for a file.
 
-   Variable arguments:
-
-      *paths   uncache files for these paths
+   Options:
+     -?, --help  Show this message and exit.
 
 Example
 .......
 
 .. code-block:: bash
 
-   $ dbsake fincore /var/lib/mysql/ibdata1
-   /var/lib/mysql/ibdata1: total_pages=37376 cached=37376 percent=100.00
-   $ dbsake uncache /var/lib/mysql/ibdata1
+   # dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=6656 cached=6656 percent=100.00
+   # dbsake uncache /var/lib/mysql/ibdata1
    Uncached /var/lib/mysql/ibdata1
-   $ dbsake fincore /var/lib/mysql/ibdata1
-   /var/lib/mysql/ibdata1: total_pages=37376 cached=0 percent=0.00
+   # dbsake fincore /var/lib/mysql/ibdata1
+   /var/lib/mysql/ibdata1: total_pages=6656 cached=0 percent=0.00
 
 Options
 .......
@@ -486,101 +483,230 @@ Options
 
    Path(s) to remove from cache.
 
-split-mysqldump
-~~~~~~~~~~~~~~~
+sieve
+~~~~~
 
-Split mysqldump output into separate parts.
+Filter and transform a mysqldump stream.
 
-This command splits mysqldump into a .sql file for each table in the original 
-dumpfile.   Files are created under a subdirectory which matches the database
-name.  An optional filtering command can be specified to compress these files,
-and split-mysqldump defaults to filtering through gzip --fast (gzip -1).
+This command processes mysqldump output, potentially filtering or
+transforming the output based on the provided command line options.
+
+sieve effective works in two modes:
+
+  - streaming; mysqldump is read from ``--input-file`` and written to
+    stdout possibly with different output depending on the provided
+    options.
+  - directory; mysqldump is read from ``--input-file`` and split into
+    separate files in the requested directory. This allows converting
+    a large dump in a file-per-table easily.  Files output in this
+    mode are additionally filtered through ``--compress-command``
+    and are processed through ``gzip --fast`` by default so the
+    output is compressed on disk by default.
+
 
 Usage
 .....
 
 .. code-block:: bash
 
-   Usage: dbsake split-mysqldump [<target>] [<directory>] [<filter_command>] [<regex>]
-   
-   Split mysqldump output into separate files
-   
+   Usage: dbsake sieve [OPTIONS]
+
+     Filter a mysqldump plaintext SQL stream
+
    Options:
-   
-      -t --target          MySQL version target (default 5.5)
-      -C --directory       Directory to output to (default .)
-      -f --filter-command  Command to filter output through(default gzip -1)
-      --regex
+     -F, --format <name>
+     -C, --directory <output directory>
+     -i, --input-file <path>
+     -z, --compress-command <command>
+     -t, --table <glob pattern>
+     -T, --exclude-table <glob pattern>
+     --defer-indexes
+     --defer-foreign-keys
+     --write-binlog / --disable-binlog
+     --table-data / --skip-table-data
+     --master-data / --no-master-data
+     -f, --force
+     -?, --help                      Show this message and exit.
 
 Example
 .......
 
 .. code-block:: bash
 
-   $ mysqldump sakila | dbsake split-mysqldump -C backups/
-   2014-01-04 05:34:01,181 Deferring indexes for sakila.actor (backups/sakila/actor.schema.sql)
-   2014-01-04 05:34:01,185 Injecting deferred index creation backups/sakila/actor.data.sql
-   2014-01-04 05:34:01,194 Not deferring index `idx_fk_city_id` - used by constraint `fk_address_city`
-   2014-01-04 05:34:01,211 Not deferring index `idx_fk_country_id` - used by constraint `fk_city_country`
-   2014-01-04 05:34:01,227 Not deferring index `idx_fk_address_id` - used by constraint `fk_customer_address`
-   2014-01-04 05:34:01,227 Not deferring index `idx_fk_store_id` - used by constraint `fk_customer_store`
-   2014-01-04 05:34:01,227 Deferring indexes for sakila.customer (backups/sakila/customer.schema.sql)
-   2014-01-04 05:34:01,231 Injecting deferred index creation backups/sakila/customer.data.sql
-   2014-01-04 05:34:01,240 Not deferring index `idx_fk_original_language_id` - used by constraint `fk_film_language_original`
-   2014-01-04 05:34:01,240 Not deferring index `idx_fk_language_id` - used by constraint `fk_film_language`
-   2014-01-04 05:34:01,240 Deferring indexes for sakila.film (backups/sakila/film.schema.sql)
-   2014-01-04 05:34:01,245 Injecting deferred index creation backups/sakila/film.data.sql
-   2014-01-04 05:34:01,258 Not deferring index `idx_fk_film_id` - used by constraint `fk_film_actor_film`
-   2014-01-04 05:34:01,275 Not deferring index `fk_film_category_category` - used by constraint `fk_film_category_category`
-   2014-01-04 05:34:01,300 Not deferring index `idx_fk_film_id` - used by constraint `fk_inventory_film`
-   2014-01-04 05:34:01,301 Not deferring index `idx_store_id_film_id` - used by constraint `fk_inventory_store`
-   2014-01-04 05:34:01,330 Not deferring index `idx_fk_customer_id` - used by constraint `fk_payment_customer`
-   2014-01-04 05:34:01,331 Not deferring index `idx_fk_staff_id` - used by constraint `fk_payment_staff`
-   2014-01-04 05:34:01,331 Not deferring index `fk_payment_rental` - used by constraint `fk_payment_rental`
-   2014-01-04 05:34:01,380 Not deferring index `idx_fk_staff_id` - used by constraint `fk_rental_staff`
-   2014-01-04 05:34:01,380 Not deferring index `idx_fk_customer_id` - used by constraint `fk_rental_customer`
-   2014-01-04 05:34:01,381 Not deferring index `idx_fk_inventory_id` - used by constraint `fk_rental_inventory`
-   2014-01-04 05:34:01,445 Not deferring index `idx_fk_address_id` - used by constraint `fk_staff_address`
-   2014-01-04 05:34:01,446 Not deferring index `idx_fk_store_id` - used by constraint `fk_staff_store`
-   2014-01-04 05:34:01,460 Not deferring index `idx_fk_address_id` - used by constraint `fk_store_address`
-   2014-01-04 05:34:01,493 Split input into 1 database(s) 16 table(s) and 14 view(s)
+   $ mysqldump --routines sakila | dbsake sieve --format=directory --directory=backups/
+   $ tree backups
+   backups
+   └── sakila
+       ├── actor.sql.gz
+       ├── address.sql.gz
+       ├── category.sql.gz
+       ├── city.sql.gz
+       ├── country.sql.gz
+       ├── customer.sql.gz
+       ├── film_actor.sql.gz
+       ├── film_category.sql.gz
+       ├── film.sql.gz
+       ├── film_text.sql.gz
+       ├── inventory.sql.gz
+       ├── language.sql.gz
+       ├── payment.sql.gz
+       ├── rental.sql.gz
+       ├── routines.ddl.gz
+       ├── staff.sql.gz
+       ├── store.sql.gz
+       └── views.ddl.gz
+   
+   1 directory, 18 files
 
 Options
 .......
 
-.. program:: split-mysqldump
+.. program:: sieve
 
-.. option:: -t <version>, --target <version>
+.. versionchanged:: 2.0.0
+   Renamed split-mysqldump to sieve; Significant rewrite of functionality.
 
-   Which version of MySQL the output files should be targetted to.
-   This option toggles whether split-mysqldump defers index creation
-   until after the data is loaded (5.5+) or whether to defer foreign-key
-   creation (5.6+).
+.. versionchanged:: 2.0.0
+   Remove --regex option in favor of -t/--table and -T/--exclude-table option
+   which accepts globs.
 
-   Valid values: 5.1, 5.5, 5.6
+.. option:: -F, --format <name>
 
-.. option:: -C <path>, --directory <path>
+   Output file format.  Must be one of 'stream' or 'directory'. If set to
+   'stream', output will be written on stdout.  Unless --force is also
+   specified the sieve command with refuse to write to a terminal.
 
-   Where split-mysqldump should create output files.
-   split-mysqldump will create this path if it does not already exist.
+   If set to 'directory', output will be written to the path specified by
+   the ``--directory`` option, with a file per table.
+
+.. versionadded:: 2.0.0
+
+.. option:: -C, --directory <output directory>
+
+   Path where the sieve command should create output files. Ignored if
+   ``--format`` is set to 'stream'. The sieve command will create this
+   path if it does not already exist.
+
    Defaults to '.' - the current working directory.
 
-.. option:: -f <command>, --filter-command <command>
+.. option:: -i, --input-file <path>
 
-   Filter output files through this command.
-   split-mysqldump will detect most compression commands
-   and set an appropriate extension on its output files. E.g.
-   -f gzip results in a gz extension, -f "bzip -9" results in
-   bz2 extension, etc.
+   Input file to read mysqldump input from.  Default to "-" and reads from
+   stdin. This must be an uncompressed data source, so to process an already
+   compressed .sql.gz file you might run it through
+   "zcat backup.sql.gz | dbsake sieve [options...]"
 
-   Defaults to "gzip -1"
+.. versionadded:: 2.0.0
 
-.. option:: --regex <pattern>
+.. option:: -z, --compress-command <command>
 
-   Matches tables and views against the provided regex.
-   Any object that doesn't match the regex is skipped.
-   Defaults to matching all objects.
+   Filter output files through this command. If ``--format`` is not set to
+   'directory', then this option is ignored. The sieve command will detect
+   most common compression command and create an appropriate extension on the
+   output files.  For example, --compress-command=gzip will create .sql.gz
+   files under the path specified by ``--directory``.
 
+   Defaults to "gzip -1".
+
+.. versionchanged:: 2.0.0
+   -f/--filter-command was renamed to -z/--compress-command
+
+.. option:: -t, --table <glob pattern>
+
+   f ``--table`` is specified, then only tables matching the provided glob
+   pattern will be included in the output of the sieve command. Each table
+   is qualified by the database name in "database.table" format and then
+   compared against the glob pattern. For example, to include all tables
+   in the "mysql" database you would specify --table="mysql.*".
+
+   This option may be specified multiple times and sieve will include any
+   table that matches at least one of these options so long as the table
+   does not also match an ``--exclude-table`` option.
+
+   If no --table options are provided, all tables are included in the output
+   that do not otherwise match an ``--exclude-table`` pattern.
+
+.. versionadded:: 2.0.0
+ 
+.. option:: -T, --exclude-table <glob pattern>
+
+   If ``--exclude-table`` is specified, then only tables not matching
+   the provided glob pattern will be included in the output of the sieve
+   command. Each table is qualified by the database name in "database.table"
+   format and then compared against the glob pattern.  For example, to exclude
+   the mysql.user table from output you would specify the option:
+   "--exclude-table=mysql.user".
+
+   This option may be specified multiple times and sieve will include any
+   table that matches at least one of these options so long as the table
+   does not also match an ``--exclude-table`` option.
+
+   If no ``--exclude-table`` options are provided, all tables are included in
+   the output that match at least one ``--table`` pattern, or all output is
+   included if neither ``--exclude-table`` or ``--table`` options are provided.
+
+.. versionadded:: 2.0.0
+
+.. option:: --defer-indexes
+
+   This option rewrites the output of CREATE TABLE statements and arranges for
+   secondary indexes to be created after the table data is loaded.  This causes
+   an additional ALTER TABLE statement to be output after the table data section
+   of each table, when there is at least one secondary index to be added.
+
+   If there are foreign key constraints on the table, associated indexes will
+   not be deferred unless the ``--defer-foreign-keys`` option is also specified.
+
+   This option only applies to InnoDB tables and is only efficient on MySQL 5.1+
+   (if the innodb plugin is enabled) or on MySQL 5.5+ (default InnoDB engine),
+   where the fast alter path may be used.
+
+.. option:: --defer-foreign-keys
+
+   This option rewrites the output of CREATE TABLE statements and adds foreign
+   key constraints after the table data is loaded.  This is primarily useful
+   to allow deferring secondary indexes with associated foreign keys.
+
+   This option only makes sense if reloading a dump into MySQL 5.6+, othrewise
+   adding indexes will require a full table rebuild and will end up being
+   much slower than just reloading the mysqldump unaltered.
+
+.. option:: --write-binlog / --disable-binlog
+
+   If ``--disable-binlog`` is set, sieve will output a SET SQL_LOG_BIN=0 SQL
+   command to the beginning of the dump to avoid writing to the binary log
+   when reloading the resulting output.  Use the option with care, as the
+   resulting dump will not replicate to a slave if this option is set.
+
+.. versionadded:: 2.0.0
+
+.. option:: --table-data / --skip-table-data
+
+  If ``--skip-table-data`` is set, sieve will not output any table data
+  sections and only output DDL.  Reloading such a dump will result in
+  empty tables.
+
+.. versionadded:: 2.0.0
+
+.. option:: --master-data / --no-master-data
+
+   If the ``--master-data`` option is set, any commented out CHANGE MASTER
+   statements will be uncommented in the output.  This is useful of setting
+   up a replication slave from a backup created using --master-data=2.
+
+   If the ``--no-master-data`` option is set, any CHANGE MASTER statements
+   will be commented out in the output, ensuring no CHANGE MASTER is run.
+   This is useful for dumps created with --master-data[=1].
+
+.. versionadded:: 2.0.0
+
+.. option:: -f, --force
+
+   The ``--force`` option will force output to be written to stdout even if it
+   appears that this will write to an active terminal. This can be useful in
+   cases when filtering the mysqldump output or when not outputing large
+   amounts of data and want to read it directly on the terminal.
+ 
 upgrade-mycnf
 ~~~~~~~~~~~~~
 
@@ -601,15 +727,15 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake upgrade-mycnf [<config>] [<target>] [<patch>]
+   Usage: dbsake upgrade-mycnf [OPTIONS]
    
-   Patch a my.cnf to a new MySQL version
+     Upgrade a MySQL option file
    
    Options:
-   
-      -c --config  my.cnf file to parse (default: /etc/my.cnf)
-      -t --target  MySQL version to target the option file (default: 5.5)
-      -p --patch   Output unified diff rather than full config (default off)
+     -c, --config PATH               my.cnf file to parse
+     -t, --target [5.1|5.5|5.6|5.7]  MySQL version to target
+     -p, --patch                     Output unified diff rather than full config
+     -?, --help                      Show this message and exit.
 
 Example
 .......
@@ -652,10 +778,10 @@ Options
    Specify the output should be a unified diff rather than a full my.cnf.
    Defaults to outputting a full my.cnf if this option is not specified.
 
-.. _frm-to-schema:
+.. _frmdump:
 
-frm-to-schema
-~~~~~~~~~~~~~
+frmdump
+~~~~~~~
 
 Decode a MySQL .frm file and output a CREATE VIEW or CREATE TABLE statement.
 
@@ -674,19 +800,14 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake frm-to-schema [<raw_types>] [<replace>] [<paths>...]
+   Usage: dbsake frmdump [options] [path[, path...]]
    
-   Decode a binary MySQl .frm file to DDL
+     Dump schema from MySQL frm files.
    
    Options:
-   
-      --raw-types
-      --replace    If a path references a view output CREATE OR REPLACE so a view
-                   definition can be replaced.
-   
-   Variable arguments:
-   
-      *paths   paths to extract schema from
+     -r, --raw-types
+     -R, --replace
+     -?, --help       Show this message and exit.
 
 Example
 .......
@@ -694,7 +815,7 @@ Example
 .. code-block:: bash
 
 
-   $ dbsake frm-to-schema /var/lib/mysql/mysql/plugin.frm
+   $ dbsake frmdump /var/lib/mysql/mysql/plugin.frm
    --
    -- Table structure for table `plugin`
    -- Created with MySQL Version 5.6.15
@@ -706,7 +827,7 @@ Example
      PRIMARY KEY (`name`)
    ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT 'MySQL plugins';
 
-   $ dbsake frm-to-schema /var/lib/mysql/sakila/actor_info.frm
+   $ dbsake frmdump /var/lib/mysql/sakila/actor_info.frm
    --
    -- View:         actor_info
    -- Timestamp:    2014-01-04 05:29:55
@@ -719,14 +840,17 @@ Example
 Options
 .......
 
-.. program:: frm-to-schema
+.. program:: frmdump
 
-.. option:: --replace
+.. versionchanged:: 2.0.0
+   frm-to-schema was renamed to frmdump
+
+.. option:: -R, --replace
 
    Output view as CREATE OR REPLACE so that running the DDL against MySQL will
    overwrite a view.
 
-.. option:: --raw-types
+.. option:: -r, --raw-types
 
    Add comment to base tables noting the underlying mysql type code
    as MYSQL_TYPE_<name>.
@@ -749,13 +873,13 @@ Options
    A -- Table structure for table \`<name>\` comment is added before each table
 
 .. versionadded:: 1.0.2
-   The :option:`frm-to-schema --raw-types` option
+   The :option:`frmdump --raw-types` option
 
 .. versionadded:: 1.0.2
-   The :option:`frm-to-schema --replace` option
+   The :option:`frmdump --replace` option
 
-filename-to-tablename
-~~~~~~~~~~~~~~~~~~~~~
+decode
+~~~~~~
 
 Decode a MySQL encoded filename
 
@@ -768,21 +892,19 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake filename-to-tablename [<names>...]
-   
-   Decode a MySQL tablename as a unicode name
-   
-   Variable arguments:
-   
-      *names   filenames to decode
+   Usage: dbsake decode [options] [NAMES]...
 
+     Decode a MySQL tablename as a unicode name.
+
+   Options:
+     -?, --help  Show this message and exit.
 
 Example
 .......
 
 .. code-block:: bash
 
-   $ dbsake filename-to-tablename $(basename /var/lib/mysql/test/foo@002ebar.frm .frm)
+   $ dbsake decode $(basename /var/lib/mysql/test/foo@002ebar.frm .frm)
    foo.bar
 
 Options
@@ -794,8 +916,8 @@ Options
 
    Specify a filename to convert to plain unicode
 
-tablename-to-filename
-~~~~~~~~~~~~~~~~~~~~~
+encode
+~~~~~~
 
 Encode a MySQL tablename with the MySQL filename encoding
 
@@ -807,99 +929,27 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake tablename-to-filename [<names>...]
-   
-   Encode a unicode tablename as a MySQL filename
-   
-   Variable arguments:
-   
-      *names   names to encode
+   Usage: dbsake encode [options] [NAMES]...
 
+     Encode a MySQL tablename
+
+   Options:
+     -?, --help  Show this message and exit.
 
 Example
 .......
 
 .. code-block:: bash
 
-   $ dbsake tablename-to-filename foo.bar
+   $ dbsake encode foo.bar
    foo@002ebar
 
 Options
 .......
 
-.. program:: tablename-to-filename
+.. program:: encode
 
 .. option:: path [path...]
 
    Specify a tablename to convert to an encoded filename
-
-import-frm
-~~~~~~~~~~
-
-Takes a source binary .frm and converts it to a MyISAM .frm
-
-.. danger::
-   This command is experimental.  The resulting .frm may crash the MySQL server
-   in some cases, particularly if converting very old .frms.
-
-This command is intended to essentially import a binary .frm to maintain its
-original column definitions which might be lost with a normal CREATE TABLE, or
-in cases where the .frm is otherwise not readable by MySQL with its current
-storage engine.
-
-This is essentially equivalent to running the MySQL DDL command:
-
-CREATE TABLE mytable LIKE source_table;
-ALTER TABLE mytable ENGINE = MYISAM, REMOVE PARTITIONING;
-
-Options
-.......
-
-.. program:: import-frm
-
-.. option:: source destination
-
-   import an existing .frm as a MyISAM table to the path specified by destination
-
-read-ib-binlog
-~~~~~~~~~~~~~~
-
-Read the binary log coordinates from an innodb shared tablespace
-
-If binary logging is enabled, InnoDB transactionally records the binary log
-coordinates relative to InnoDB transactions.  This is stored in the system
-header page of the first InnoDB shared tablespace (e.g. /var/lib/mysql/ibdata1
-with a standard MySQL configuration).  This command reads the filename and
-position of the log coordinates and outputs a friendly CHANGE MASTER command.
-
-Usage
-.....
-
-.. code-block:: bash
-
-   Usage: dbsake read-ib-binlog <path>
-   
-   Extract binary log filename/position from ibdata
-   
-   Required Arguments:
-   
-     path
-   
-Example
-.......
-
-.. code-block:: bash
-
-   $ dbsake read-ib-binlog /var/lib/mysql/ibdata1
-   CHANGE MASTER TO MASTER_LOG_FILE='mysqld-bin.000003', MASTER_LOG_POS=644905653;
-
-Options
-.......
-
-.. program:: read-ib-binlog
-
-.. option:: path
-
-   Specify the path to a shared InnoDB tablespace (e.g. /var/lib/mysql/ibdata1)
-   Binary log information will be read from this file.
 
