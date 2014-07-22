@@ -24,18 +24,18 @@ Features
 --------
 
 * `Parsing MySQL .frm files and output DDL`_
-* `Splitting mysqldump output into a file per object`_
+* `Filtering and transforming mysqldump output`_
 * `Patching a my.cnf to remove or convert deprecated options`_
 * `Deploying a new standalone MySQL "sandbox" instance`_
 * `Decoding/encoding MySQL filenames`_
 * `Managing OS caching for a set of files`_
 
 
-.. _Parsing MySQL .frm files and output DDL: http://docs.dbsake.net/subcommands.html#frm-to-schema
-.. _Splitting mysqldump output into a file per object: http://docs.dbsake.net/subcommands.html#split-mysqldump
+.. _Parsing MySQL .frm files and output DDL: http://docs.dbsake.net/subcommands.html#frmdump
+.. _Filtering and transforming mysqldump output: http://docs.dbsake.net/subcommands.html#sieve
 .. _Patching a my.cnf to remove or convert deprecated options: http://docs.dbsake.net/subcommands.html#upgrade-mycnf
 .. _Deploying a new standalone MySQL "sandbox" instance: http://docs.dbsake.net/subcommands.html#mysql-sandbox
-.. _Decoding/encoding MySQL filenames: http://docs.dbsake.net/subcommands.html#filename-to-tablename
+.. _Decoding/encoding MySQL filenames: http://docs.dbsake.net/subcommands.html#decode
 .. _Managing OS caching for a set of files: http://docs.dbsake.net/subcommands.html#fincore
 
 Dependencies
@@ -75,32 +75,34 @@ You can run as a script by making it executable::
 
 Run it with no arguments to see all possible commands::
 
-   $ dbsake
-    No command specified
-    dbsake <command> [options]
+    $ dbsake
+    Usage: dbsake [options] <command>
 
-    Available commands:
-      decode-tablename - Decode a MySQL tablename as a unicode name
-      encode-tablename - Encode a unicode tablename as a MySQL filename
-      fincore          - Check if a file is cached by the OS
-      frmdump          - Decode a binary MySQl .frm file to DDL
-      import-frm       - Import a binary .frm as a MyISAM table
-      read-ib-binlog   - Extract binary log filename/position from ibdata
-      sandbox          - Create a temporary MySQL instance
-      split-mysqldump  - Split mysqldump output into separate files
-      uncache          - Uncache a file from the OS page cache
-      upgrade-mycnf    - Patch a my.cnf to a new MySQL version
+    Options:
+      -d, --debug
+      -q, --quiet
+      -V, --version  Show the version and exit.
+      -?, --help     Show this message and exit.
 
-    Use 'dbsake help <command>' for individual command help.
+    Commands:
+      decode         Decode a MySQL tablename as a unicode name.
+      encode         Encode a MySQL tablename
+      fincore        Report cached pages for a file.
+      frmdump        Dump schema from MySQL frm files.
+      help           Show help for a command.
+      sandbox        Create a sandboxed MySQL instance.
+      sieve          Filter a mysqldump plaintext SQL stream
+      uncache        Drop OS cached pages for a file.
+      upgrade-mycnf  Upgrade a MySQL option file
 
 "Upgrading" a my.cnf
 ====================
 
 Here's how you might upgrade a MySQL 5.0 my.cnf to 5.5::
 
-    $ ./dbsake upgrade-mycnf --target=5.5 --config=my.cnf --patch
-    [INFO]:Rewriting option 'log-slow-queries'. Reason: Logging options changed in MySQL 5.1
-    [INFO]:Removing option 'skip-external-locking'. Reason: Default behavior in MySQL 4.1+
+    $ dbsake upgrade-mycnf --target=5.5 --config=my.cnf --patch
+    Rewriting option 'log-slow-queries'. Reason: Logging options changed in MySQL 5.1
+    Removing option 'skip-external-locking'. Reason: Default behavior in MySQL 4.1+
     --- a/my.cnf
     +++ b/my.cnf
     @@ -26,7 +26,6 @@
@@ -123,96 +125,134 @@ Here's how you might upgrade a MySQL 5.0 my.cnf to 5.5::
      [mysqldump]
      quick
 
-Splitting up mysqldump output
-=============================
+Processing mysqldump output
+===========================
 
-Here's how you split a single mysqldump stream into a file-per-object::
+Here's how you filter a single table from a mysqldump::
 
-    $ mysqldump -A | ./dbsake split-mysqldump -t 5.6 -C mydata/
-    Deferring indexes and constraints for sakila.actor (mydata/sakila/actor.schema.sql)
-    Injecting deferred index creation mydata/sakila/actor.data.sql
-    Deferring indexes and constraints for sakila.address (mydata/sakila/address.schema.sql)
-    Injecting deferred index creation mydata/sakila/address.data.sql
-    Deferring indexes and constraints for sakila.city (mydata/sakila/city.schema.sql)
-    Injecting deferred index creation mydata/sakila/city.data.sql
-    Deferring indexes and constraints for sakila.customer (mydata/sakila/customer.schema.sql)
-    Injecting deferred index creation mydata/sakila/customer.data.sql
-    Deferring indexes and constraints for sakila.film (mydata/sakila/film.schema.sql)
-    Injecting deferred index creation mydata/sakila/film.data.sql
-    Deferring indexes and constraints for sakila.film_actor (mydata/sakila/film_actor.schema.sql)
-    Injecting deferred index creation mydata/sakila/film_actor.data.sql
-    Deferring indexes and constraints for sakila.film_category (mydata/sakila/film_category.schema.sql)
-    Injecting deferred index creation mydata/sakila/film_category.data.sql
-    Deferring indexes and constraints for sakila.inventory (mydata/sakila/inventory.schema.sql)
-    Injecting deferred index creation mydata/sakila/inventory.data.sql
-    Deferring indexes and constraints for sakila.payment (mydata/sakila/payment.schema.sql)
-    Injecting deferred index creation mydata/sakila/payment.data.sql
-    Deferring indexes and constraints for sakila.rental (mydata/sakila/rental.schema.sql)
-    Injecting deferred index creation mydata/sakila/rental.data.sql
-    Deferring indexes and constraints for sakila.staff (mydata/sakila/staff.schema.sql)
-    Injecting deferred index creation mydata/sakila/staff.data.sql
-    Deferring indexes and constraints for sakila.store (mydata/sakila/store.schema.sql)
-    Injecting deferred index creation mydata/sakila/store.data.sql
-    Split input into 6 database(s) 44 table(s) and 14 view(s)
+    $ mysqldump -A | dbsake sieve --force -t mysql.db
+    -- MySQL dump 10.14  Distrib 5.5.38-MariaDB, for Linux (x86_64)
+    --
+    -- Host: localhost    Database:
+    -- ------------------------------------------------------
+    -- Server version   5.5.38-MariaDB-log
+
+    /\*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT \*/;
+    /\*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS \*/;
+    /\*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION \*/;
+    /\*!40101 SET NAMES utf8 \*/;
+    /\*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE \*/;
+    /\*!40103 SET TIME_ZONE='+00:00' \*/;
+    /\*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 \*/;
+    /\*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 \*/;
+    /\*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' \*/;
+    /\*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 \*/;
+
+    --
+    -- Table structure for table `db`
+    --
+
+    DROP TABLE IF EXISTS `db`;
+    /\*!40101 SET @saved_cs_client     = @@character_set_client \*/;
+    /\*!40101 SET character_set_client = utf8 \*/;
+    CREATE TABLE `db` (
+      `Host` char(60) COLLATE utf8_bin NOT NULL DEFAULT '',
+      `Db` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
+      `User` char(16) COLLATE utf8_bin NOT NULL DEFAULT '',
+      `Select_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Insert_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Update_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Delete_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Create_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Drop_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Grant_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `References_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Index_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Alter_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Create_tmp_table_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Lock_tables_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Create_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Show_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Create_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Alter_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Execute_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Event_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      `Trigger_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+      PRIMARY KEY (`Host`,`Db`,`User`),
+      KEY `User` (`User`)
+    ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Database privileges';
+    /\*!40101 SET character_set_client = @saved_cs_client \*/;
+
+    --
+    -- Dumping data for table `db`
+    --
+
+    LOCK TABLES `db` WRITE;
+    /\*!40000 ALTER TABLE `db` DISABLE KEYS \*/;
+    /\*!40000 ALTER TABLE `db` ENABLE KEYS \*/;
+    UNLOCK TABLES;
+
+    /\*!40103 SET TIME_ZONE=@OLD_TIME_ZONE \*/;
+
+    /\*!40101 SET SQL_MODE=@OLD_SQL_MODE \*/;
+    /\*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS \*/;
+    /\*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS \*/;
+    /\*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT \*/;
+    /\*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS \*/;
+    /\*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION \*/;
+    /\*!40111 SET SQL_NOTES=@OLD_SQL_NOTES \*/;
+
+    -- Dump completed on 2014-07-22 21:01:35
 
 Deploying a MySQL sandbox instance
 ==================================
 
 Here is how you create a MySQL 5.7.3-m13 instance::
 
-    $ ./dbsake mysql-sandbox -m 5.7.3-m13
-    Preparing sandbox instance: /home/localuser/sandboxes/sandbox_20140121_221858
+    $ dbsake sandbox -m 5.7.3-m13
+    Preparing sandbox instance: /home/localuser/sandboxes/sandbox_20140722_210338
       Creating sandbox directories
-        - Created /home/localuser/sandboxes/sandbox_20140121_221858/data
-        - Created /home/localuser/sandboxes/sandbox_20140121_221858/tmp
-        * Prepared sandbox in 0.00 seconds
+        * Created directories in 0.00 seconds
       Deploying MySQL distribution
-        - Attempting to deploy distribution for MySQL 5.7.3-m13
-        - Downloading from http://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz
-        - Caching download: /home/localuser/.dbsake/cache/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz
+        - Deploying MySQL 5.7.3-m13 from download
+        - Using cached download /home/localuser/.dbsake/cache/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz
+        - Verifying gpg signature via: /usr/bin/gpg2 --verify /home/localuser/.dbsake/cache/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz.asc -
         - Unpacking tar stream. This may take some time
     (100.00%)[========================================] 322.9MiB / 322.9MiB
-        - Stored MD5 checksum for download: /home/localuser/.dbsake/cache/mysql-5.7.3-m13-linux-glibc2.5-x86_64.tar.gz.md5
-        - Using mysqld (v5.7.3): /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysqld
-        - Using mysqld_safe: /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysqld_safe
-        - Using mysql: /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysql
-        - Using share directory: /home/localuser/sandboxes/sandbox_20140121_221858/share
-        - Using mysqld --basedir: /home/localuser/sandboxes/sandbox_20140121_221858
-        - Using MySQL plugin directory: /home/localuser/sandboxes/sandbox_20140121_221858/lib/plugin
-        * Deployed MySQL distribution to sandbox in 17.42 seconds
+        - GPG signature validated
+        * Deployed MySQL distribution in 13.56 seconds
       Generating my.sandbox.cnf
         - Generated random password for sandbox user root@localhost
-        * Generated /home/localuser/sandboxes/sandbox_20140121_221858/my.sandbox.cnf in 0.00 seconds
+        * Generated /home/localuser/sandboxes/sandbox_20140722_210338/my.sandbox.cnf in 0.03 seconds
       Bootstrapping sandbox instance
-        - Logging bootstrap output to /home/localuser/sandboxes/sandbox_20140121_221858/bootstrap.log
-        - Generated bootstrap SQL
-        - Running /home/localuser/sandboxes/sandbox_20140121_221858/bin/mysqld --defaults-file=/home/localuser/sandboxes/sandbox_20140121_221858/my.sandbox.cnf --bootstrap
-        * Bootstrapped sandbox in 3.56 seconds
+        - Logging bootstrap output to /home/localuser/sandboxes/sandbox_20140722_210338/bootstrap.log
+        * Bootstrapped sandbox in 2.67 seconds
       Creating sandbox.sh initscript
-        * Generated initscript in 0.00 seconds
-    Sandbox created in 20.98 seconds
-    Here are some useful sandbox commands
-           Start sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh start
-            Stop sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh stop
-      Connect to sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh mysql <options>
-       mysqldump sandbox: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh mysqldump <options>
-    Install SysV service: /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh install-service
+        * Generated initscript in 0.01 seconds
+    Sandbox created in 16.28 seconds
+
+    Here are some useful sandbox commands:
+           Start sandbox: /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh start
+            Stop sandbox: /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh stop
+      Connect to sandbox: /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh mysql <options>
+       mysqldump sandbox: /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh mysqldump <options>
+    Install SysV service: /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh install-service
 
 The sandbox.sh script has some convenient commands for interacting with the sandbox too::
 
-    $ /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh start
-    Starting sandbox: .....[OK]
+    $ /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh start
+    Starting sandbox: .[OK]
 
-    $ /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh mysql -e 'select @@datadir, @@version, @@version_comment\G'
+    $ /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh mysql -e 'select @@datadir, @@version, @@version_comment\G'
     *************************** 1. row ***************************
-            @@datadir: /home/localuser/sandboxes/sandbox_20140121_221858/data/
+            @@datadir: /home/localuser/sandboxes/sandbox_20140722_210338/data/
             @@version: 5.7.3-m13-log
     @@version_comment: MySQL Community Server (GPL)
 
 The sandbox.sh script can also install itself, if you want to make the sandbox persistent::
 
-    $ sudo /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh install-service
-    + /bin/cp /home/localuser/sandboxes/sandbox_20140121_221858/sandbox.sh /etc/init.d/mysql-5.7.3
+    $ sudo /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh install-service
+    + /bin/cp /home/localuser/sandboxes/sandbox_20140722_210338/sandbox.sh /etc/init.d/mysql-5.7.3
     + /sbin/chkconfig --add mysql-5.7.3 && /sbin/chkconfig mysql-5.7.3 on
     Service installed in /etc/init.d/mysql-5.7.3 and added to default runlevels
 
@@ -221,7 +261,7 @@ Dumping the schema from MySQL .frm files
 
 Here's an example dumping a normal table's .frm::
 
-    $ sudo ./dbsake frm-to-schema /var/lib/mysql/sakila/actor.frm
+    $ sudo dbsake frmdump /var/lib/mysql/sakila/actor.frm
     --
     -- Table structure for table `actor`
     -- Created with MySQL Version 5.5.34
@@ -238,7 +278,7 @@ Here's an example dumping a normal table's .frm::
 
 You can also format VIEW .frm files directly as well::
 
-    $ sudo ./dbsake frm-to-schema /var/lib/mysql/sakila/actor_info.frm
+    $ sudo dbsake frmdump /var/lib/mysql/sakila/actor_info.frm
     --
     -- View:         actor_info
     -- Timestamp:    2014-01-18 18:22:54
