@@ -42,7 +42,8 @@ Dependencies
 ------------
 
 - Requires python v2.6+
-- Uses python-tempita for templating
+- jinja2 >= 2.2
+- click >= 2.0
 
 Reporting Bugs
 --------------
