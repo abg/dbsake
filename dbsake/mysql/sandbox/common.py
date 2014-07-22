@@ -34,7 +34,7 @@ class SandboxError(Exception):
 SandboxOptions = collections.namedtuple('SandboxOptions',
                                         ['basedir',
                                          'distribution', 'datasource',
-                                         'tables', 'exclude_tables',
+                                         'include_tables', 'exclude_tables',
                                          'cache_policy',
                                          'skip_libcheck', 'skip_gpgcheck',
                                          'force', 'password',
@@ -72,26 +72,17 @@ def check_options(**kwargs):
         raise SandboxError("Unknown --cache-policy '%s'" %
                            kwargs['cache_policy'])
 
-    if kwargs['prompt_password']:
-        if sys.stdin.isatty():
-            password = getpass.getpass()
-        else:
-            password = sys.stdin.readline().rstrip(os.linesep)
-    else:
-        password = None
-
-
     return SandboxOptions(
         basedir=basedir,
         distribution=dist,
         datasource=kwargs['data_source'],
-        tables=kwargs['table'],
-        exclude_tables=kwargs['exclude_table'],
+        include_tables=kwargs['include_tables'],
+        exclude_tables=kwargs['exclude_tables'],
         cache_policy=kwargs['cache_policy'],
         skip_libcheck=kwargs['skip_libcheck'],
         skip_gpgcheck=kwargs['skip_gpgcheck'],
         force=bool(kwargs['force']),
-        password=password,
+        password=kwargs['password'],
         innobackupex_options=kwargs['innobackupex_options'],
     )
 

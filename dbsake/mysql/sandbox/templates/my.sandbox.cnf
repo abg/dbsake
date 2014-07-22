@@ -3,6 +3,7 @@
 {{default additional_options = ()}}
 {{default open_files_limit = 1024}}
 {{default innodb_log_files_in_group = 2}}
+{{default port = 3306}}
 
 [mysql]
 no-auto-rehash
