@@ -20,6 +20,5 @@ def read_innodb_binlog(path):
     except ValueError:
         raise Error("No binary log information was found in '%s'" % path)
         return 1
-    return ('CHANGE MASTER TO MASTER_LOG_FILE='%s', MASTER_LOG_POS=%d;' % 
+    return ("CHANGE MASTER TO MASTER_LOG_FILE='%s', MASTER_LOG_POS=%d;" %
             (filename, position))
-    return 0
