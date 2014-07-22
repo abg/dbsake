@@ -76,9 +76,14 @@ def sandbox_cli(ctx,
     from dbsake.core.mysql import sandbox
 
     if password:
-        password = click.prompt('Password' if sys.stdin.isatty() else '',
-                                hide_input=sys.stdin.isatty(),
-                                confirmation_prompt=sys.stdin.isatty())
+        if not sys.stdin.isatty():
+            options = dict(text='',
+                           prompt_suffix='')
+        else:
+            options = dict(text='Password',
+                           confirmation_prompt=True,
+                           hide_input=True)
+        password = click.prompt(**options)
 
     try:
         sandbox.create(sandbox_directory=sandbox_directory,
