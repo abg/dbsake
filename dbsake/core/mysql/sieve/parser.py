@@ -226,7 +226,6 @@ class DumpParser(object):
 
         while not self._stream.closed:
             discriminator = self.discriminate_next()
-            debug('#  Discriminated next section: %r', discriminator)
             iterable = getattr(self,
                                'read_section_' + discriminator['name'],
                                self.read_section)
