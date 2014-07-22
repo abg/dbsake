@@ -15,9 +15,7 @@ tasks for MySQL.
 
    # curl http://get.dbsake.net > dbsake
    # chmod u+x dbsake
-   # mysqldump --all-databases | ./dbsake split-mysqldump -C /var/lib/backups/today/
-   ...
-   2014-01-03 21:01:15,228 Split input into 2 database(s) 35 table(s) and 0 view(s)
+   # dbsake sandbox
 
 .. toctree::
    :maxdepth: 4
