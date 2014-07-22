@@ -1,38 +1,85 @@
 """
-dbsake.util.template
-~~~~~~~~~~~~~~~~~~~~
+dbsake.core.util.template
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Template support
+Support for loading jinja2 templates via pkgutil.
 
-This module wraps tempita and provides a simple template loader that loads
-templates from a given package and renders the template content through
-a tempita template.
+This is done to remove the dependence on setuptools, which
+is often not a trivial dependency for the non-python savvy.
 """
 
 import pkgutil
 
-from dbsake.thirdparty import tempita
+import jinja2
 
-def escape(value):
+
+def jinja2_version():
+    version = jinja2.__version__.partition('-')[0]
+    return tuple([int(x) for x in version.split('.')])
+
+
+class PEP302Loader(jinja2.BaseLoader):
+    """Load templates from a python package.
+
+    PEP302Loader is constructed with the name of the python package and path
+    to the templates in that package::
+
+        loader = PEP302Loader('mypackage', 'views')
+
+    If the package path is not given, ``'templates'`` is assumed.
+
+    Per default the template encoding is ``'utf-8'`` which can be changed
+    by setting the `encoding` parameter to something else.
+    """
+
+    def __init__(self, package_name, package_path='templates',
+                 encoding='utf-8'):
+        self.package_name = package_name
+        self.encoding = encoding
+        self.package_path = package_path
+
+    def get_source(self, environment, template):
+        """Get the template source via pkgutil.get_data()
+
+        If a resource is not found, a jinja2.TemplateNotFound error is raised.
+        """
+        resource_path = '/'.join([self.package_path, template])
+        resource = pkgutil.get_data(self.package_name, resource_path)
+        if resource is None:
+            raise jinja2.TemplateNotFound(template)
+
+        filename = None
+        uptodate = None
+
+        return resource.decode(self.encoding), filename, uptodate
+
+    def list_templates(self):
+        """This loader does not support enumerating available templates.
+
+        :raises: TypeError
+        """
+        raise TypeError('this loader cannot iterate over all templates')
+
+
+def escape_string(value):
     """Escape a string value by backslash escaping quotes and backslashes
 
     :returns: backslash escaped string
     """
     return value.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
 
-def loader(package, prefix):
-    """Create a template loader
 
-    :param package: package to load from
-    :param prefix: relative prefix to load resources from
-    :returns: template renderer
+def create_environment(package_name, package_path='templates', **kwargs):
+    """Create a new jinja2 environment using a PEP302Loader
+
+    :param package_name: package_name to load templates from
+    :param package_path: relative path in ``package_name`` to load templates
+    :param kwargs: additional custom arguments to pass to jinja2.Environment
+                   constructor
+    :returns: jinja2.Environment instance
     """
-    from dbsake import __version__ as __dbsake_version__
-
-    def render(name, **kwargs):
-        data = pkgutil.get_data(package, '/'.join([prefix, name]))
-        namespace = dict(escape=escape,
-                         __dbsake_version__=__dbsake_version__)
-        return tempita.Template(data.decode('utf8'),
-                                namespace=namespace).substitute(**kwargs)
-    return render
+    loader = PEP302Loader(package_name, package_path)
+    kwargs['trim_blocks'] = True
+    environment = jinja2.Environment(loader=loader, **kwargs)
+    environment.filters['escape_string'] = escape_string
+    return environment
