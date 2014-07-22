@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import codecs
 import pkgutil
 
 
@@ -19,7 +20,7 @@ def find_packages(path, prefix):
 
 def load_requirements(path):
     result = []
-    with open(path, 'rb') as fileobj:
+    with codecs.open(path, 'r', encoding='utf-8') as fileobj:
         for line in fileobj:
             if line.startswith("#"):
                 continue
