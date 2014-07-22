@@ -55,8 +55,10 @@ def create(**options):
     info("  Deploying MySQL distribution")
     dist = distribution.deploy(sbopts)
     info("  Generating my.sandbox.cnf")
-    password = common.mkpassword()
-    info("    - Generated random password for sandbox user root@localhost")
+    password = sbopts.password
+    if not password:
+        password = common.mkpassword()
+        info("    - Generated random password for sandbox user root@localhost")
     common.generate_defaults(sbopts,
                              user='root',
                              password=password,
