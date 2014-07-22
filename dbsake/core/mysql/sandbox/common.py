@@ -20,7 +20,7 @@ import sys
 import tempfile
 import time
 
-from dbsake.thirdparty import sarge
+from dbsake.util import cmd
 from dbsake.util import path
 from dbsake.util import template
 
@@ -273,12 +273,12 @@ def bootstrap(options, dist, password, additional_options=()):
     logfile = os.path.join(options.basedir, 'bootstrap.log')
     info("    - Logging bootstrap output to %s", logfile)
 
-    cmd = sarge.shell_format("{mysqld} --defaults-file={defaults_file}",
-                             mysqld=dist.mysqld, defaults_file=defaults_file)
+    cmd = cmd.shell_format("{mysqld} --defaults-file={defaults_file}",
+                           mysqld=dist.mysqld, defaults_file=defaults_file)
     additional_options = ('--bootstrap',
                           '--default-storage-engine=myisam') + \
                          additional_options
-    additional = ' '.join(map(sarge.shell_format, additional_options))
+    additional = ' '.join(map(cmd.shell_format, additional_options))
     if additional:
         cmd += ' ' + additional
 
@@ -307,10 +307,10 @@ def bootstrap(options, dist, password, additional_options=()):
             debug("    # Generated bootstrap SQL script")
             debug("    # Executing %s", cmd)
             with open(bootstrap_sql, 'rb') as fileobj:
-                pipeline = sarge.run(cmd,
-                                     input=fileobj.fileno(),
-                                     stdout=stderr,
-                                     stderr=stderr)
+                pipeline = cmd.run(cmd,
+                                   input=fileobj.fileno(),
+                                   stdout=stderr,
+                                   stderr=stderr)
     if sum(pipeline.returncodes) != 0:
         raise SandboxError("Bootstrapping failed. Details in %s" % stderr.name)
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)

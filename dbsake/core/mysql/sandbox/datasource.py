@@ -17,6 +17,8 @@ import sys
 import tarfile
 import time
 
+from dbsake.util import cmd
+
 from dbsake.core.mysql.frm import tablename
 
 from . import common
@@ -65,14 +67,13 @@ def prepare_datadir(datadir, options):
     if not innobackupex:
         raise common.SandboxError("innobackupex not found in path. Aborting.")
 
-    from dbsake.thirdparty import sarge
 
     xb_log = os.path.join(datadir, 'innobackupex.log')
-    cmd = sarge.shell_format('{0} --apply-log {1!s} . > innobackupex.log 2>&1',
-                             innobackupex, options.innobackupex_options)
+    cmd = cmd.shell_format('{0} --apply-log {1!s} . > innobackupex.log 2>&1',
+                           innobackupex, options.innobackupex_options)
     info("    - Running: %s", cmd)
     info("    - (cwd: %s)", datadir)
-    result = sarge.run(cmd, cwd=datadir)
+    result = cmd.run(cmd, cwd=datadir)
 
     if result.returncode != 0:
         info("    ! innobackupex --apply-log failed. See details in %s", xb_log)
@@ -127,27 +128,6 @@ def datasource_from_directory(options):
     info("  Symlinked datadir '%s' to %s",
          datadir, os.path.join(options.basedir, 'data'))
 
-def finalize(sandbox_options):
-    if _is_tarball(datasource):
-        # then we've successfully ran through bootstrap phase
-        # remove the ib_logfile so we startup with the my.cnf values
-        for name in glob(basedir + 'data/ib_logfile*'):
-            os.unlink(name)
-    elif _is_sqldump(datasource):
-        pass
-        # start sandbox
-        # pipe data in through shell
-        # ./sandbox start
-        # ./sandbox shell <datafiles>
-        # sarge.run(sandbox.start) || fail
-        # try:
-        #   with sarge.run(sandbox shell, async=True, stdin=PIPE,
-        #                  stderr|stdout=import.log):
-        #       for each sql file:
-        #           with open(sql_file, 'rb') as fileobj:
-        #               shutil.copyfileobj(fileobj, stdin)
-        # finally:
-        #   sarge.run(sandbox.stop) || fail
 
 #: files required for the sandbox - and never filtered
 is_required = re.compile('(ibdata.*|ib_logfile[0-9]+|backup-my.cnf|'
