@@ -11,7 +11,9 @@ import os
 import re
 import sys
 
-from dbsake import baker
+from dbsake.util import path, stream_command
+from . import parser
+from . import defer
 
 def cmd_to_ext(cmd):
     extensions = dict(gzip='.gz',
@@ -24,30 +26,20 @@ def cmd_to_ext(cmd):
     name = cmd.split()[0]
     return extensions.get(name, '')
 
+
 def output(cmd, name, iterable, mode='wb'):
-    from dbsake.util import stream_command
     ext = cmd_to_ext(cmd)
     with open(name + ext, mode) as fileobj:
         with stream_command(cmd, stdout=fileobj) as process:
             for item in iterable:
                 process.stdin.write(item)
 
-@baker.command(name='split-mysqldump',
-               shortopts=dict(target="t",
-                              directory="C",
-                              filter_command="f"),
-               params=dict(target="MySQL version target (default 5.5)",
-                           directory="Directory to output to (default .)",
-                           filter_command="Command to filter output through"
-                                          "(default gzip -1)"))
+
 def split_mysqldump(target='5.5',
                     directory='.',
                     filter_command='gzip -1',
                     regex='.*'):
     """Split mysqldump output into separate files"""
-    from dbsake.util import path, stream_command
-    from .parser import MySQLDumpParser, extract_identifier
-    from .defer import extract_create_table, split_indexes
 
     defer_indexes = False
     defer_constraints = False
@@ -64,7 +56,7 @@ def split_mysqldump(target='5.5',
         logging.info("Created output directory '%s'",
                 os.path.abspath(directory))
     stream = sys.stdin
-    parser = MySQLDumpParser(stream)
+    dumpparser = parser.MySQLDumpParser(stream)
     header = None
     post_data = None
     table_count = 0
@@ -72,14 +64,14 @@ def split_mysqldump(target='5.5',
     view_count = 0
     filter_cre = re.compile(regex)
     logging.debug("Compiled regex %s", regex)
-    for section_type, iterator in parser.sections:
+    for section_type, iterator in dumpparser.sections:
         if section_type == 'replication_info':
             name = os.path.join(directory, 'replication_info.sql')
             data = itertools.chain([header], iterator)
             output(cmd, name, data)
         elif section_type == 'schema':
             lines = list(iterator)
-            db = extract_identifier(lines[1])
+            db = parser.extract_identifier(lines[1])
             path.makedirs(os.path.join(directory, db), exist_ok=True)
             data = itertools.chain([header], lines)
             output(cmd, os.path.join(directory, db, 'create.sql'), data)
@@ -93,13 +85,13 @@ def split_mysqldump(target='5.5',
             output(cmd, os.path.join(directory, db, 'events.sql'), data)
         elif section_type in ('table_definition',):
             lines = list(iterator)
-            table = extract_identifier(lines[1])
+            table = parser.extract_identifier(lines[1])
             name = os.path.join(directory, db, table + '.schema.sql')
             table_definition_data = ''.join(lines)
-            table_ddl = extract_create_table(table_definition_data)
+            table_ddl = defer.extract_create_table(table_definition_data)
             if defer_indexes and 'ENGINE=InnoDB' in table_ddl:
-                alter_table, create_table = split_indexes(table_ddl,
-                                                          defer_constraints)
+                alter_table, create_table = defer.split_indexes(table_ddl,
+                                                                defer_constraints)
                 if alter_table:
                     if not defer_constraints:
                         info = "indexes"
@@ -169,4 +161,3 @@ def split_mysqldump(target='5.5',
                 logging.debug("  -> %s", line.rstrip())
     logging.info("Split input into %d database(s) %d table(s) and %d view(s)",
                  database_count, table_count, view_count)
-    return 0

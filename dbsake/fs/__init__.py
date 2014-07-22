@@ -2,79 +2,152 @@
 dbsake.fs
 ~~~~~~~~~
 
-Filesystem related commands
-
+Support for inspecting and uncaching files from OS cache
 """
-from __future__ import print_function
+from __future__ import division
 
+import collections
+import ctypes
+import ctypes.util
 import os
-import sys
+import struct
 
-from dbsake import baker
+libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
 
+# void *mmap(void *addr, size_t length, int prot, int flags,
+#            int fd, off_t offset)
+mmap = libc.mmap
+mmap.argtypes = [
+    ctypes.c_void_p, # void *addr
+    ctypes.c_size_t, # size_t length
+    ctypes.c_int,    # int prot
+    ctypes.c_int,    # int flags
+    ctypes.c_int,    # int fd
+    ctypes.c_size_t  # off_t offset
+]
+mmap.restype = ctypes.c_void_p
 
-@baker.command
-def fincore(verbose=False, *paths):
-    """Check if a file is cached by the OS
+# int munmap(void *addr, size_t length)
+munmap = libc.munmap
+munmap.argtypes = [
+    ctypes.c_void_p, # void *addr
+    ctypes.c_size_t, # size_t length
+]
+munmap.restype = ctypes.c_int
 
-    Outputs the cached vs. total pages with a percent.
+# int mincore(void *addr, size_t length, unsigned char *vec)
+mincore = libc.mincore
+mincore.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_size_t,
+    ctypes.c_void_p,
+]
+mincore.restype = ctypes.c_int
 
-    :param verbose: itemize which pages are cached
-    :param paths: check if these paths are cached
+# int posix_fadvise(int fd, off_t offset, off_t len, int advice)
+posix_fadvise = libc.posix_fadvise
+posix_fadvise.argtypes = [
+    ctypes.c_int,
+    ctypes.c_size_t,
+    ctypes.c_size_t,
+    ctypes.c_int
+]
+posix_fadvise.restype = ctypes.c_int
+
+# XXX: not correct for at least s390, but ignoring that for now
+POSIX_FADV_DONTNEED = 4
+
+PAGESIZE = os.sysconf('SC_PAGE_SIZE')
+
+PROT_READ   = 0x1     # /* Page can be read.  */
+PROT_WRITE  = 0x2     # /* Page can be written.  */
+PROT_EXEC   = 0x4     # /* Page can be executed.  */
+PROT_NONE   = 0x0     # /* Page can not be accessed.  */
+
+# (void *) -1 on the current platform
+MAP_FAILED  = struct.unpack('P', struct.pack('P', -1))[0]
+MAP_SHARED  = 0x01       #  /* Share changes.  */
+
+class CacheStats(collections.namedtuple('CacheStats', 'total cached pages')):
+    """Stats for cached pages for a given file
+
+    :attr total: total pages for the file
+    :attr cached: number of pages presently cached
+    :attr pages: enumerated list of pages
     """
-    from . import util
-    if not paths:
-        baker.usage('fincore')
-        return 1
+    @property
+    def percent(self):
+        """Percent of pages that are cached
 
-    errors = 0
+        Derived property calculated from cached pages divided by total pages.
 
-    for path in paths:
-        if not os.path.isfile(path):
-            print("Skipping '%s'. Not a regular file" % path, file=sys.stderr)
-            continue
-        try:
-            stats = util.fincore(path, verbose)
-            for page in stats.pages:
-                print("Page %d cached" % page)
-            print("%s: total_pages=%d cached=%d percent=%.2f" %
-                  (path, stats.total, stats.cached, stats.percent))
-        except OSError as exc:
-            print("fincore %s failed: %s" % (path, exc))
-            errors += 1
-            continue
-    if errors:
-        return 1
-    else:
-        return 0
+        If there are no pages (e.g. a zero byte file) then 0 is returned as
+        the percent
+        """
+        if not self.total:
+            return 0.0
+        else:
+            return (self.cached / self.total) * 100.0
 
-@baker.command
-def uncache(*paths):
-    """Uncache a file from the OS page cache
 
-    :param paths: uncache files for these paths
+def ctypes_os_error(msg):
+    """Instantiate an OSError from a ctypes errno
+
+    This is similar to perror(), looking up the errno
+    from ctypes and formatting strerror from os.strerror()
+    and prefixing that message with the user provided
+    message.
+
+    :param msg: msg to to prefix the OSError strerror with
     """
-    from . import util
+    errno = ctypes.get_errno()
+    strerror = os.strerror(errno)
+    return OSError(errno, "%s: %s" % (msg, strerror))
 
-    # from /usr/include/linux/fadvise.h
-    if not paths:
-        baker.usage('uncache')
-        return 1
+def fincore(path, enumerate_pages=False):
+    """Check if underlying path is incore
 
-    errors = 0
-    for path in paths:
-        if not os.path.isfile(path):
-            print("Skipping '%s'. Not a regular file" % path, file=sys.stderr)
-            continue
+    :returns: CacheStats instance
+    """
+    with open(path, 'rb') as fileobj:
+        st_size = os.fstat(fileobj.fileno()).st_size
+
+        if not st_size:
+            return CacheStats(0, 0, ())
+
+        pa = mmap(0, st_size, PROT_NONE, MAP_SHARED, fileobj.fileno(), 0)
+
+        if pa == MAP_FAILED:
+            raise ctypes_os_error("mmap('%s')" % path)
+
+        # round the filesize to the nearest page size
+        # note the use of integer division here
+        total_pages = (st_size+PAGESIZE-1)//PAGESIZE
+
         try:
-            util.uncache(path)
-            print("Uncached %s" % path)
-        except (IOError, OSError) as exc:
-            print("Could not uncache '%s': [%d] %s" % 
-                  (path, exc.errno, exc.strerror),
-                  file=sys.stderr)
-            errors += 1
-    if errors:
-        return 1
-    else:
-        return 0
+            vec = (ctypes.c_uint8*total_pages)()
+            ret = mincore(ctypes.c_void_p(pa), ctypes.c_size_t(st_size), vec)
+            if ret != 0:
+                raise ctypes_os_error("mincore")
+        finally:
+            ret = munmap(ctypes.c_void_p(pa), ctypes.c_size_t(st_size))
+            if ret != 0:
+                raise ctypes_os_error("munmap")
+
+        cached_count = 0
+        cached_count = sum(1 for page in vec if page & 1)
+        pages = ()
+        if enumerate_pages:
+            pages = tuple(offset for offset, page in enumerate(vec) if page & 1)
+        return CacheStats(total_pages, cached_count, pages)
+
+def uncache(path):
+    """Uncache the file contents specified by ``path``
+
+    :param path: the path to uncache
+    :raises: OSError, IOError
+    """
+    with open(path, 'rb') as fileobj:
+        ret = posix_fadvise(fileobj.fileno(), 0, 0, POSIX_FADV_DONTNEED)
+        if ret != 0:
+            raise ctypes_os_error("posix_fadvise")

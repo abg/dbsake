@@ -9,24 +9,20 @@ import difflib
 import os
 import sys
 
-from dbsake import baker
+from dbsake.util import path
 
-@baker.command(name='upgrade-mycnf',
-               shortopts=dict(config="c",
-                              target="t",
-                              patch="p"))
-def upgrade_mycnf(config='/etc/my.cnf',
-                  target='5.5',
-                  patch=False):
+from . import parser
+
+class Error(Exception):
+    """Raised if error parsing my.cnf"""
+
+def upgrade(config, target, patch):
     """Patch a my.cnf to a new MySQL version
 
     :param config: my.cnf file to parse (default: /etc/my.cnf)
     :param target: MySQL version to target the option file (default: 5.5)
     :param patch: Output unified diff rather than full config (default off)
     """
-    from dbsake.util.path import relpath
-    from . import parser
-
     if target == '5.1':
         rewriter = parser.MySQL51OptionRewriter
     elif target == '5.5':
@@ -36,20 +32,18 @@ def upgrade_mycnf(config='/etc/my.cnf',
     elif target == '5.7':
         rewriter = parser.MySQL57OptionRewriter
     else:
-        print("Invalid target version '%s'" % target, file=sys.stderr)
-        return 1
+        raise Error("Invalid target version '%s'" % target)
 
     if not os.path.exists(config):
-        print("No config file found: %s" % config, file=sys.stderr)
-        return 1
+        raise Error("No config file found: %s" % config)
 
-    for path, orig, modified in parser.upgrade_config(config, rewriter):
+    for cfg_path, orig, modified in parser.upgrade_config(config, rewriter):
         if patch:
             # make patch file names pretty
-            from_file = relpath(os.path.abspath(path), '/')
+            from_file = path.relpath(os.path.abspath(cfg_path), '/')
             to_file = os.path.join('b', from_file)
             from_file = os.path.join('a', from_file)
-            print(''.join(difflib.unified_diff(orig, modified, from_file, to_file)))
+            return ''.join(difflib.unified_diff(orig, modified, from_file, to_file))
         else:
-            print(''.join(modified))
+            return ''.join(modified)
     return 0
