@@ -21,17 +21,17 @@ class SectionFilter(object):
         name = section.name
 
         if include_sections and name not in include_sections:
-            debug("    - list of sections to include specified and '%s' was "
+            debug("# list of sections to include specified and '%s' was "
                   "not found. Filtering.", name)
             return True
         if name in exclude_sections:
-            debug("    - '%s' was in the list of excluded sections", name)
+            debug("# '%s' was in the list of excluded sections", name)
             return True
         return False
 
     def filtered_table(self, section):
         if not section.database:
-            debug("    - No database context, skipping table filters")
+            debug("# No database context, skipping table filters")
             return False
 
         identifier = b'.'.join([section.database or b'', section.table or b''])
@@ -39,13 +39,13 @@ class SectionFilter(object):
 
         for pattern in self.options.exclude_table:
             if fnmatch.fnmatch(identifier, pattern):
-                debug("    - '%s' matched table exclusion pattern %s. "
+                debug("# '%s' matched table exclusion pattern %s. "
                       "Filtering", identifier, pattern)
                 return True
 
         for pattern in self.options.table:
             if fnmatch.fnmatch(identifier, pattern):
-                debug("    - '%s' matched a table inclusion pattern(%s). "
+                debug("# '%s' matched a table inclusion pattern(%s). "
                       "Including.", identifier, pattern)
                 return False
 
