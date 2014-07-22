@@ -17,17 +17,33 @@ def find_packages(path, prefix):
     return [prefix] + [name for _, name, ispkg in walk if ispkg]
 
 
-requirements = open('requirements.txt').read().split()
-test_requirements = open('test_requirements.txt').read().split()
-readme = open('README.rst').read()
-history = open('HISTORY.rst').read().replace('.. :changelog:', '')
+def load_requirements(path):
+    result = []
+    with open(path, 'rb') as fileobj:
+        for line in fileobj:
+            if line.startswith("#"):
+                continue
+            result.append(line.rstrip())
+    return result
 
+
+def load_readme():
+    with open('README.rst') as fileobj:
+        data = fileobj.read()
+    with open('HISTORY.rst') as fileobj:
+        data += "\n\n" + fileobj.read().replace('.. :changelog:', '')
+    return data
+
+
+requirements = load_requirements('requirements.txt')
+test_requirements = load_requirements('test_requirements.txt')
+readme = load_readme()
 
 setup(
     name='dbsake',
     version=dbsake.__version__,
     description='db admin\'s (s)wiss (a)rmy (k)nif(e) for MySQL',
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author='Andrew Garner',
     author_email='andrew.garner@rackspace.com',
     url='https://github.com/abg/dbsake',
