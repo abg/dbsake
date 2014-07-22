@@ -17,23 +17,14 @@ tasks for MySQL.
    ...
    2014-01-03 21:01:15,228 Split input into 2 database(s) 35 table(s) and 0 view(s)
 
-.. only:: html
-
-   .. toctree::
-      :maxdepth: 4
+.. toctree::
+   :maxdepth: 4
    
-      getting_started
-      subcommands
-      developing
-      frm_format
-
-.. only:: man
-
-   .. toctree::
-      :maxdepth: 4
-   
-      getting_started
-      subcommands
+   readme
+   subcommands
+   developing
+   frm_format
+   history
 
 Indices and tables
 ==================
