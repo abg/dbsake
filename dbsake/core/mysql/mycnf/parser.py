@@ -118,7 +118,7 @@ class RewriteRule(object):
 
     >> noop_rule = RewriteRule([], reason='Stupid option.')
     >> for line in noop_rule.rewrite('skip-innodb', None):
-        print line
+        print(line)
     [INFO] Rewriting option '%s'.  Reason: Stupid option.
     >>
     """
