@@ -53,8 +53,8 @@ click.UsageError.show = _show
              subcommand_metavar='<command>',
              invoke_without_command=True,
              context_settings=CONTEXT_SETTINGS)
-@click.option("--debug", default=False, is_flag=True)
-@click.option("--quiet", default=False, is_flag=True)
+@click.option("-d", "--debug", default=False, is_flag=True)
+@click.option("-q", "--quiet", default=False, is_flag=True)
 @click.version_option(dbsake_version, '-V', '--version')
 @click.pass_context
 def dbsake(ctx, debug, quiet):
