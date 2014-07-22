@@ -65,7 +65,7 @@ PROT_EXEC   = 0x4     # /* Page can be executed.  */
 PROT_NONE   = 0x0     # /* Page can not be accessed.  */
 
 # (void *) -1 on the current platform
-MAP_FAILED  = struct.unpack('P', struct.pack('P', -1))[0]
+MAP_FAILED  = ctypes.c_void_p(-1)
 MAP_SHARED  = 0x01       #  /* Share changes.  */
 
 class CacheStats(collections.namedtuple('CacheStats', 'total cached pages')):
