@@ -20,6 +20,7 @@ import urllib2
 import re
 import shutil
 import sys
+import tempfile
 
 from dbsake.util import cmd
 from dbsake.util import path as dbsake_path
@@ -94,9 +95,9 @@ def mysqld_version(mysqld):
     :returns: MySQLVersion instance
     """
 
-    cmd = cmd.shell_format('{0} --no-defaults --version', mysqld)
+    version_cmd = cmd.shell_format('{0} --no-defaults --version', mysqld)
     try:
-        result = cmd.capture_stdout(cmd)
+        result = cmd.capture_stdout(version_cmd)
     except OSError as exc:
         if exc.errno == errno.ENOENT:
             if os.path.exists(mysqld):
@@ -109,17 +110,18 @@ def mysqld_version(mysqld):
                                            "not a source tarball.") % mysqld)
         else:
             raise common.SandboxError("%s Failed (errno: %d[%s])" %
-                                      (cmd,
+                                      (version_cmd,
                                        exc.errno,
                                        errno.errorcode[exc.errno]))
 
     if result.returncode != 0:
         raise common.SandboxError("%s failed (exit status: %d)" %
-                                  (cmd, result.returncode))
-    m = re.search('(\d+[.]\d+[.]\d+)', result.stdout.text)
+                                  (version_cmd, result.returncode))
+    m = re.search('(\d+[.]\d+[.]\d+)', result.stdout)
     if not m:
-        raise common.SandboxError("Failed to discover version for %s" % cmd)
-    return MySQLVersion.from_string(result.stdout.text)
+        raise common.SandboxError("Failed to discover version for %s" %
+                                  version_cmd)
+    return MySQLVersion.from_string(result.stdout)
 
 # XXX this documentation isn't very clear
 def first_subdir(basedir, *paths):
@@ -591,9 +593,9 @@ def initialize_gpg():
     gpg = dbsake_path.which('gpg') or dbsake_path.which('gpg2')
     if not gpg:
         raise common.SandboxError("Failed to find gpg")
-    cmd = cmd.shell_format('{0} -k 5072E1F5', gpg)
+    gpg_cmd = cmd.shell_format('{0} -k 5072E1F5', gpg)
     debug("    # Verifying .dbsake/gpg is initialized")
-    ret = cmd.capture_both(cmd, env={'GNUPGHOME' : gpghome})
+    ret = cmd.capture_both(gpg_cmd, env={'GNUPGHOME' : gpghome})
     if not ret.returncode:
         return # all is well
     else:
@@ -602,8 +604,8 @@ def initialize_gpg():
 
     # else import the mysql key
     info("    - Importing mysql public key to %s", gpghome)
-    cmd = cmd.shell_format('{0} --keyserver=pgp.mit.edu --recv-keys 5072E1F5', gpg)
-    ret = cmd.capture_both(cmd, env={'GNUPGHOME' : gpghome})
+    gpg_cmd = cmd.shell_format('{0} --keyserver=pgp.mit.edu --recv-keys 5072E1F5', gpg)
+    ret = cmd.capture_both(gpg_cmd, env={'GNUPGHOME' : gpghome})
     for line in ret.stderr:
         debug("    # %s", line.rstrip())
     if ret.returncode != 0:
@@ -611,19 +613,24 @@ def initialize_gpg():
 
 @contextlib.contextmanager
 def gpg_verify_stream(signature):
-    from subprocess import PIPE
-
     gpghome = os.path.expanduser('~/.dbsake/gpg')
     gpg = dbsake_path.which('gpg') or dbsake_path.which('gpg2')
-    cmd = cmd.shell_format('{0} --verify {1} -', gpg, signature)
-    info("    - Verifying gpg signature via: %s", cmd)
-    with cmd.capture_both(cmd, input=PIPE, async=True, env={'GNUPGHOME' : gpghome }) as pipeline:
-        stdin = pipeline.processes[0].stdin
-        yield stdin
-        stdin.close()
-    for line in pipeline.stderr:
-        debug("    # %s", line.rstrip())
-    if pipeline.returncode != 0:
+    verify_cmd = cmd.shell_format('{0} --verify {1} -', gpg, signature)
+    info("    - Verifying gpg signature via: %s", verify_cmd)
+    try:
+        with tempfile.TemporaryFile() as output:
+            try:
+                with cmd.stream_command(verify_cmd,
+                                        stdout=output,
+                                        stderr=output,
+                                        env={'GNUPGHOME' : gpghome }) as stdin:
+                    yield stdin
+            finally:
+                output.flush()
+                output.seek(0)
+                for line in output:
+                    debug("    # %s", line.rstrip())
+    except cmd.CommandError:
         raise common.SandboxError("gpg signature not valid")
     else:
         info("    - GPG signature validated")
