@@ -128,27 +128,6 @@ def datasource_from_directory(options):
     info("  Symlinked datadir '%s' to %s",
          datadir, os.path.join(options.basedir, 'data'))
 
-def finalize(sandbox_options):
-    if _is_tarball(datasource):
-        # then we've successfully ran through bootstrap phase
-        # remove the ib_logfile so we startup with the my.cnf values
-        for name in glob(basedir + 'data/ib_logfile*'):
-            os.unlink(name)
-    elif _is_sqldump(datasource):
-        pass
-        # start sandbox
-        # pipe data in through shell
-        # ./sandbox start
-        # ./sandbox shell <datafiles>
-        # sarge.run(sandbox.start) || fail
-        # try:
-        #   with sarge.run(sandbox shell, async=True, stdin=PIPE,
-        #                  stderr|stdout=import.log):
-        #       for each sql file:
-        #           with open(sql_file, 'rb') as fileobj:
-        #               shutil.copyfileobj(fileobj, stdin)
-        # finally:
-        #   sarge.run(sandbox.stop) || fail
 
 #: files required for the sandbox - and never filtered
 is_required = re.compile('(ibdata.*|ib_logfile[0-9]+|backup-my.cnf|'
