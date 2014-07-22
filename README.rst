@@ -1,6 +1,6 @@
-======
-dbsake
-======
+=================
+    酒 dbsake
+=================
 
 .. image:: https://badge.fury.io/py/dbsake.png
    :target: http://badge.fury.io/py/dbsake
@@ -16,12 +16,6 @@ dbsake
 
 
 dbsake - a (s)wiss-(a)rmy-(k)nif(e) for MySQL
-
-
-.. image::  docs/_static/sake-icon.png
-   :target: http://docs.dbsake.net
-
-
 
 * Free software: GPLv2
 * Documentation: http://docs.dbsake.net.
