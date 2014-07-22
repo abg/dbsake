@@ -92,7 +92,7 @@ def preload(options):
         # filtering the database and tablename through the mysql
         # tablename encoders
         start = time.time()
-        _filter = table_filter(options.tables, options.exclude_tables)
+        _filter = table_filter(options.include_tables, options.exclude_tables)
         info("  Preloading sandbox data from %s", options.datasource)
         datadir = os.path.join(options.basedir, 'data')
         deploy_tarball(options.datasource, datadir, table_filter=_filter)
