@@ -102,9 +102,8 @@ def preload(options):
             info("    - Sandbox data appears to be unprepared xtrabackup data")
             prepare_datadir(datadir, options)
         info("    * Data extracted in %.2f seconds", time.time() - start)
-    elif _is_sqldump(options.datasource):
-        # nothing to do before the sandbox is started
-        pass
+    else:
+        raise common.SandboxError("Unsupported data source: %s" % options.datasource)
 
 def datasource_from_directory(options):
     datadir = os.path.normpath(os.path.realpath(options.datasource))
