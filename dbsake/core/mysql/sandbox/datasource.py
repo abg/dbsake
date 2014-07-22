@@ -69,13 +69,17 @@ def prepare_datadir(datadir, options):
 
 
     xb_log = os.path.join(datadir, 'innobackupex.log')
-    cmd = cmd.shell_format('{0} --apply-log {1!s} . > innobackupex.log 2>&1',
-                           innobackupex, options.innobackupex_options)
-    info("    - Running: %s", cmd)
+    xb_cmd = cmd.shell_format('{0} --apply-log {1!s} .',
+                              innobackupex, options.innobackupex_options)
+    info("    - Running: %s", xb_cmd)
     info("    - (cwd: %s)", datadir)
-    result = cmd.run(cmd, cwd=datadir)
+    with open(xb_log, 'wb') as fileobj:
+        returncode = cmd.run(xb_cmd,
+                             stdout=fileobj,
+                             stderr=fileobj,
+                             cwd=datadir)
 
-    if result.returncode != 0:
+    if returncode != 0:
         info("    ! innobackupex --apply-log failed. See details in %s", xb_log)
         raise common.SandboxError("Data preloading failed")
     else:
