@@ -20,6 +20,7 @@ import urllib2
 import re
 import shutil
 import sys
+import tempfile
 
 from dbsake.util import cmd
 from dbsake.util import path as dbsake_path
@@ -617,9 +618,18 @@ def gpg_verify_stream(signature):
     verify_cmd = cmd.shell_format('{0} --verify {1} -', gpg, signature)
     info("    - Verifying gpg signature via: %s", verify_cmd)
     try:
-        with cmd.stream_command(verify_cmd,
-                                env={'GNUPGHOME' : gpghome }) as stdin:
-            yield stdin
+        with tempfile.TemporaryFile() as output:
+            try:
+                with cmd.stream_command(verify_cmd,
+                                        stdout=output,
+                                        stderr=output,
+                                        env={'GNUPGHOME' : gpghome }) as stdin:
+                    yield stdin
+            finally:
+                output.flush()
+                output.seek(0)
+                for line in output:
+                    debug("    # %s", line.rstrip())
     except cmd.CommandError:
         raise common.SandboxError("gpg signature not valid")
     else:
