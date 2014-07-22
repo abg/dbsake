@@ -49,6 +49,7 @@ class SectionFilter(object):
                       "Including.", identifier, pattern)
                 return False
 
+        debug("# '%s' did not match any inclusion pattern. Filtering.", identifier)
         return True if self.options.table else False
 
     def __call__(self, section):
