@@ -17,6 +17,8 @@ import sys
 import tarfile
 import time
 
+from dbsake.util import cmd
+
 from dbsake.core.mysql.frm import tablename
 
 from . import common
@@ -65,14 +67,13 @@ def prepare_datadir(datadir, options):
     if not innobackupex:
         raise common.SandboxError("innobackupex not found in path. Aborting.")
 
-    from dbsake.thirdparty import sarge
 
     xb_log = os.path.join(datadir, 'innobackupex.log')
-    cmd = sarge.shell_format('{0} --apply-log {1!s} . > innobackupex.log 2>&1',
-                             innobackupex, options.innobackupex_options)
+    cmd = cmd.shell_format('{0} --apply-log {1!s} . > innobackupex.log 2>&1',
+                           innobackupex, options.innobackupex_options)
     info("    - Running: %s", cmd)
     info("    - (cwd: %s)", datadir)
-    result = sarge.run(cmd, cwd=datadir)
+    result = cmd.run(cmd, cwd=datadir)
 
     if result.returncode != 0:
         info("    ! innobackupex --apply-log failed. See details in %s", xb_log)

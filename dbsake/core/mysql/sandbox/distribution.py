@@ -21,7 +21,7 @@ import re
 import shutil
 import sys
 
-from dbsake.thirdparty import sarge
+from dbsake.util import cmd
 from dbsake.util import path as dbsake_path
 
 from . import common
@@ -94,9 +94,9 @@ def mysqld_version(mysqld):
     :returns: MySQLVersion instance
     """
 
-    cmd = sarge.shell_format('{0} --no-defaults --version', mysqld)
+    cmd = cmd.shell_format('{0} --no-defaults --version', mysqld)
     try:
-        result = sarge.capture_stdout(cmd)
+        result = cmd.capture_stdout(cmd)
     except OSError as exc:
         if exc.errno == errno.ENOENT:
             if os.path.exists(mysqld):
@@ -591,9 +591,9 @@ def initialize_gpg():
     gpg = dbsake_path.which('gpg') or dbsake_path.which('gpg2')
     if not gpg:
         raise common.SandboxError("Failed to find gpg")
-    cmd = sarge.shell_format('{0} -k 5072E1F5', gpg)
+    cmd = cmd.shell_format('{0} -k 5072E1F5', gpg)
     debug("    # Verifying .dbsake/gpg is initialized")
-    ret = sarge.capture_both(cmd, env={'GNUPGHOME' : gpghome})
+    ret = cmd.capture_both(cmd, env={'GNUPGHOME' : gpghome})
     if not ret.returncode:
         return # all is well
     else:
@@ -602,8 +602,8 @@ def initialize_gpg():
 
     # else import the mysql key
     info("    - Importing mysql public key to %s", gpghome)
-    cmd = sarge.shell_format('{0} --keyserver=pgp.mit.edu --recv-keys 5072E1F5', gpg)
-    ret = sarge.capture_both(cmd, env={'GNUPGHOME' : gpghome})
+    cmd = cmd.shell_format('{0} --keyserver=pgp.mit.edu --recv-keys 5072E1F5', gpg)
+    ret = cmd.capture_both(cmd, env={'GNUPGHOME' : gpghome})
     for line in ret.stderr:
         debug("    # %s", line.rstrip())
     if ret.returncode != 0:
@@ -615,9 +615,9 @@ def gpg_verify_stream(signature):
 
     gpghome = os.path.expanduser('~/.dbsake/gpg')
     gpg = dbsake_path.which('gpg') or dbsake_path.which('gpg2')
-    cmd = sarge.shell_format('{0} --verify {1} -', gpg, signature)
+    cmd = cmd.shell_format('{0} --verify {1} -', gpg, signature)
     info("    - Verifying gpg signature via: %s", cmd)
-    with sarge.capture_both(cmd, input=PIPE, async=True, env={'GNUPGHOME' : gpghome }) as pipeline:
+    with cmd.capture_both(cmd, input=PIPE, async=True, env={'GNUPGHOME' : gpghome }) as pipeline:
         stdin = pipeline.processes[0].stdin
         yield stdin
         stdin.close()
