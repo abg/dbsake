@@ -13,7 +13,7 @@ import click
 from dbsake.cli import dbsake
 
 
-@dbsake.command('frm-to-schema', options_metavar="[options]")
+@dbsake.command('frmdump', options_metavar="[options]")
 @click.option('-r', '--raw-types', default=False, is_flag=True)
 @click.option('-R', '--replace', default=False, is_flag=True)
 @click.argument('path',
