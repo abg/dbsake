@@ -73,7 +73,7 @@ def sandbox_cli(ctx,
     This command installs a new MySQL instance under the specified sandbox
     directory, or under ~/sandboxes/sandbox_<datetime> if none is specified.
     """
-    from dbsake.mysql import sandbox
+    from dbsake.core.mysql import sandbox
 
     if password:
         password = click.prompt('Password' if sys.stdin.isatty() else '',

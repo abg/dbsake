@@ -22,7 +22,7 @@ from dbsake.cli import dbsake
                 nargs=-1)
 def frmdump(path, raw_types, replace):
     """Dump schema from MySQL frm files."""
-    from dbsake.mysql import frm
+    from dbsake.core.mysql import frm
 
     failures = 0
 
@@ -47,7 +47,7 @@ def frmdump(path, raw_types, replace):
 @click.argument('names', nargs=-1)
 def decode(names):
     """Decode a MySQL tablename as a unicode name."""
-    from dbsake.mysql.frm import tablename
+    from dbsake.core.mysql.frm import tablename
 
     for name in names:
         click.echo(tablename.filename_to_tablename(name))
@@ -58,7 +58,7 @@ def decode(names):
 @click.argument('names', nargs=-1)
 def encode(names):
     """Encode a MySQL tablename"""
-    from dbsake.mysql.frm import tablename
+    from dbsake.core.mysql.frm import tablename
 
     for name in names:
         click.echo(tablename.tablename_to_filename(name))

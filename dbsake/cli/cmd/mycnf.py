@@ -26,7 +26,7 @@ from dbsake.cli import dbsake
               help="Output unified diff rather than full config")
 def upgrade_mycnf(config, target, patch):
     """Upgrade a MySQL option file"""
-    from dbsake.mysql import mycnf
+    from dbsake.core.mysql import mycnf
     
     result = mycnf.upgrade(config, target, patch)
     click.echo(result)

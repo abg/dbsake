@@ -19,7 +19,7 @@ from dbsake.cli import dbsake
 @click.argument('paths', nargs=-1)
 def fincore(paths, verbose):
     """Report cached pages for a file."""
-    from dbsake import fs
+    from dbsake.core import fs
 
     errors = 0
     for path in paths:
@@ -41,7 +41,7 @@ def fincore(paths, verbose):
 @click.argument('paths', nargs=-1)
 def uncache(paths):
     """Drop OS cached pages for a file."""
-    from dbsake import fs
+    from dbsake.core import fs
 
     errors = 0
     for path in paths:
