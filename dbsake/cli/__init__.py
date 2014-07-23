@@ -16,7 +16,7 @@ from dbsake import __version__ as dbsake_version
 CONTEXT_SETTINGS = dict(help_option_names=['-?', '--help'])
 
 try:
-    logging.NullHandler
+    NullHandler = logging.NullHandler
 except AttributeError:
     class NullHandler(logging.Handler):
         """
@@ -83,6 +83,7 @@ def help(ctx, command):
         click.echo(cmd.get_help(ctx))
     else:
         click.echo(ctx.parent.get_help())
+    sys.exit(0)
 
 def handle_uncaught_exception(exc_type, exc_value, traceback):
     """Handle uncaught exceptions
@@ -102,7 +103,7 @@ def handle_uncaught_exception(exc_type, exc_value, traceback):
     click.echo("Consider filing a bug report at %s" % issues_url,
                file=sys.stderr)
 
-def main():
+def main(argv=sys.argv[1:]):
     """Main entry point
 
     This is our external interface and we dispatch to the underlying cli
@@ -111,5 +112,5 @@ def main():
     sys.excepthook = handle_uncaught_exception
     from . import cmd
     cmd.discover_commands()
-    dbsake(auto_envvar_prefix='DBSAKE', obj={})
+    dbsake(args=argv, auto_envvar_prefix='DBSAKE', obj={})
     return 0
