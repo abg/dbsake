@@ -23,6 +23,7 @@ tasks for MySQL.
    readme
    subcommands
    developing
+   contributing
    frm_format
    history
 
