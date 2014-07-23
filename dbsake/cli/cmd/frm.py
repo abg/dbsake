@@ -29,8 +29,8 @@ def frmdump(path, raw_types, replace):
     for name in path:
         try:
             table = frm.parse(name)
-        except frm.Error:
-            click.echo("Failed to parse %s" % (name,), file=sys.stderr)
+        except frm.Error as exc:
+            click.echo("Failed to parse %s: %s" % (name, exc), file=sys.stderr)
             failures += 1
             continue
         else:
