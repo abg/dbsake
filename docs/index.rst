@@ -22,10 +22,10 @@ tasks for MySQL.
    
    readme
    subcommands
+   history
    developing
    contributing
-   frm_format
-   history
+   appendix
 
 Indices and tables
 ==================
