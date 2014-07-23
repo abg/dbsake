@@ -9,7 +9,10 @@ Decode plaintext view .frm files
 from __future__ import print_function
 
 import collections
-import ConfigParser as configparser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import datetime
 import hashlib
 import io
