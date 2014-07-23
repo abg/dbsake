@@ -60,9 +60,15 @@ class ByteReader(io.BytesIO):
 
     def sint24(self, endian="<"):
         data = self.read(3)
-        offset = endian = '>' and -1 or 0
-        msb = struct.unpack_from('B', data)[offset]
-        pad = (msb & 0x80) and b'\xff' or b'\x00'
+        if endian == "<":
+            msb, = struct.unpack("B", data[-1:])
+        else:
+            msb, = struct.unpack("B", data[0:1])
+        # check high bit so we can extend sign appropriately
+        if msb & 0x80:
+            pad = b'\xff'
+        else:
+            pad = b'\x00'
         if endian == '<':
             return struct.unpack('<i', data + pad)[0]
         else:
