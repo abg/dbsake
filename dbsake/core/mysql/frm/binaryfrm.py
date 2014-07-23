@@ -258,7 +258,8 @@ def unpack_columns(packed_columns, table):
     defaults = util.ByteReader(packed_columns.defaults)
     comments = util.ByteReader(packed_columns.comments)
 
-    null_map = map(ord, defaults.read((packed_columns.null_count + 1 + 7) // 8))
+    _null_bytes = defaults.read((packed_columns.null_count + 1 + 7) // 8)
+    null_map = bytearray(_null_bytes)
     if table.options.handler_options.PACK_RECORD:
         null_bit = 0
     else:
