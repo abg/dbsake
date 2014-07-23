@@ -77,7 +77,7 @@ class MySQLView(collections.namedtuple('MySQLView',
             parts.append('CREATE')
         parts.append('ALGORITHM=' + self.algorithm.name)
         parts.append('DEFINER=' + self.definer.format())
-        security = 'INVOKER' if self.suid.name == 'DEFAULT' else self.suid.name
+        security = 'DEFINER' if self.suid.name == 'DEFAULT' else self.suid.name
         parts.append('SQL SECURITY ' + security)
         parts.append('VIEW')
         parts.append("`{0}`".format(self.name))
