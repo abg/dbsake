@@ -518,7 +518,7 @@ def unpack_type_time2(defaults, context):
     hour = (value >> 12) % (1 << 10)
     minute = (value >> 6) % (1 << 6)
     second = value % (1 << 6)
-    result = '{0}:{1}:{2}'.format(hour, minute, second)
+    result = '%02d:%02d:%02d' % (hour, minute, second)
 
     scale = context.length - constants.MAX_TIME_WIDTH - 1
 
@@ -531,7 +531,10 @@ def unpack_type_time2(defaults, context):
         frac_part, = struct.unpack('>i', data)
         if frac_part < 0:
             frac_part = -frac_part
-        result += '.' + str(frac_part).zfill(scale)
+        frac_part = str(frac_part).zfill(scale)
+        if len(frac_part) > scale:
+            frac_part = frac_part[0:scale]
+        result += '.' + frac_part
 
     if is_neg:
         result = '-' + result
