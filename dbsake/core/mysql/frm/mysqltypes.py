@@ -443,14 +443,68 @@ def unpack_type_null(defaults, context):
 
 
 # Date/Time types
+TIME_MAX_HOUR = 838
+TIME_MAX_MINUTE = 59
+TIME_MAX_SECOND = 59
+TIME_MAX_SECOND_PART = 999999
+TIME_SECOND_PART_FACTOR = (TIME_MAX_SECOND_PART+1)
+TIME_SECOND_PART_DIGITS = 6
+TIME_MAX_VALUE = (TIME_MAX_HOUR*10000 + TIME_MAX_MINUTE*100 + TIME_MAX_SECOND)
+TIME_MAX_VALUE_SECONDS = (TIME_MAX_HOUR * 3600L +
+                          TIME_MAX_MINUTE * 60L + TIME_MAX_SECOND)
+
+
+def _sec_part_shift(value, digits):
+    return value // 10**(TIME_SECOND_PART_DIGITS - digits)
+
+
+def _sec_part_unshift(value, digits):
+    return value * 10**(TIME_SECOND_PART_DIGITS - digits)
+
+TIME_HIRES_BYTES = [3, 4, 4, 5, 5, 5, 6]
+
+
+def _unpack_type_time_hires(defaults, context, scale):
+    """Unpack the default value for a MariaDB TIME(N) column
+
+    This is similar in function to the MYSQL_TYPE_TIME2 type,
+    but is encoded as a standard MYSQL_TYPE_TIME field and
+    values are unpacked according to the following logic.
+    :returns: string TIME value with microseconds
+    """
+    pack_length = TIME_HIRES_BYTES[scale]
+    unpack = {
+        3: defaults.uint24,
+        4: defaults.uint32,
+        5: defaults.uint40,
+        6: defaults.uint48
+    }
+    dispatch = unpack[pack_length]
+    value = dispatch(endian=">")
+    zero_point = _sec_part_shift(
+        (TIME_MAX_VALUE_SECONDS+1)*TIME_SECOND_PART_FACTOR,
+        scale
+    )
+    value = _sec_part_unshift(value - zero_point, scale)
+    value, usec = divmod(value, 1000000)
+    value, sec = divmod(value, 60)
+    value, minute = divmod(value, 60)
+    hour = value
+    result = "%02d:%02d:%02d.%06d" % (hour, minute, sec, usec)
+    if scale < 6:
+        result = result[0:-(6 - scale)]
+    return "'%s'" % result
+
+
 def unpack_type_time(defaults, context):
+    scale = context.length - constants.MAX_TIME_WIDTH - 1
+    if scale > 0:
+        return _unpack_type_time_hires(defaults, context, scale)
     value = defaults.uint24()
     hour = value // 10000
     minute = (value // 100) % 100
     second = value % 100
-    return "'%s'" % '{hour}:{minute}:{second}'.format(hour=hour,
-                                                      minute=minute,
-                                                      second=second)
+    return "'%02d:%02d:%02d'" % (hour, minute, second)
 
 
 def unpack_type_time2(defaults, context):
