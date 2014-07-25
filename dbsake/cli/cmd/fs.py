@@ -1,6 +1,6 @@
 """
 dbsake.cmd.fs
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 Commands for interacting with the local filesystem
 
@@ -35,7 +35,7 @@ def fincore(paths, verbose):
         sys.exit(1)
     else:
         sys.exit(0)
-        
+
 
 @dbsake.command()
 @click.argument('paths', nargs=-1)
