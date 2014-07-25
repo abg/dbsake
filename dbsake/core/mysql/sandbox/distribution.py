@@ -297,7 +297,7 @@ def unpack_tarball_distribution(stream, destdir):
                 continue
             # reset the user to something sane
             tarinfo.uname = 'mysql'
-            tarinfo.group = 'mysql'
+            tarinfo.gname = 'mysql'
             tarinfo.uid = 0
             tarinfo.gid = 0
             # finally extract the element
