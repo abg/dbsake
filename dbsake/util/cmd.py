@@ -124,7 +124,9 @@ def capture_stdout(cmd, encoding='utf8', **kwargs):
                              stdout=stdout.read(),
                              stderr=None)
 
-
+# include here, but not really used anywhere yet
+# commenting out to avoid exposing an api
+'''
 def capture_combined(cmd, encoding='utf-8', **kwargs):
     """Run a command and capture stdout and stderr as a single stream"""
     with tempfile.TemporaryFile() as stdout:
@@ -136,10 +138,11 @@ def capture_combined(cmd, encoding='utf-8', **kwargs):
         stdout.seek(0)
         if encoding:
             stdout = codecs.getreader(encoding)(stdout)
-        output = stdout.read()
+        output = stdout.read().decode(encoding)
         return ProcessResult(status=returncode,
                              stdout=output,
                              stderr=output)
+'''
 
 
 def capture_both(cmd, encoding='utf-8', **kwargs):
@@ -161,8 +164,8 @@ def capture_both(cmd, encoding='utf-8', **kwargs):
                                  stdout=stdout.read(),
                                  stderr=stderr.read())
 
-## The following shell quoting is adapted from sarge
-## with minor code cleanups
+# The following shell quoting is adapted from sarge
+# with minor code cleanups
 
 # This regex determines which shell input needs quoting
 # because it may be unsafe
