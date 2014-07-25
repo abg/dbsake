@@ -6,12 +6,11 @@ Sandbox utilities
 """
 from __future__ import print_function, division
 
-import contextlib
-import os
 import sys
 import time
 
 import dbsake.util as util
+
 
 class StreamProxy(object):
     """Proxy over an underlying stream
@@ -56,10 +55,11 @@ def progressbar(max=0, width=40, interval=0.5):
     template = '({pct:6.2%})[{fill:.<{width}}]{cur_size:^10}/{max_size:^10}'
     params = dict(length=0, last_update=0, complete=False)
     max_size = util.format_filesize(max)
+
     def _show_progress(data):
         params['length'] += len(data)
         if time.time() - params['last_update'] >= interval or \
-            (not data and not params['complete']):
+                (not data and not params['complete']):
             params['last_update'] = time.time()
             frac = params['length'] / max
             units = int(frac*width)
@@ -75,19 +75,3 @@ def progressbar(max=0, width=40, interval=0.5):
             print(file=sys.stderr)
             params['complete'] = True
     return _show_progress
-
-@contextlib.contextmanager
-def cache_url(url):
-    """Yield a file to cache content from a url
-    """
-    # XXX: this assumes we have no fragment / query portions
-    path = os.path.basename(url)
-    cachedir = os.environ.get('DBSAKE_CACHE_DIR',
-                              os.path.expanduser('~/.dbsake/cache'))
-    try:
-        os.makedirs(cachedir)
-    except OSError:
-        pass
-    path = os.path.join(cachedir, path)
-    with open(path, 'wb') as fileobj:
-        yield fileobj
