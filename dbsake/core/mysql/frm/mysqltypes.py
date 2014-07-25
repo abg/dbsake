@@ -616,7 +616,31 @@ def unpack_type_timestamp2(defaults, context):
         return "'{0}'".format(value)
 
 
+def _unpack_type_datetime_hires(defaults, context, scale):
+    value = defaults.uint64(endian=">")
+    value *= 10**(TIME_SECOND_PART_DIGITS - scale)
+    units = (
+        ('usec', 1000000, scale),
+        ('second', 60, 2),
+        ('minute', 60, 2),
+        ('hour', 24, 2),
+        ('day', 32, 2),
+        ('month', 13, 2),
+    )
+    kwargs = {}
+    for name, unit, zfill in units:
+        value, component = divmod(value, unit)
+        kwargs[name] = ("%s" % component).zfill(zfill)
+    kwargs['year'] = value
+    return "'{year}-{month}-{day} {hour}:{minute}:{second}.{usec}'".format(
+        **kwargs
+    )
+
+
 def unpack_type_datetime(defaults, context):
+    scale = context.length - constants.MAX_DATETIME_WIDTH - 1
+    if scale > 0:
+        return _unpack_type_datetime_hires(defaults, context, scale)
     value = defaults.uint64()
     # map field to # of encoded digits
     units = (
