@@ -21,7 +21,7 @@ tasks for MySQL.
    :maxdepth: 4
    
    readme
-   subcommands
+   cli
    history
    developing
    contributing
