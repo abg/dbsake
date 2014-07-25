@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 from . import binaryfrm
 from . import mysqlview
 
+
 class Error(Exception):
     """Base error type when an issue occurs parsing an .frm"""
 
@@ -17,7 +18,8 @@ class Error(Exception):
 def parse(path):
     """Parse a .frm file
 
-    :param path: path to a .frm file. path may be either a binary .frm or a view
+    :param path: path to a .frm file. path may be either a binary .frm or a
+                 view
     :returns: Table or View instance
     """
     if not path.endswith('.frm'):

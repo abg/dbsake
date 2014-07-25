@@ -21,14 +21,15 @@ import os
 from dbsake.util import enum
 from . import tablename
 
+
 # These constants are taken from sql/table.h
 # from the MySQL source tree and adapted to python enums here
 
 class ViewAlgorithm(enum.IntEnum):
     """MySQL view ALGORITHM value"""
-    UNDEFINED   = 0
-    TMPTABLE    = 1
-    MERGE       = 2
+    UNDEFINED = 0
+    TMPTABLE = 1
+    MERGE = 2
 
 
 class ViewSUID(enum.IntEnum):
@@ -40,9 +41,9 @@ class ViewSUID(enum.IntEnum):
 
 class ViewCheckOption(enum.IntEnum):
     """MySQL view WITH CHECK OPTION value"""
-    NONE        = 0
-    LOCAL       = 1
-    CASCADED    = 2
+    NONE = 0
+    LOCAL = 1
+    CASCADED = 2
 
 
 class MySQLDefiner(collections.namedtuple('MySQLDefiner', 'user host')):
@@ -114,13 +115,14 @@ def parse(path):
 
     # Safer in 5.1+ when we know the underlying charset
     if cfg.has_option('view', 'view_body_utf8'):
-        raw_view_body = cfg.get('view', 'view_body_utf8').decode('string_escape')
+        raw_view_body = cfg.get('view', 'view_body_utf8')
+        raw_view_body = raw_view_body.decode('string_escape')
         view_body = raw_view_body.decode('utf8')
     else:
         # < 5.1, so assume utf8 if not charset was specified
         raw_view_body = cfg.get('view', 'query').decode('string_escape')
         view_body = raw_view_body.decode('utf8')
-            
+
     check_option = ViewCheckOption(cfg.getint('view', 'with_check_option'))
 
     md5 = cfg.get('view', 'md5')
