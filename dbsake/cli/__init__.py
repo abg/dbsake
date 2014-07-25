@@ -85,6 +85,7 @@ def help(ctx, command):
         click.echo(ctx.parent.get_help())
     sys.exit(0)
 
+
 def handle_uncaught_exception(exc_type, exc_value, traceback):
     """Handle uncaught exceptions
 
@@ -103,7 +104,8 @@ def handle_uncaught_exception(exc_type, exc_value, traceback):
     click.echo("Consider filing a bug report at %s" % issues_url,
                file=sys.stderr)
 
-def main(argv=sys.argv[1:]):
+
+def main(argv=None):
     """Main entry point
 
     This is our external interface and we dispatch to the underlying cli

@@ -43,6 +43,7 @@ def frmdump(path, raw_types, replace):
         sys.exit(1)
     sys.exit(0)
 
+
 @dbsake.command('decode', options_metavar="[options]")
 @click.argument('names', nargs=-1)
 def decode(names):
@@ -53,6 +54,7 @@ def decode(names):
         click.echo(tablename.filename_to_tablename(name))
 
     return 0
+
 
 @dbsake.command('encode', options_metavar="[options]")
 @click.argument('names', nargs=-1)
