@@ -745,7 +745,7 @@ def distribution_from_download(options):
     elif options.cache_policy != 'never' and stream.headers['x-dbsake-cache']:
         cache_path = stream.headers['x-dbsake-cache']
         md5_path = cache_path + '.md5'
-        with open(md5_path, 'wb') as fileobj:
+        with codecs.open(md5_path, 'wb', 'utf-8') as fileobj:
             print("# MD5 checksum of cache file", file=fileobj)
             print("# size: %s" % stream.info()['content-length'], file=fileobj)
             print("%s  %s" % (checksum.hexdigest(), cache_path),
