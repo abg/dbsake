@@ -5,12 +5,12 @@ dbsake.core.mysql.frm.util
 Utility methods
 
 """
-
 import contextlib
 import functools
 import io
 import os
 import struct
+
 
 # Utility class for reading and interpreting packed byte strings
 class ByteReader(io.BytesIO):
@@ -74,8 +74,11 @@ class ByteReader(io.BytesIO):
         else:
             return struct.unpack('>i', pad + data)[0]
 
-    def uint32(self):
-        return struct.unpack('<I', self.read(4))[0]
+    def uint32(self, endian="<"):
+        if endian == "<":
+            return struct.unpack('<I', self.read(4))[0]
+        elif endian == ">":
+            return struct.unpack(">I", self.read(4))[0]
 
     def sint32(self, endian="<"):
         if endian == '<':
@@ -92,8 +95,9 @@ class ByteReader(io.BytesIO):
         elif endian == '>':
             return struct.unpack('>Q', b'\x00'*3 + self.read(5))[0]
 
-    def uint64(self):
-        return struct.unpack('<Q', self.read(8))[0]
+    def uint64(self, endian="<"):
+        assert endian in ("<", ">")
+        return struct.unpack('%sQ' % endian, self.read(8))[0]
 
     def sint64(self):
         return struct.unpack('<q', self.read(8))[0]
@@ -107,7 +111,7 @@ class ByteReader(io.BytesIO):
     def bytes_prefix16(self):
         """Read a length-prefix string
 
-        Reads a 16-bit integer length and 
+        Reads a 16-bit integer length and
         return ``length`` bytes
 
         :returns: byte string
@@ -135,9 +139,9 @@ class ByteReader(io.BytesIO):
             # skip the trailing null
             self.skip(1)
 
-    ## Offset based methods
-    ## These read values at some offset and 
-    ## restore the original offset.
+    # Offset based methods
+    # These read values at some offset and
+    # restore the original offset.
     def uint8_at(self, offset, whence=os.SEEK_SET):
         with self.offset(offset, whence):
             return self.uint8()
@@ -182,8 +186,8 @@ class ByteReader(io.BytesIO):
         with self.offset(offset, whence):
             return self.read(size)
 
-    ## Skip support to move the cursor forward
-    ## Convenience method wrapping BytesIO.seek(offset, whence)
+    # Skip support to move the cursor forward
+    # Convenience method wrapping BytesIO.seek(offset, whence)
     def skip(self, n_bytes):
         self.seek(n_bytes, os.SEEK_CUR)
 
@@ -202,6 +206,7 @@ def add_metaclass(metaclass):
             orig_vars.pop(slots_var)
         return metaclass(cls.__name__, cls.__bases__, orig_vars)
     return wrapper
+
 
 # Suppress pylint's "Too few methods" warning
 # pylint: disable=R0903
@@ -307,7 +312,6 @@ class BitFlags(object):
 
     def clear(self):
         """Clear all bit flags"""
-        #self.disable(*self._members_)
         self.value = 0
         return self
 
@@ -318,4 +322,3 @@ class BitFlags(object):
                 attrs.append(repr(name))
         return '{classname}({attrs})'.format(classname=self.__class__.__name__,
                                              attrs=','.join(attrs))
-
