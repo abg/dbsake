@@ -272,13 +272,13 @@ def unpack_default(defaults, context):
     type_name = context.type_code.name.lower()
     try:
         dispatch = globals()['unpack_type_{0}'.format(type_name)]
-    except KeyError:
+    except KeyError:  # pragma: no cover
         raise LookupError("No method to decode default for type %s" %
                           context.type_code)
     else:
         try:
             return dispatch(defaults, context)
-        except NotImplementedError:
+        except NotImplementedError:  # pragma: no cover
             raise LookupError("Unpack method not implemented for %r" %
                               context.type_code)
 
@@ -439,7 +439,8 @@ def unpack_type_double(defaults, context):
 
 # Null type
 def unpack_type_null(defaults, context):
-    return None
+    # should never be called. NULL defaults are handled via flags
+    raise NotImplemented  # pragma: no cover
 
 
 # Date/Time types
@@ -599,7 +600,7 @@ def unpack_type_timestamp2(defaults, context):
             fractional = defaults.uint16(">")
         elif nbytes == 3:
             fractional = defaults.uint24(">")
-        else:
+        else:  # pragma: no cover
             raise ValueError("Invalid scale for TIMESTAMP(%r)" % scale)
         value += '.' + str(fractional).zfill(scale)
 
@@ -734,7 +735,7 @@ def unpack_type_enum(defaults, context):
 
     try:
         return "'%s'" % labels[offset]
-    except IndexError:
+    except IndexError:  # pragma: no cover
         return "''"
 
 
@@ -755,7 +756,7 @@ def unpack_type_set(defaults, context):
         value = defaults.uint32()
     elif n_bytes == 8:
         value = defaults.uint64()
-    else:
+    else:  # pragma: no cover
         raise ValueError("Sets cannot have more than 64 elements!")
     result = []
     for bit, name in enumerate(context.labels):
@@ -769,7 +770,7 @@ def unpack_type_set(defaults, context):
 # included here for documentation purposes
 # MySQL BLOB/TEXT types
 def unpack_type_long_blob(defaults, context):
-    return None
+    raise NotImplementedError  # pragma: no cover
 unpack_type_tiny_blob = unpack_type_long_blob
 unpack_type_medium_blob = unpack_type_long_blob
 unpack_type_blob = unpack_type_long_blob
@@ -777,4 +778,5 @@ unpack_type_blob = unpack_type_long_blob
 
 # MySQL GEOMETRY type
 def unpack_type_geometry(defaults, context):
-    raise NotImplementedError
+    # GEOMETRY cannot have a default value so this should never be called
+    raise NotImplementedError  # pragma: no cover
