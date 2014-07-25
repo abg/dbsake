@@ -25,6 +25,28 @@ New features:
   * dbsake no longer uses the sarge library internally
   * dbsake no longer uses the tempita library internally
 
+Bugs fixed:
+
+  * frmdump incorrectly defaulted to SQL SECURITY INVOKER when decoding view
+    .frm files.  This behavior has been changed to use MySQL's default of
+    SQL SECURITY DEFINER.
+  * frmdump did not match MySQL output when decoding views
+  * frmdump did not correctly decode default values for 3-byte MEDIUM int
+    fields due to several logic errors.
+  * frmdump did not include the unsigned attribute for float / double fields
+    which were defined with a (precision, scale) scale attribute.
+  * frmdump did not format MariaDB TIME fields with microsecond precision
+    correctly.
+  * frmdump did not format MariaDB TIMESTAMP fields with microsecond precision
+    correctly.
+  * frmdump did not format MariaDB DATETIME(N) with microsecond precision
+    correctly.
+  * frmdump did not handle timestamp values that defaulted to '0' correctly,
+    and instead used '1970-01-01 00:00:00' as the default, rather than the
+    MySQL convention of using '0000-00-00 00:00:00'
+  * frmdump did not always format microseconds for MySQL 5.6 DATETIME(N)
+    fields correctly.
+
 1.0.9 (2014-07-09)
 ------------------
 
