@@ -6,7 +6,9 @@ dbsake.core.mysql.mycnf.parser
 MySQL my.cnf parsing and rewriting support
 
 """
+from __future__ import unicode_literals
 
+import codecs
 import glob
 import logging
 import os
@@ -314,48 +316,49 @@ def parse(path):
     # remaining !included .cnf to worry about
     paths = [path]
     while paths:
-        iterable = open(paths.pop(0), 'rb')
-        section = None
-        lines = []
-        # map interesting options -> offsets in lines[]
-        keys = {}
-        for idx, line in enumerate(iterable):
-            lines.append(line)
-            # trim righ-trailing whitespace
-            # (preserve original line)
-            _line = sanitize(line, idx+1).rstrip()
-            if not _line:
-                # skip blank lines
-                continue
-            if _line.startswith('['):
-                section = _line[1:-1]
-                continue
+        with codecs.open(paths.pop(0), 'rb', 'utf-8') as iterable:
+            section = None
+            lines = []
+            # map interesting options -> offsets in lines[]
+            keys = {}
+            for idx, line in enumerate(iterable):
+                lines.append(line)
+                # trim righ-trailing whitespace
+                # (preserve original line)
+                _line = sanitize(line, idx+1).rstrip()
+                if not _line:
+                    # skip blank lines
+                    continue
+                if _line.startswith('['):
+                    section = _line[1:-1]
+                    continue
 
-            if _line.startswith('#'):
-                continue
+                if _line.startswith('#'):
+                    continue
 
-            if _line.startswith('!include '):
-                paths.append(_line.split(None, 2)[-1])
-                continue
+                if _line.startswith('!include '):
+                    paths.append(_line.split(None, 2)[-1])
+                    continue
 
-            if _line.startswith('!includedir '):
-                _path = os.path.join(_line.split(None, 2)[-1], '*.cnf')
-                paths.extend(glob.glob(_path))
-                continue
+                if _line.startswith('!includedir '):
+                    _path = os.path.join(_line.split(None, 2)[-1], '*.cnf')
+                    paths.extend(glob.glob(_path))
+                    continue
 
-            if section != 'mysqld':
-                logging.debug("Ignoring section [%s] options %s on line %d",
-                              section, _line, idx+1)
-                continue
-            # must be an option or a syntax error
-            key, value, inline_comment = parse_option(_line)
+                if section != 'mysqld':
+                    logging.debug("Ignoring [%s] options %s on line %d",
+                                  section, _line, idx+1)
+                    continue
+                # must be an option or a syntax error
+                key, value, inline_comment = parse_option(_line)
 
-            # normalize key
-            # XXX: handle prefix-values (e.g. key-buffer -> key-buffer-size)
-            key = key.replace('_', '-')
+                # normalize key
+                # XXX: handle prefix-values
+                # (e.g. key-buffer -> key-buffer-size)
+                key = key.replace('_', '-')
 
-            keys.setdefault(key, [])
-            keys[key].append((idx, value, _line))
+                keys.setdefault(key, [])
+                keys[key].append((idx, value, _line))
 
         yield iterable.name, lines, keys
 
@@ -382,7 +385,7 @@ def upgrade_config(path, rewriter):
         purge_list = []
         pending = {}
 
-        for key, idx_list in keys.iteritems():
+        for key, idx_list in keys.items():
             if len(idx_list) > 1 and key != 'set-variable' and \
                     key not in multi_valued_options:
                 logging.warning("Duplicate options for '%s'", key)
