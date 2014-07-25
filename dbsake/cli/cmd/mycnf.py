@@ -2,7 +2,7 @@
 dbsake.cli.cmd.mycnf
 ~~~~~~~~~~~~~~~~~~~~
 
-MySQL option file utilities
+MySQL option file utilitie
 """
 from __future__ import unicode_literals
 
@@ -27,7 +27,7 @@ from dbsake.cli import dbsake
 def upgrade_mycnf(config, target, patch):
     """Upgrade a MySQL option file"""
     from dbsake.core.mysql import mycnf
-    
+
     result = mycnf.upgrade(config, target, patch)
     click.echo(result)
     sys.exit(0)
