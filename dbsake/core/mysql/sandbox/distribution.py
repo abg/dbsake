@@ -724,7 +724,7 @@ def distribution_from_download(options):
 
         if not options.skip_gpgcheck:
             managers.append(gpg_verify_stream(signature))
-        with contextlib.nested(*managers) as ctx:
+        with util.nested(*managers) as ctx:
             for _f in ctx:
                 stream.add(_f.write)
             info("    - Unpacking tar stream. This may take some time")

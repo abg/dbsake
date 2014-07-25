@@ -6,6 +6,7 @@ Sandbox utilities
 """
 from __future__ import print_function, division
 
+import contextlib
 import sys
 import time
 
@@ -75,3 +76,47 @@ def progressbar(max=0, width=40, interval=0.5):
             print(file=sys.stderr)
             params['complete'] = True
     return _show_progress
+
+
+# hack for python3
+# XXX: find a prettier way to handle this other than contextlib.nested
+@contextlib.contextmanager
+def nested(*managers):
+    """Combine multiple context managers into a single nested context manager.
+
+   This function has been deprecated in favour of the multiple manager form
+   of the with statement.
+
+   The one advantage of this function over the multiple manager form of the
+   with statement is that argument unpacking allows it to be
+   used with a variable number of context managers.
+
+    """
+    exits = []
+    vars = []
+    exc = (None, None, None)
+    try:
+        for mgr in managers:
+            exit = mgr.__exit__
+            enter = mgr.__enter__
+            vars.append(enter())
+            exits.append(exit)
+        yield vars
+    except:
+        exc = sys.exc_info()
+    finally:
+        while exits:
+            exit = exits.pop()
+            try:
+                if exit(*exc):
+                    exc = (None, None, None)
+            except:
+                exc = sys.exc_info()
+        if exc != (None, None, None):
+            # Don't rely on sys.exc_info() still containing
+            # the right information. Another exception may
+            # have been raised and caught by an exit method
+            if sys.version_info < (3,):
+                raise (exc[0], exc[1], exc[2])
+            else:
+                raise exc[1].with_traceback(exc[2])
