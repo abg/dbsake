@@ -14,7 +14,7 @@ import os
 import time
 
 from dbsake.util import format_filesize
-from dbsake.util import path
+from dbsake.util import pathutil
 
 from . import common
 from . import datasource
@@ -31,7 +31,7 @@ def create(**options):
     sbopts = common.check_options(**options)
 
     # a basic sanity check: make sure there's at least 1GB free (or 5%)
-    usage = path.disk_usage(sbopts.basedir)
+    usage = pathutil.disk_usage(sbopts.basedir)
 
     if usage.free < 1024**3:
         raise SandboxError(("Only {0} of {1} (<{2:.2%}) available on {3}. "
@@ -39,7 +39,7 @@ def create(**options):
                            format_filesize(usage.free),
                            format_filesize(usage.total),
                            usage.free / usage.total,
-                           path.resolve_mountpoint(sbopts.basedir)))
+                           pathutil.resolve_mountpoint(sbopts.basedir)))
 
     start = time.time()
     sbdir = sbopts.basedir
