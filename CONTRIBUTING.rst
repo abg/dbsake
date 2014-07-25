@@ -11,7 +11,7 @@ Types of Contributions
 ----------------------
 
 Report Bugs
-~~~~~~~~~~
+~~~~~~~~~~~
 
 Report bugs at https://github.com/abg/dbsake/issues.
 
@@ -22,26 +22,26 @@ If you are reporting a bug, please include:
 * Detailed steps to reproduce the bug.
 
 Fix Bugs
-~~~~~~~
+~~~~~~~~
 
 Look through the GitHub issues for bugs. Anything tagged with "bug"
 is open to whoever wants to implement it.
 
 Implement Features
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 Look through the GitHub issues for features. Anything tagged with "feature"
 is open to whoever wants to implement it.
 
 Write Documentation
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 dbsake could always use more documentation, whether as part of the
 official dbsake docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 The best way to send feedback is to file an issue at https://github.com/abg/dbsake/issues.
 
