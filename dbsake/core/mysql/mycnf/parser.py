@@ -2,6 +2,7 @@
 dbsake.core.mysql.mycnf.parser
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 MySQL my.cnf parsing and rewriting support
 
 """
@@ -26,6 +27,7 @@ multi_valued_options = (
     'plugin-load',
 )
 
+
 # basic parsing helper methods
 # borrowed from holland.lib.mysql's option parsing package
 def remove_inline_comment(value):
@@ -43,11 +45,13 @@ def remove_inline_comment(value):
         escaped = (quote and char == '\\' and not escaped)
     return value, ''
 
+
 def unpack_option_value(value):
     """Process an option value according to MySQL's syntax rules"""
     value, comment = remove_inline_comment(value)
     value = value.strip()
     return value, comment
+
 
 def resolve_option(item):
     """Expand an option prefix to the full name of the option"""
@@ -71,6 +75,7 @@ def resolve_option(item):
 
 SV_CRE = re.compile(r'(?P<sv>set[-_]variable\s*=\s*)(?P<value>.*)')
 
+
 def sanitize(line, lineno):
     """Sanitize an old set-variable option to modern key=value form"""
     match = SV_CRE.match(line)
@@ -82,6 +87,7 @@ def sanitize(line, lineno):
     return line
 
 KV_CRE = re.compile(r'\s*(?P<key>[^=\s]+?)\s*(?:=\s*(?P<value>.*))?$')
+
 
 def parse_option(line):
     """Process a key/value directive according to MySQL syntax rules
@@ -101,7 +107,8 @@ def parse_option(line):
         return key, value, inline_comment
     return None
 
-## Rewrite support
+
+# Rewrite support
 class RewriteRule(object):
     """Rewrite an option into zero or more options
 
@@ -114,13 +121,10 @@ class RewriteRule(object):
     :attr reason: an optional reason that will be logged when
                   rewriting an option
 
-    Example remove 'skip-innodb' option:
-
-    >> noop_rule = RewriteRule([], reason='Stupid option.')
-    >> for line in noop_rule.rewrite('skip-innodb', None):
-        print(line)
+    >>> noop_rule = RewriteRule([], reason='Stupid option.')
+    >>> for line in noop_rule.rewrite('skip-innodb', None):
+    ...     print line
     [INFO] Rewriting option '%s'.  Reason: Stupid option.
-    >>
     """
     def __init__(self, options=None, reason='unknown'):
         self.options = options
@@ -135,6 +139,7 @@ class RewriteRule(object):
 
         for option in self.options:
             yield string.Template(option).safe_substitute(key=key, value=value)
+
 
 class SlowLogRewriteRule(RewriteRule):
     """Rewrite < 5.1 slow-query-log optoins"""
@@ -168,7 +173,7 @@ class InnoDBPluginRewriteRule(RewriteRule):
             if plugin_lib != 'ha_innodb_plugin.so':
                 result.append(option)
         if result:
-            self.options = [ 'plugin-load = ' + ';'.join(result) ]
+            self.options = ['plugin-load = ' + ';'.join(result)]
         else:
             self.options = []
         for line in super(InnoDBPluginRewriteRule, self).__call__(key, value):
@@ -201,63 +206,63 @@ class OptionRewriter(object):
 
         return [line for line in rule(key, value)]
 
+
 class MySQL51OptionRewriter(OptionRewriter):
     """Option Rewriter for MySQL 5.1 options"""
 
     rules = {
-        'default-character-set' : RewriteRule([
-            'character-set-server = ${value}',
-        ],
-        reason="Deprecated in MySQL 5.0 in favor of character-set-server"),
-        'default-collation' : RewriteRule([
-            'collation-server = ${value}',
-        ],
-        reason="Deprecated in MySQL 4.1.3 in favor of collation-server"),
-    'default-table-type' : RewriteRule([
-        'default-storage-engine = ${value}',
-    ],
-    reason="Deprecated in MySQL 5.0 in favor of default-storage-engine"),
-        'log-slow-queries' : SlowLogRewriteRule(
+        'default-character-set': RewriteRule(
+            ['character-set-server = ${value}'],
+            reason="Deprecated in MySQL 5.0 in favor of character-set-server"),
+        'default-collation': RewriteRule(
+            ['collation-server = ${value}'],
+            reason="Deprecated in MySQL 4.1.3 in favor of collation-server"),
+        'default-table-type': RewriteRule(
+            ['default-storage-engine = ${value}'],
+            reason=("Deprecated in MySQL 5.0 in favor of "
+                    "default-storage-engine")),
+        'log-slow-queries': SlowLogRewriteRule(
             reason='Logging options changed in MySQL 5.1'
         ),
-        'table-cache' : RewriteRule([
+        'table-cache': RewriteRule([
             'table-open-cache = ${value}',
             'table-definition-cache = ${value}',
         ], reason='Table cache options changed in MySQL 5.1'),
         # null rules (completely removes from output)
-        'enable-pstack'         : RewriteRule([
+        'enable-pstack': RewriteRule([
         ], reason='Deprecated in MySQL 5.1.54'),
-        'log-long-format'       : RewriteRule([
+        'log-long-format': RewriteRule([
         ], reason="Deprecated in MySQL 4.1"),
-        'log-short-format'      : RewriteRule([
+        'log-short-format': RewriteRule([
         ], reason="Deprecated in MySQL 4.1. This option now does nothing."),
-        'master-connect-retry'  : RewriteRule([
+        'master-connect-retry': RewriteRule([
         ], reason='Deprecated in MySQL 5.1.17. Removed in 5.5'),
-        'master-host'           : RewriteRule([
+        'master-host': RewriteRule([
         ], reason='Deprecated in MySQL 5.1.17. Removed in 5.5'),
-        'master-password'       : RewriteRule([
+        'master-password': RewriteRule([
         ], reason='Deprecated in MySQL 5.1.17. Removed in 5.5'),
-        'master-port'           : RewriteRule([
+        'master-port': RewriteRule([
         ], reason='Deprecated in MySQL 5.1.17. Removed in 5.5'),
-        'master-user'           : RewriteRule([
+        'master-user': RewriteRule([
         ], reason='Deprecated in MySQL 5.1.17. Removed in 5.5'),
-        'master-ssl'            : RewriteRule([
+        'master-ssl': RewriteRule([
         ], reason='Deprecated in MySQL 5.1.17. Removed in 5.5'),
-        'safe-mode'             : RewriteRule([
+        'safe-mode': RewriteRule([
         ], reason="Deprecated in MySQL 5.0"),
-        'safe-show-database'    : RewriteRule([
+        'safe-show-database': RewriteRule([
         ], reason="Deprecated in MySQL 4.0.2"),
-        'skip-locking'          : RewriteRule([
+        'skip-locking': RewriteRule([
         ], reason='Deprecated in MySQL 4.0.3. Removed in 5.5'),
-        'skip-external-locking' : RewriteRule([
+        'skip-external-locking': RewriteRule([
         ], reason='Default behavior in MySQL 4.1+'),
-        'skip-bdb'              : RewriteRule([
+        'skip-bdb': RewriteRule([
         ], reason='Removed in MySQL 5.1.11'),
-        'skip-innodb'           : RewriteRule([
+        'skip-innodb': RewriteRule([
         ], reason='Default storage engine in 5.5'),
-    'skip-thread-priority'  : RewriteRule([
-    ], reason="Deprecated in MySQL 5.1.29"),
+        'skip-thread-priority': RewriteRule([
+        ], reason="Deprecated in MySQL 5.1.29"),
     }
+
 
 class MySQL55OptionRewriter(MySQL51OptionRewriter):
     """Rewrite rules for MySQL 5.5 my.cnfs
@@ -270,10 +275,12 @@ class MySQL55OptionRewriter(MySQL51OptionRewriter):
     rules['one-thread'] = RewriteRule([
         '--thread-handling=no-threads',
     ], reason="Deprecated and removed in MySQL 5.6")
-    rules['ignore-builtin-innodb'] = RewriteRule(options=[],
-            reason="InnoDB plugin is now the default in 5.5")
+    rules['ignore-builtin-innodb'] = RewriteRule(
+        options=[],
+        reason="InnoDB plugin is now the default in 5.5")
     rules["plugin-load"] = InnoDBPluginRewriteRule(
         reason="InnoDB plugin is now the default in 5.5")
+
 
 class MySQL56OptionRewriter(MySQL55OptionRewriter):
     """MySQL 5.6 option rewriting rules
@@ -285,12 +292,14 @@ class MySQL56OptionRewriter(MySQL55OptionRewriter):
     """
     rules = dict(MySQL55OptionRewriter.rules)
 
+
 class MySQL57OptionRewriter(MySQL56OptionRewriter):
     """MySQL 5.7 rewriting rules
 
     Currently this is identical to 5.6
     """
     rules = dict(MySQL55OptionRewriter.rules)
+
 
 def parse(path):
     """Parse an iterable of lines into a list and option mapping
@@ -304,8 +313,6 @@ def parse(path):
     """
     # remaining !included .cnf to worry about
     paths = [path]
-
-
     while paths:
         iterable = open(paths.pop(0), 'rb')
         section = None
@@ -351,6 +358,7 @@ def parse(path):
             keys[key].append((idx, value, _line))
 
         yield iterable.name, lines, keys
+
 
 def upgrade_config(path, rewriter):
     """Upgrade my.cnf based on set of rewriter rules
