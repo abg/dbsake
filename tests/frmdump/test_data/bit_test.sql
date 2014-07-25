@@ -1,0 +1,3 @@
+CREATE TABLE `bit_test` (
+  `value` bit(9) NOT NULL DEFAULT b'101001101'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
