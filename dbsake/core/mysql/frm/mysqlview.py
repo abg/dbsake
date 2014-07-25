@@ -5,9 +5,10 @@ dbsake.core.mysql.frm.mysqlview
 Decode plaintext view .frm files
 
 """
-
 from __future__ import print_function
+from __future__ import unicode_literals
 
+import codecs
 import collections
 try:
     import configparser
@@ -19,7 +20,9 @@ import io
 import os
 
 from dbsake.util import enum
+
 from . import tablename
+from . import util
 
 
 # These constants are taken from sql/table.h
@@ -96,31 +99,30 @@ def parse(path):
     :returns: ``View`` instance
     """
 
-    with open(path, 'rb') as fileobj:
-        if fileobj.read(9) != b'TYPE=VIEW':
+    with codecs.open(path, 'rb', 'utf-8') as fileobj:
+        if fileobj.read(9) != 'TYPE=VIEW':
             raise ValueError("'%s' is not a view" % path)
         fileobj.seek(0)
-        data = io.BytesIO()
-        data.write(b"[view]\n")
+        data = io.StringIO()
+        print("[view]", file=data)
         data.write(fileobj.read())
         data.seek(0)
     cfg = configparser.RawConfigParser()
     cfg.readfp(data, path)
 
     algorithm = ViewAlgorithm(cfg.getint('view', 'algorithm'))
-    definer_user = cfg.get('view', 'definer_user').decode('utf8')
-    definer_host = cfg.get('view', 'definer_host').decode('utf8')
+    definer_user = cfg.get('view', 'definer_user')
+    definer_host = cfg.get('view', 'definer_host')
     suid = ViewSUID(cfg.getint('view', 'suid'))
     name = tablename.decode(os.path.splitext(os.path.basename(path))[0])
     # use "query" to match SHOW CREATE VIEW output
-    raw_view_body = cfg.get('view', 'query').decode('string_escape')
-    view_body = raw_view_body.decode('utf8')
+    view_body = util.unescape(cfg.get('view', 'query'))
 
     check_option = ViewCheckOption(cfg.getint('view', 'with_check_option'))
 
     md5 = cfg.get('view', 'md5')
     computed_md5 = hashlib.md5()
-    computed_md5.update(cfg.get('view', 'query').decode("string_escape"))
+    computed_md5.update(view_body.encode('utf-8'))
     computed_md5 = computed_md5.hexdigest()
 
     if computed_md5 != md5:

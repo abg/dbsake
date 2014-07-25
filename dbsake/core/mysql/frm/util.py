@@ -9,6 +9,7 @@ import contextlib
 import functools
 import io
 import os
+import re
 import struct
 
 
@@ -328,3 +329,26 @@ class BitFlags(object):
                 attrs.append(repr(name))
         return '{classname}({attrs})'.format(classname=self.__class__.__name__,
                                              attrs=','.join(attrs))
+
+
+def unescape(value):
+    """Remove backslash escapes from a string
+
+    :returns: unescaped string
+    """
+    meta_mapping = {
+        'b': "\b",
+        't': "\t",
+        'n': "\n",
+        'r': "\r",
+        '\\': "\\",
+        's': " ",
+        '"': '"',
+        "'": "'"
+    }
+
+    def replace(match):
+        return meta_mapping[match.group(1)]
+
+    regex = re.compile(r'''\\(['"btnr\\s])''')
+    return regex.sub(replace, value)
