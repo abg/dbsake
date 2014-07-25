@@ -90,19 +90,20 @@ format_type_decimal = format_type_newdecimal
 
 
 def _format_real(name, context):
-    if context.flags.DECIMAL:
+    value = name
+    decimals = f_decimals(context.flags)
+    if decimals != NOT_FIXED_DEC:
         precision = context.length
-        scale = f_decimals(context.flags)
+        scale = decimals
         # if scale is way out of range, this probably means
         # we shouldn't format the <type>(M,D) syntax
-        if scale > 30:
-            value = name
-        else:
-            value = '{0}({1},{2})'.format(name, precision, scale)
-    else:
-        value = name + ' unsigned'
+        if scale < NOT_FIXED_DEC:
+            value += '({M},{D})'.format(M=precision, D=scale)
 
-    if context.flags.ZEROFILL:
+    if not f_is_dec(context.flags):
+        value += ' unsigned'
+
+    if f_is_zerofill(context.flags):
         value += ' zerofill'
 
     return value
