@@ -21,7 +21,12 @@ def test_sandbox_50():
         result = runner.invoke(sandbox_cli,
                                ['-d', 'mysql_system', '-m', '5.0.95'],
                                auto_envvar_prefix='DBSAKE', obj={})
-    assert result.exit_code == 0
+        assert result.exit_code == 0
+        result = runner.invoke(sandbox_cli,
+                               ['--force', '-d', 'mysql_system', '-m', '5.0.95'],
+                               auto_envvar_prefix='DBSAKE', obj={})
+        assert result.exit_code == 0
+
 
 '''
 def test_sandbox_51():
@@ -46,7 +51,7 @@ def test_sandbox_56():
         result = runner.invoke(sandbox_cli,
                                ['-d', 'mysql_system', '-m', '5.6.19'],
                                auto_envvar_prefix='DBSAKE', obj={})
-    assert_equals(result.exit_code, 0)
+    assert result.exit_code == 0
 
 def test_sandbox_57():
     runner = CliRunner()
