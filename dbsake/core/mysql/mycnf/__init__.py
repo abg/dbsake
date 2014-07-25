@@ -7,14 +7,15 @@ from __future__ import print_function
 
 import difflib
 import os
-import sys
 
-from dbsake.util import path
+from dbsake.util import pathutil
 
 from . import parser
 
+
 class Error(Exception):
     """Raised if error parsing my.cnf"""
+
 
 def upgrade(config, target, patch):
     """Patch a my.cnf to a new MySQL version
@@ -40,10 +41,11 @@ def upgrade(config, target, patch):
     for cfg_path, orig, modified in parser.upgrade_config(config, rewriter):
         if patch:
             # make patch file names pretty
-            from_file = path.relpath(os.path.abspath(cfg_path), '/')
+            from_file = pathutil.relpath(os.path.abspath(cfg_path), '/')
             to_file = os.path.join('b', from_file)
             from_file = os.path.join('a', from_file)
-            return ''.join(difflib.unified_diff(orig, modified, from_file, to_file))
+            return ''.join(difflib.unified_diff(orig, modified,
+                                                from_file, to_file))
         else:
             return ''.join(modified)
     return 0
