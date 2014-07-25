@@ -7,61 +7,9 @@ Convenience functions for working with filesystem paths
 
 import collections
 import errno
-import grp
 import os
-import pwd
 import sys
 
-
-# From python shutil in 3.3.2
-def _get_gid(name):
-    """Returns a gid, given a group name."""
-    try:
-        return grp.getgrnam(name).gr_gid
-    except KeyError:
-        return None
-
-
-def _get_uid(name):
-    """Returns an uid, given a user name."""
-    if name is None:
-        return None
-    try:
-        return pwd.getpwnam(name).pw_uid
-    except KeyError:
-        return None
-
-
-def chown(path, user=None, group=None):
-    """Change owner user and group of the given path.
-
-    user and group can be the uid/gid or the user/group names, and in that
-    case, they are converted to their respective uid/gid.
-    """
-
-    if user is None and group is None:
-        raise ValueError("user and/or group must be set")
-
-    _user = user
-    _group = group
-
-    # -1 means don't change it
-    if user is None:
-        _user = -1
-    # user can either be an int (the uid) or a string (the system username)
-    elif isinstance(user, str):
-        _user = _get_uid(user)
-        if _user is None:
-            raise LookupError("no such user: {!r}".format(user))
-
-    if group is None:
-        _group = -1
-    elif not isinstance(group, int):
-        _group = _get_gid(group)
-        if _group is None:
-            raise LookupError("no such group: {!r}".format(group))
-
-    os.chown(path, _user, _group)
 
 _ntuple_diskusage = collections.namedtuple('usage', 'total used free')
 
@@ -169,7 +117,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         return None
     path = path.split(os.pathsep)
 
-    if sys.platform == "win32":
+    if sys.platform == "win32":  # pragma: no cover
         # The current directory takes precedence on Windows.
         if os.curdir not in path:
             path.insert(0, os.curdir)
