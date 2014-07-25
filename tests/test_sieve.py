@@ -3,6 +3,7 @@ Test dbsake cli
 """
 from __future__ import unicode_literals
 
+import contextlib
 import os
 import gzip
 
@@ -20,7 +21,7 @@ def test_sieve_stream():
         '--exclude-table=sakila.actor_info',
         '--no-master-data',
     ]
-    with gzip.open(path, "rb") as fileobj:
+    with contextlib.closing(gzip.open(path, "rb")) as fileobj:
         result = runner.invoke(sieve_cli, args, obj={}, input=fileobj)
     assert result.exit_code == 0
 
@@ -30,6 +31,6 @@ def test_sieve_directory():
     sakila_path = os.path.join(os.path.dirname(__file__), 'sakila.sql.gz')
     args = ['--format=directory']
     with runner.isolated_filesystem():
-        with gzip.open(sakila_path, 'rb') as fileobj:
+        with contextlib.closing(gzip.open(sakila_path, 'rb')) as fileobj:
             result = runner.invoke(sieve_cli, args, obj={}, input=fileobj)
         assert result.exit_code == 0
