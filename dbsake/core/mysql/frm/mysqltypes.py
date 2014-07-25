@@ -13,7 +13,6 @@ display in a show create table "DEFAULT ..." clause.
 """
 
 import datetime
-import decimal
 import operator
 import struct
 
@@ -420,21 +419,29 @@ def unpack_type_longlong(defaults, context):
 def unpack_type_float(defaults, context):
     scale = f_decimals(context.flags)
     precision = context.length
+    value = defaults.float()
     if scale >= NOT_FIXED_DEC:
-        return "'%.6g'" % defaults.float()
-    with decimal.localcontext() as ctx:
-        ctx.prec = precision
-        return "'%s'" % +decimal.Decimal(defaults.float(), ctx)
+        return "'%.6g'" % value
+    max_scale = 16 if precision > 16 else precision
+    base = '%.*g' % (max_scale, value)
+    int_part, dec_part = base.partition('.')[0::2]
+    if len(dec_part) < scale:
+        dec_part += '0'*(scale - len(dec_part))
+    return "'%s.%s'" % (int_part, dec_part)
 
 
 def unpack_type_double(defaults, context):
     scale = f_decimals(context.flags)
     precision = context.length
+    value = defaults.double()
     if scale >= NOT_FIXED_DEC:
-        return "'%.16g'" % defaults.double()
-    with decimal.localcontext() as ctx:
-        ctx.prec = precision
-        return "'%s'" % +decimal.Decimal(defaults.double(), ctx)
+        return "'%.16g'" % value
+    max_scale = 16 if precision > 16 else precision
+    base = '%.*g' % (max_scale, value)
+    int_part, dec_part = base.partition('.')[0::2]
+    if len(dec_part) < scale:
+        dec_part += '0'*(scale - len(dec_part))
+    return "'%s.%s'" % (int_part, dec_part)
 
 
 # Null type
