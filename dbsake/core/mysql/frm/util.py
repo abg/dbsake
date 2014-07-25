@@ -95,6 +95,12 @@ class ByteReader(io.BytesIO):
         elif endian == '>':
             return struct.unpack('>Q', b'\x00'*3 + self.read(5))[0]
 
+    def uint48(self, endian="<"):
+        if endian == "<":
+            return struct.unpack('<Q', self.read(6) + b'\x00'*2)[0]
+        elif endian == '>':
+            return struct.unpack('>Q', b'\x00'*2 + self.read(6))[0]
+
     def uint64(self, endian="<"):
         assert endian in ("<", ">")
         return struct.unpack('%sQ' % endian, self.read(8))[0]
