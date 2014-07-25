@@ -683,7 +683,10 @@ def unpack_type_datetime2(defaults, context):
         frac_bytes = defaults.read(DIGITS_TO_BYTES[scale])
         padding = b'\x00'*(4 - len(frac_bytes))
         microseconds, = struct.unpack('>I', padding + frac_bytes)
-        value += '.' + str(microseconds).rstrip('0').zfill(scale)
+        microseconds = str(microseconds).zfill(scale)
+        if len(microseconds) > scale:
+            microseconds = microseconds[0:scale]
+        value += '.' + microseconds
     return "'%s'" % value
 
 
