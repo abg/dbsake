@@ -302,6 +302,14 @@ def unpack_tarball_distribution(stream, destdir):
             tarinfo.gid = 0
             # finally extract the element
             debug("    # Extracting: %s", name)
+            # http://bugs.python.org/issue12800
+            if tarinfo.issym():
+                dest_path = os.path.join(destdir, name)
+                try:
+                    os.unlink(dest_path)
+                except OSError as exc:
+                    if exc.errno != errno.ENOENT:
+                        raise
             tar.extract(tarinfo, destdir)
             extracted_size += tarinfo.size
     finally:
