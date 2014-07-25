@@ -10,7 +10,6 @@ import collections
 import ctypes
 import ctypes.util
 import os
-import struct
 
 libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
 
@@ -18,20 +17,20 @@ libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
 #            int fd, off_t offset)
 mmap = libc.mmap
 mmap.argtypes = [
-    ctypes.c_void_p, # void *addr
-    ctypes.c_size_t, # size_t length
-    ctypes.c_int,    # int prot
-    ctypes.c_int,    # int flags
-    ctypes.c_int,    # int fd
-    ctypes.c_size_t  # off_t offset
+    ctypes.c_void_p,  # void *addr
+    ctypes.c_size_t,  # size_t length
+    ctypes.c_int,     # int prot
+    ctypes.c_int,     # int flags
+    ctypes.c_int,     # int fd
+    ctypes.c_size_t   # off_t offset
 ]
 mmap.restype = ctypes.c_void_p
 
 # int munmap(void *addr, size_t length)
 munmap = libc.munmap
 munmap.argtypes = [
-    ctypes.c_void_p, # void *addr
-    ctypes.c_size_t, # size_t length
+    ctypes.c_void_p,  # void *addr
+    ctypes.c_size_t,  # size_t length
 ]
 munmap.restype = ctypes.c_int
 
@@ -59,14 +58,15 @@ POSIX_FADV_DONTNEED = 4
 
 PAGESIZE = os.sysconf('SC_PAGE_SIZE')
 
-PROT_READ   = 0x1     # /* Page can be read.  */
-PROT_WRITE  = 0x2     # /* Page can be written.  */
-PROT_EXEC   = 0x4     # /* Page can be executed.  */
-PROT_NONE   = 0x0     # /* Page can not be accessed.  */
+PROT_READ = 0x1     # /* Page can be read.  */
+PROT_WRITE = 0x2     # /* Page can be written.  */
+PROT_EXEC = 0x4     # /* Page can be executed.  */
+PROT_NONE = 0x0     # /* Page can not be accessed.  */
 
 # (void *) -1 on the current platform
-MAP_FAILED  = ctypes.c_void_p(-1)
-MAP_SHARED  = 0x01       #  /* Share changes.  */
+MAP_FAILED = ctypes.c_void_p(-1)
+MAP_SHARED = 0x01    # /* Share changes.  */
+
 
 class CacheStats(collections.namedtuple('CacheStats', 'total cached pages')):
     """Stats for cached pages for a given file
@@ -104,6 +104,7 @@ def ctypes_os_error(msg):
     strerror = os.strerror(errno)
     return OSError(errno, "%s: %s" % (msg, strerror))
 
+
 def fincore(path, enumerate_pages=False):
     """Check if underlying path is incore
 
@@ -138,8 +139,11 @@ def fincore(path, enumerate_pages=False):
         cached_count = sum(1 for page in vec if page & 1)
         pages = ()
         if enumerate_pages:
-            pages = tuple(offset for offset, page in enumerate(vec) if page & 1)
+            pages = tuple(offset
+                          for offset, page in enumerate(vec)
+                          if page & 1)
         return CacheStats(total_pages, cached_count, pages)
+
 
 def uncache(path):
     """Uncache the file contents specified by ``path``
