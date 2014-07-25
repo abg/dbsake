@@ -704,7 +704,7 @@ def unpack_type_varchar(defaults, context):
         length = defaults.uint8()
     else:
         length = defaults.uint16()
-    return "%r" % defaults.read(length)
+    return "'%s'" % defaults.read(length).decode(context.charset.name)
 
 
 # This is the 4.1 varchar type, but with trailing whitespace
@@ -715,13 +715,14 @@ def unpack_type_varchar(defaults, context):
 def unpack_type_var_string(defaults, context):
     """Unpack a MySQL 4.1 VARCHAR(N) default value"""
     data = defaults.read(context.length)
-    return "'%s'" % data.rstrip(' ').decode(context.charset.name)
+    return "'%s'" % data.decode(context.charset.name).rstrip(' ')
 
 
 def unpack_type_string(defaults, context):
     """Unpack a CHAR(N) fixed length string"""
     # Trailing spaces are always stripped for CHAR fields
-    return "%r" % defaults.read(context.length).rstrip(' ')
+    bytestr = defaults.read(context.length)
+    return "'%s'" % bytestr.decode(context.charset.name).rstrip(' ')
 
 
 # MySQL BIT(m) type
