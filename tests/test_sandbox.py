@@ -23,7 +23,9 @@ def test_sandbox_50():
                                auto_envvar_prefix='DBSAKE', obj={})
         assert result.exit_code == 0
         result = runner.invoke(sandbox_cli,
-                               ['--force', '-d', 'mysql_system', '-m', '5.0.95'],
+                               ['--force',
+                                '-d', 'mysql_system',
+                                '-m', '5.0.95'],
                                auto_envvar_prefix='DBSAKE', obj={})
         assert result.exit_code == 0
 
