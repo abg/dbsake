@@ -569,7 +569,10 @@ def unpack_type_timestamp(defaults, context):
         return unpack_type_timestamp2(defaults, context)
     fmt = '%Y-%m-%d %H:%M:%S'
     epoch = defaults.sint32(endian="<")
-    value = datetime.datetime.fromtimestamp(epoch).strftime(fmt)
+    if epoch != 0:
+        value = datetime.datetime.fromtimestamp(epoch).strftime(fmt)
+    else:
+        value = '0000-00-00 00:00:00'
     if context.unireg_check.name == 'TIMESTAMP_DN_FIELD':
         return 'CURRENT_TIMESTAMP'
     elif context.unireg_check.name == 'TIMESTAMP_UN_FIELD':
@@ -583,7 +586,10 @@ def unpack_type_timestamp(defaults, context):
 def unpack_type_timestamp2(defaults, context):
     fmt = '%Y-%m-%d %H:%M:%S'
     epoch = defaults.sint32(endian=">")
-    value = datetime.datetime.fromtimestamp(epoch).strftime(fmt)
+    if epoch != 0:
+        value = datetime.datetime.fromtimestamp(epoch).strftime(fmt)
+    else:
+        value = '0000-00-00 00:00:00'
     scale = context.length - constants.MAX_DATETIME_WIDTH - 1
     if scale > 0:
         nbytes = DIGITS_TO_BYTES[scale]
