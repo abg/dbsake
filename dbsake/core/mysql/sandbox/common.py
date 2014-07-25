@@ -271,7 +271,7 @@ def bootstrap(options, dist, password, additional_options=()):
                                      dist.mysqld, defaults_file)
     additional_options = ('--bootstrap',
                           '--default-storage-engine=myisam') + \
-                         additional_options
+        additional_options
     additional = ' '.join(map(cmd.shell_quote, additional_options))
     if additional:
         bootstrap_cmd += ' ' + additional
