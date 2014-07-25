@@ -13,19 +13,22 @@ display in a show create table "DEFAULT ..." clause.
 """
 
 import datetime
-import sys
+import operator
+import struct
 
-# local imports
 from . import constants
-from . import charsets
 
-## Formatting of types
+# some constants used specifically for unpacking
+NOT_FIXED_DEC = 31
+
+
+# Formatting of types
 def format_type(context):
     name = context.type_code.name.lower()
     try:
         dispatch = globals()['format_type_{0}'.format(name)]
-    except KeyError:
-        raise LookupError("No method to format type {0}".format(context.type_code))
+    except KeyError:  # pragma: no cover
+        raise LookupError("No method to format type %s" % context.type_code)
 
     result = dispatch(context)
 
@@ -36,6 +39,7 @@ def format_type(context):
         result += ' AUTO_INCREMENT'
 
     return result
+
 
 def _format_number(name, context):
     value = name
@@ -51,21 +55,26 @@ def _format_number(name, context):
 def format_type_tiny(context):
     return _format_number('tinyint', context)
 
+
 def format_type_short(context):
     return _format_number('smallint', context)
+
 
 def format_type_int24(context):
     return _format_number('mediumint', context)
 
+
 def format_type_long(context):
     return _format_number('int', context)
+
 
 def format_type_longlong(context):
     return _format_number('bigint', context)
 
+
 def format_type_newdecimal(context):
     precision = context.length
-    scale = (int(context.flags) >> 8) & 31
+    scale = f_decimals(context.flags)
     if scale:
         precision -= 1
     if precision:
@@ -78,10 +87,11 @@ def format_type_newdecimal(context):
 # and pack flags accordingly
 format_type_decimal = format_type_newdecimal
 
+
 def _format_real(name, context):
     if context.flags.DECIMAL:
         precision = context.length
-        scale = (int(context.flags) >> 8) & 31
+        scale = f_decimals(context.flags)
         # if scale is way out of range, this probably means
         # we shouldn't format the <type>(M,D) syntax
         if scale > 30:
@@ -96,13 +106,16 @@ def _format_real(name, context):
 
     return value
 
+
 def format_type_float(context):
     return _format_real('float', context)
+
 
 def format_type_double(context):
     return _format_real('double', context)
 
-## String types
+
+# String types
 def _format_charset(context):
     value = ''
     if context.table.charset != context.charset:
@@ -112,9 +125,11 @@ def _format_charset(context):
         value += ' COLLATE {0}'.format(context.charset.collation)
     return value
 
+
 def format_type_string(context):
     value = 'char({0})'.format(context.length // context.charset.maxlen)
     return value + _format_charset(context)
+
 
 def format_type_varchar(context):
     value = 'varchar({0})'.format(context.length // context.charset.maxlen)
@@ -124,24 +139,28 @@ def format_type_varchar(context):
 # but is an older datatype from MySQL 4.1
 format_type_var_string = format_type_varchar
 
-## Enum type
+
+# Enum type
 def format_type_enum(context):
     value = 'enum({0})'.format(','.join("'%s'" % name
                                         for name in context.labels))
     return value + _format_charset(context)
 
-## SET type
+
+# SET type
 def format_type_set(context):
     value = 'set({0})'.format(','.join("'%s'" % name
                                        for name in context.labels))
     return value + _format_charset(context)
 
-## Blob typesa
+
+# Blob types
 def format_type_tiny_blob(context):
     if context.charset.name == 'binary':
         return 'tinyblob'
     else:
         return 'tinytext' + _format_charset(context)
+
 
 def format_type_blob(context):
     if context.charset.name == 'binary':
@@ -149,11 +168,13 @@ def format_type_blob(context):
     else:
         return 'text' + _format_charset(context)
 
+
 def format_type_medium_blob(context):
     if context.charset.name == 'binary':
         return 'mediumblob'
     else:
         return 'mediumtext' + _format_charset(context)
+
 
 def format_type_long_blob(context):
     if context.charset.name == 'binary':
@@ -161,8 +182,10 @@ def format_type_long_blob(context):
     else:
         return 'longtext' + _format_charset(context)
 
+
 def format_type_bit(context):
     return 'bit({0})'.format(context.length)
+
 
 def format_type_time2(context):
     scale = context.length - constants.MAX_TIME_WIDTH - 1
@@ -172,6 +195,7 @@ def format_type_time2(context):
         return 'time'
 format_type_time = format_type_time2
 
+
 def format_type_timestamp2(context):
     scale = context.length - constants.MAX_DATETIME_WIDTH - 1
     if scale > 0:
@@ -180,12 +204,15 @@ def format_type_timestamp2(context):
         return 'timestamp'
 format_type_timestamp = format_type_timestamp2
 
+
 def format_type_year(context):
     return 'year({0})'.format(context.length)
+
 
 def format_type_newdate(context):
     return 'date'
 format_type_date = format_type_newdate
+
 
 def format_type_datetime2(context):
     scale = context.length - constants.MAX_DATETIME_WIDTH - 1
@@ -195,10 +222,12 @@ def format_type_datetime2(context):
         return 'datetime'
 format_type_datetime = format_type_datetime2
 
+
 def format_type_geometry(context):
     return context.subtype_code.name.lower()
 
-## Defaults unpacking
+
+# Defaults unpacking
 def unpack_default(defaults, context):
     """Unpack a default value from the defaults ("record") buffer
 
@@ -210,7 +239,8 @@ def unpack_default(defaults, context):
                         type_code - a MySQLType enum instance
                         flags - BitFlags instance with field flags
                         null_bit - current null bit offset pointing to
-                                   the current columns bit position (if nullable)
+                                   the current columns bit position
+                                   (if nullable)
                         null_map - bit string of nullable column bits
     :returns: string of default value
     """
@@ -218,14 +248,15 @@ def unpack_default(defaults, context):
     # blob fields also never have a default in any current MySQL version but
     # some mysql forks don't set the NO_DEFAULT field flag, so default
     # processing is special cased here to handle these cases
-    if (context.flags.NO_DEFAULT or
-        context.unireg_check == constants.Utype.NEXT_NUMBER):
+    no_default_value = context.flags.NO_DEFAULT
+    is_auto_increment = (context.unireg_check == constants.Utype.NEXT_NUMBER)
+    if (no_default_value or is_auto_increment):
         return None
 
     if context.flags.MAYBE_NULL:
         null_map = context.null_map
         offset = context.null_bit // 8
-        null_byte = null_map[context.null_bit // 8]
+        null_byte = null_map[offset]
         null_bit = context.null_bit % 8
         context.null_bit += 1
         if null_byte & (1 << null_bit) and \
@@ -240,25 +271,41 @@ def unpack_default(defaults, context):
     try:
         dispatch = globals()['unpack_type_{0}'.format(type_name)]
     except KeyError:
-        raise LookupError("No method to decode default for type {0}".format(context.type_code))
+        raise LookupError("No method to decode default for type %s" %
+                          context.type_code)
     else:
         try:
             return dispatch(defaults, context)
         except NotImplementedError:
-            raise LookupError("Unpack method not implemented for {0!r}".format(context.type_code))
+            raise LookupError("Unpack method not implemented for %r" %
+                              context.type_code)
 
-## Decimal (exact precision) types
+
+# help methods for the various decimal pack_flag lookups
+def f_decimals(flags):
+    FIELDFLAG_DEC_SHIFT = constants.FieldFlag.DEC_SHIFT
+    FIELDFLAG_MAX_DEC = constants.FieldFlag.MAX_DEC
+    return (int(flags) >> FIELDFLAG_DEC_SHIFT) & FIELDFLAG_MAX_DEC
+
+
+def f_is_dec(flags):
+    return bool(flags.DECIMAL)
+
+
+def f_is_zerofill(flags):
+    return bool(flags.ZEROFILL)
+
+
+# Decimal (exact precision) types
 def unpack_type_decimal(defaults, context):
     return "'{0}'".format(defaults.read(context.length).decode('ascii'))
 
-import operator
-import struct
 
 DIG_PER_DEC1 = 9
-DIGITS_TO_BYTES = [ 0, 1, 1, 2, 2, 3, 3, 4, 4, 4 ]
+DIGITS_TO_BYTES = [0, 1, 1, 2, 2, 3, 3, 4, 4, 4]
 
 
-def  _decode_decimal(data, invert=False):
+def _decode_decimal(data, invert=False):
     """Decode the decimal digits from a set of bytes
 
     This does not zero pad fractional digits - so these
@@ -289,6 +336,7 @@ def  _decode_decimal(data, invert=False):
         groups = map(operator.invert, groups)
     return ''.join(str(i) for i in groups)
 
+
 def unpack_type_newdecimal(defaults, context):
     """Unpack a MySQL 5.0+ NEWDECIMAL value
 
@@ -299,14 +347,14 @@ def unpack_type_newdecimal(defaults, context):
 
     """
     precision = context.length
-    scale = (int(context.flags) >> 8) & 31
+    scale = f_decimals(context.flags)
     if scale:
         precision -= 1
     if precision:
         precision -= 1
 
     int_length = ((precision - scale) // 9)*4 + \
-                 DIGITS_TO_BYTES[(precision - scale) % 9]
+        DIGITS_TO_BYTES[(precision - scale) % 9]
     frac_length = (scale // 9)*4 + DIGITS_TO_BYTES[scale % 9]
     data = defaults.read(int_length + frac_length)
 
@@ -332,48 +380,55 @@ def unpack_type_newdecimal(defaults, context):
 
     return "%r" % '.'.join(parts)
 
-## Integer types
+
+# Integer types
 # For integer types signed is denoted
 # by tagging the FIELDFLAG_DECIMAL flag
 def _format_integer_default(value):
     return "'%d'" % value
+
 
 def unpack_type_tiny(defaults, context):
     """Unpack a MySQL TINY 1-byte integer"""
     value = defaults.sint8() if context.flags.DECIMAL else defaults.uint8()
     return _format_integer_default(value)
 
+
 def unpack_type_short(defaults, context):
     value = defaults.sint16() if context.flags.DECIMAL else defaults.uint16()
     return _format_integer_default(value)
+
 
 def unpack_type_int24(defaults, context):
     value = defaults.sint24() if context.flags.DECIMAL else defaults.uint24()
     return _format_integer_default(value)
 
+
 def unpack_type_long(defaults, context):
     value = defaults.sint32() if context.flags.DECIMAL else defaults.uint32()
     return _format_integer_default(value)
+
 
 def unpack_type_longlong(defaults, context):
     value = defaults.sint64() if context.flags.DECIMAL else defaults.uint64()
     return _format_integer_default(value)
 
-## Floating point types
+
+# Floating point types
 def unpack_type_float(defaults, context):
-    # TODO: handle (M, D) specifications
     return "'%.6g'" % defaults.float()
 
+
 def unpack_type_double(defaults, context):
-    # TODO: handle (M, D) specifications
     return "'%.16g'" % defaults.double()
 
-## Null type
+
+# Null type
 def unpack_type_null(defaults, context):
     return None
 
 
-## Date/Time types
+# Date/Time types
 def unpack_type_time(defaults, context):
     value = defaults.uint24()
     hour = value // 10000
@@ -382,6 +437,7 @@ def unpack_type_time(defaults, context):
     return "'%s'" % '{hour}:{minute}:{second}'.format(hour=hour,
                                                       minute=minute,
                                                       second=second)
+
 
 def unpack_type_time2(defaults, context):
     data = defaults.read(3)
@@ -413,6 +469,7 @@ def unpack_type_time2(defaults, context):
         result = '-' + result
     return "'{0}'".format(result)
 
+
 def unpack_type_year(defaults, context):
     value = defaults.uint8()
     if value == 0:
@@ -420,9 +477,11 @@ def unpack_type_year(defaults, context):
     else:
         return "'{0}'".format(1900 + value)
 
+
 # pre 4.1 - unsupported for now, should be rare
 def unpack_type_date(defaults, context):
     raise NotImplementedError
+
 
 def unpack_type_newdate(defaults, context):
     # 3 bytes, big endian packed
@@ -431,6 +490,7 @@ def unpack_type_newdate(defaults, context):
     month = (value >> 5) & 15
     day = value & 31
     return "'{0:4}-{1:02}-{2:02}'".format(year, month, day)
+
 
 # XXX: Handle mariadb timestamp(N) columns
 #      stored as MYSQL_TYPE_TIMESTAMP values
@@ -446,6 +506,7 @@ def unpack_type_timestamp(defaults, context):
         return 'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
     else:
         return "'{0}'".format(value)
+
 
 def unpack_type_timestamp2(defaults, context):
     fmt = '%Y-%m-%d %H:%M:%S'
@@ -470,9 +531,12 @@ def unpack_type_timestamp2(defaults, context):
     elif context.unireg_check.name == 'TIMESTAMP_UN_FIELD':
         return "'{0}' ON UPDATE CURRENT_TIMESTAMP{1}".format(value, scale_str)
     elif context.unireg_check.name == 'TIMESTAMP_DNUN_FIELD':
-        return 'CURRENT_TIMESTAMP{0} ON UPDATE CURRENT_TIMESTAMP{0}'.format(scale_str)
+        return 'CURRENT_TIMESTAMP%s ON UPDATE CURRENT_TIMESTAMP%s' % (
+            scale_str, scale_str
+        )
     else:
         return "'{0}'".format(value)
+
 
 def unpack_type_datetime(defaults, context):
     value = defaults.uint64()
@@ -491,6 +555,7 @@ def unpack_type_datetime(defaults, context):
         value //= 10**digits
         kwargs[name] = str(unit_value).zfill(digits)
     return "'{year}-{month}-{day} {hour}:{minute}:{second}'".format(**kwargs)
+
 
 def unpack_type_datetime2(defaults, context):
     ymdhms = defaults.uint40(endian=">")
@@ -514,18 +579,20 @@ def unpack_type_datetime2(defaults, context):
     scale = context.length - constants.MAX_DATETIME_WIDTH - 1
     if scale > 0:
         frac_bytes = defaults.read(DIGITS_TO_BYTES[scale])
-        microseconds, = struct.unpack('>I', b'\x00'*(4 - len(frac_bytes)) + frac_bytes)
+        padding = b'\x00'*(4 - len(frac_bytes))
+        microseconds, = struct.unpack('>I', padding + frac_bytes)
         value += '.' + str(microseconds).rstrip('0').zfill(scale)
-    return "'{0}'".format(value)
+    return "'%s'" % value
 
 
-## String types
+# String types
 def unpack_type_varchar(defaults, context):
     if context.length < 256:
         length = defaults.uint8()
     else:
         length = defaults.uint16()
     return "%r" % defaults.read(length)
+
 
 # This is the 4.1 varchar type, but with trailing whitespace
 # that pads up to VARCHAR(N) bytes
@@ -537,19 +604,22 @@ def unpack_type_var_string(defaults, context):
     data = defaults.read(context.length)
     return "'%s'" % data.rstrip(' ').decode(context.charset.name)
 
+
 def unpack_type_string(defaults, context):
     """Unpack a CHAR(N) fixed length string"""
     # Trailing spaces are always stripped for CHAR fields
     return "%r" % defaults.read(context.length).rstrip(' ')
 
-## MySQL BIT(m) type
+
+# MySQL BIT(m) type
 def unpack_type_bit(defaults, context):
     nbytes = (context.length + 7) // 8
     pad = b'\x00'*(8 - nbytes)
     value, = struct.unpack('>Q', pad + defaults.read(nbytes))
     return "b'{0}'".format(bin(value)[2:])
 
-## MySQL ENUM TYPE
+
+# MySQL ENUM TYPE
 def unpack_type_enum(defaults, context):
     labels = context.labels
     if len(labels) < 256:
@@ -562,7 +632,8 @@ def unpack_type_enum(defaults, context):
     except IndexError:
         return "''"
 
-## MySQL SET Type
+
+# MySQL SET Type
 def unpack_type_set(defaults, context):
     elt_count = len(context.labels)
     n_bytes = (elt_count + 7) // 8
@@ -587,16 +658,18 @@ def unpack_type_set(defaults, context):
             result.append(name)
     return "'%s'" % ','.join(result)
 
-## These following handlers are left unimplemented - they cannot have default
-##  values in any current MySQL version.
-## included here for documentation purposes
-## MySQL BLOB/TEXT types
+
+# These following handlers are left unimplemented - they cannot have default
+#  values in any current MySQL version.
+# included here for documentation purposes
+# MySQL BLOB/TEXT types
 def unpack_type_long_blob(defaults, context):
     return None
 unpack_type_tiny_blob = unpack_type_long_blob
 unpack_type_medium_blob = unpack_type_long_blob
 unpack_type_blob = unpack_type_long_blob
 
-## MySQL GEOMETRY type
+
+# MySQL GEOMETRY type
 def unpack_type_geometry(defaults, context):
     raise NotImplementedError
