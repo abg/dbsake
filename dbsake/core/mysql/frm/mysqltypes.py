@@ -563,9 +563,10 @@ def unpack_type_newdate(defaults, context):
     return "'{0:4}-{1:02}-{2:02}'".format(year, month, day)
 
 
-# XXX: Handle mariadb timestamp(N) columns
-#      stored as MYSQL_TYPE_TIMESTAMP values
 def unpack_type_timestamp(defaults, context):
+    scale = context.length - constants.MAX_DATETIME_WIDTH - 1
+    if scale > 0:
+        return unpack_type_timestamp2(defaults, context)
     fmt = '%Y-%m-%d %H:%M:%S'
     epoch = defaults.sint32(endian="<")
     value = datetime.datetime.fromtimestamp(epoch).strftime(fmt)
