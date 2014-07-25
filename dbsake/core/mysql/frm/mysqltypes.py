@@ -13,6 +13,7 @@ display in a show create table "DEFAULT ..." clause.
 """
 
 import datetime
+import decimal
 import operator
 import struct
 
@@ -416,11 +417,23 @@ def unpack_type_longlong(defaults, context):
 
 # Floating point types
 def unpack_type_float(defaults, context):
-    return "'%.6g'" % defaults.float()
+    scale = f_decimals(context.flags)
+    precision = context.length
+    if scale >= NOT_FIXED_DEC:
+        return "'%.6g'" % defaults.float()
+    with decimal.localcontext() as ctx:
+        ctx.prec = precision
+        return "'%s'" % +decimal.Decimal(defaults.float(), ctx)
 
 
 def unpack_type_double(defaults, context):
-    return "'%.16g'" % defaults.double()
+    scale = f_decimals(context.flags)
+    precision = context.length
+    if scale >= NOT_FIXED_DEC:
+        return "'%.16g'" % defaults.double()
+    with decimal.localcontext() as ctx:
+        ctx.prec = precision
+        return "'%s'" % +decimal.Decimal(defaults.double(), ctx)
 
 
 # Null type
