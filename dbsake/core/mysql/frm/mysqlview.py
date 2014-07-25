@@ -112,16 +112,9 @@ def parse(path):
     definer_host = cfg.get('view', 'definer_host').decode('utf8')
     suid = ViewSUID(cfg.getint('view', 'suid'))
     name = tablename.decode(os.path.splitext(os.path.basename(path))[0])
-
-    # Safer in 5.1+ when we know the underlying charset
-    if cfg.has_option('view', 'view_body_utf8'):
-        raw_view_body = cfg.get('view', 'view_body_utf8')
-        raw_view_body = raw_view_body.decode('string_escape')
-        view_body = raw_view_body.decode('utf8')
-    else:
-        # < 5.1, so assume utf8 if not charset was specified
-        raw_view_body = cfg.get('view', 'query').decode('string_escape')
-        view_body = raw_view_body.decode('utf8')
+    # use "query" to match SHOW CREATE VIEW output
+    raw_view_body = cfg.get('view', 'query').decode('string_escape')
+    view_body = raw_view_body.decode('utf8')
 
     check_option = ViewCheckOption(cfg.getint('view', 'with_check_option'))
 
