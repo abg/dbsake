@@ -5,11 +5,11 @@
 .. image:: https://badge.fury.io/py/dbsake.png
    :target: http://badge.fury.io/py/dbsake
 
-.. image:: https://travis-ci.org/abg/dbsake.png
-   :target: https://travis-ci.org/abg/dbsake
+.. image:: https://travis-ci.org/abg/dbsake.png?branch=develop
+   :target: https://travis-ci.org/abg/dbsake?branch=develop
 
-.. image:: https://coveralls.io/repos/abg/dbsake/badge.png
-   :target: https://coveralls.io/r/abg/dbsake
+.. image:: https://coveralls.io/repos/abg/dbsake/badge.png?branch=develop
+   :target: https://coveralls.io/r/abg/dbsake?branch=develop
 
 .. image:: https://pypip.in/d/dbsake/badge.png
    :target: https://crate.io/packages/dbsake?version=latest
