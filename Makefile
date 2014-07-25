@@ -13,6 +13,7 @@ help:
 
 clean: clean-build clean-pyc
 	rm -fr htmlcov/
+	coverage erase
 
 clean-build:
 	rm -fr build/
@@ -28,7 +29,7 @@ lint:
 	flake8 dbsake tests
 
 test:
-	python setup.py test
+	py.test --cov dbsake tests
 
 test-all:
 	tox
