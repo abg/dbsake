@@ -40,6 +40,9 @@ coverage:
 	coverage html
 	open htmlcov/index.html
 
+dbsake.sh:
+	python setup.py bundle_dbsake
+
 docs:
 	rm -f docs/dbsake.rst
 	rm -f docs/modules.rst

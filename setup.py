@@ -11,6 +11,7 @@ except ImportError:
     from distutils.core import setup, Command
 
 import dbsake
+from dbsake.distutils_ext import DBSakeBundler
 
 
 class PyTest(Command):
@@ -82,7 +83,10 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
     ],
-    cmdclass = {'test': PyTest},
+    cmdclass={
+        'test': PyTest,
+        'bundle_dbsake': DBSakeBundler,
+    },
     tests_require=test_requirements,
     entry_points={
         'console_scripts': [
