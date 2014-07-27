@@ -132,6 +132,9 @@ class DBSakeBundler(distutils.core.Command):
                                 os.path.basename(dirpath) != 'templates'):
                             continue
                         path = os.path.join(dirpath, name)
+                        # don't include distutils_ext in executable
+                        if os.path.abspath(path) == __file__:
+                            continue
                         if name != '__main__.py':
                             arcname = path
                         else:
