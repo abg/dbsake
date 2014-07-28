@@ -53,7 +53,7 @@ Quickstart
 
 You can fetch dbsake easily from get.dbsake.net::
 
-    $ curl get.dbsake.net > dbsake
+    $ curl -s get.dbsake.net > dbsake
 
 This is an executable python zipfile.  You can see the contents by running::
 
@@ -62,7 +62,6 @@ This is an executable python zipfile.  You can see the contents by running::
     $ python -mzipfile -l dbsake
 
 You can run as a script by making it executable::
-
 
     $ chmod u+x dbsake
 
