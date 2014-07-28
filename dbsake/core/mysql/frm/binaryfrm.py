@@ -173,8 +173,8 @@ class Table(collections.namedtuple('Table',
             keys=()
         )
 
-    def format(self, include_raw_types=False):
-        columns = (c.format(include_raw_types) for c in self.columns)
+    def format(self, include_type_codes=False):
+        columns = (c.format(include_type_codes) for c in self.columns)
         indexes = (k.format() for k in self.keys)
         table_elements = itertools.chain(columns, indexes)
         parts = [
@@ -195,9 +195,8 @@ class Table(collections.namedtuple('Table',
 class Column(collections.namedtuple('Column',
                                     'name type_code type_name length '
                                     'attributes default comment charset')):
-    def format(self, include_raw_types=False):
+    def format(self, include_type_code=False):
         components = []
-
         components.append("`%s`" % self.name.replace('`', '``'))
         components.append(self.type_name)
 
@@ -208,7 +207,7 @@ class Column(collections.namedtuple('Column',
             components.append("COMMENT '%s'" %
                               self.comment.replace("'", "\\'"))
 
-        if include_raw_types:
+        if include_type_code:
             components.append(' /* MYSQL_TYPE_%s */' % self.type_code.name)
 
         return ' '.join(components)

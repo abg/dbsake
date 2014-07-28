@@ -14,13 +14,13 @@ from dbsake.cli import dbsake
 
 
 @dbsake.command('frmdump', options_metavar="[options]")
-@click.option('-r', '--raw-types', default=False, is_flag=True)
+@click.option('-t', '--type-codes', default=False, is_flag=True)
 @click.option('-R', '--replace', default=False, is_flag=True)
 @click.argument('path',
                 type=click.Path(dir_okay=False, resolve_path=True),
                 metavar="[path[, path...]]",
                 nargs=-1)
-def frmdump(path, raw_types, replace):
+def frmdump(path, type_codes, replace):
     """Dump schema from MySQL frm files."""
     from dbsake.core.mysql import frm
 
@@ -37,7 +37,7 @@ def frmdump(path, raw_types, replace):
             if table.type == 'VIEW':
                 click.echo(table.format(replace))
             else:
-                click.echo(table.format(raw_types))
+                click.echo(table.format(type_codes))
     if failures > 0:
         click.echo("Failed to parse %d paths" % failures, file=sys.stderr)
         sys.exit(1)
