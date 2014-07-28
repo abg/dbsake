@@ -12,7 +12,6 @@ This API supports two modes for handling mysqldump output:
       file per section (possibly transforming or filtering data)
 """
 from __future__ import unicode_literals
-from __future__ import print_function
 
 import itertools
 import logging
@@ -68,7 +67,6 @@ class DirectoryWriter(SimpleWriter):
 
     def _open(self, parts, mode='ab'):
         basedir = self.options.directory.encode('utf8')
-        print("basedir = %r parts=%r" % (basedir, parts))
         path = os.path.join(basedir, *parts)
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
@@ -137,7 +135,6 @@ class DirectoryWriter(SimpleWriter):
             dispatch = getattr(self, 'open_' + section.name)
         except AttributeError:
             # skip output for section
-            # XXX: add logging when skipping a section
             info("Skipping section '%s'", section.name)
             dispatch = self.open_devnull
         with dispatch(section) as fileobj:
