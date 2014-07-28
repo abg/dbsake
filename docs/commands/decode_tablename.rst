@@ -1,5 +1,5 @@
-decode
-------
+decode-tablename
+----------------
 
 Decode a MySQL encoded filename
 
@@ -12,7 +12,7 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake decode [options] [NAMES]...
+   Usage: dbsake decode-tablename [options] [NAMES]...
 
      Decode a MySQL tablename as a unicode name.
 
@@ -24,13 +24,13 @@ Example
 
 .. code-block:: bash
 
-   $ dbsake decode $(basename /var/lib/mysql/test/foo@002ebar.frm .frm)
+   $ dbsake decode-tablename foo@002ebar
    foo.bar
 
 Options
 .......
 
-.. program:: filename-to-tablename
+.. program:: decode-tablename
 
 .. option:: path [path...]
 

@@ -1,5 +1,5 @@
-encode
-------
+encode-tablename
+----------------
 
 Encode a MySQL tablename with the MySQL filename encoding
 
@@ -11,7 +11,7 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake encode [options] [NAMES]...
+   Usage: dbsake encode-tablename [options] [NAMES]...
 
      Encode a MySQL tablename
 
@@ -23,13 +23,13 @@ Example
 
 .. code-block:: bash
 
-   $ dbsake encode foo.bar
+   $ dbsake encode-tablename foo.bar
    foo@002ebar
 
 Options
 .......
 
-.. program:: encode
+.. program:: encode-tablename
 
 .. option:: path [path...]
 
