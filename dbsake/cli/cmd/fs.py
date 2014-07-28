@@ -40,7 +40,13 @@ def fincore(paths, verbose):
 @dbsake.command()
 @click.argument('paths', nargs=-1)
 def uncache(paths):
-    """Drop OS cached pages for a file."""
+    """Uncache file(s) from the OS page cache.
+
+    This command calls posix_fadvise(2) to indicate that cached pages for
+    a given file are no longer needed.  This is useful when using O_DIRECT
+    where cached pages for a given file can lead to a performance
+    degradation for many filesystems under Linux.
+    """
     from dbsake.core import fs
 
     errors = 0
