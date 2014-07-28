@@ -20,23 +20,25 @@ import zipfile
 import distutils.core
 
 SHELL_SCRIPT = """#!/bin/sh
+if [ "${LANG:-C}" = "C" ]; then
+    export LANG="en_US.utf8"
+fi
 
 python=$({ which python2.7 ||
            which python2.6 ||
            which python3; } 2>/dev/null)
 
-if [ $? -ne 0 ]
-then
-    echo "No supported python command found." 2>&1
+if [ $? -ne 0 ]; then
+    echo "No supported python command found." >&2
     python=$(which python 2>/dev/null)
-    [ ?$ -eq 0 ] || \
-        echo "However, found ${python} with version: $(python -V)" 2>&1
-    echo "dbsake requires python2.6+, or python3+." 2>&1
-    echo "Aborting." 2>&1
+    if [ $? -eq 0 ]; then
+        echo "However, found $(${python} -V 2>&1)" >&2
+    fi
+    echo "dbsake requires python2.6+, or python3+." >&2
+    echo "Aborting." >&2
     exit 1
 fi
-${python} $0 $@
-exit $?
+exec ${python} $0 $@ || exit 5
 """
 
 
