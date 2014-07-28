@@ -6,6 +6,7 @@ Command interface to create isolated MySQL "sandbox" instances
 """
 from __future__ import unicode_literals
 
+import os
 import sys
 
 import click
@@ -55,9 +56,7 @@ from dbsake.cli import dbsake
               metavar='<options>',
               help="additional options to run innobackupex --apply-logs",
               default='')
-@click.pass_context
-def sandbox_cli(ctx,
-                sandbox_directory,
+def sandbox_cli(sandbox_directory,
                 mysql_distribution,
                 data_source,
                 include_tables,
@@ -98,4 +97,5 @@ def sandbox_cli(ctx,
                        password=password,
                        innobackupex_options=innobackupex_options)
     except sandbox.SandboxError as exc:
-        ctx.fail("%s" % exc)
+        click.echo("%s" % exc, file=sys.stderr)
+        sys.exit(os.EX_SOFTWARE)
