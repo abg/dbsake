@@ -19,26 +19,47 @@ from dbsake.cli import dbsake
 @click.option('-F', '--format', 'output_format',
               metavar='<name>',
               default='stream',
-              type=click.Choice(['stream', 'directory']))
+              type=click.Choice(['stream', 'directory']),
+              help="Select the output format (directory, stream)")
 @click.option('-C', '--directory',
               default='.',
-              metavar='<output directory>',
-              type=click.Path(resolve_path=True))
+              metavar='<path>',
+              type=click.Path(resolve_path=True),
+              help="Specify output directory when --format=directory")
 @click.option('-i', '--input-file',
               metavar='<path>',
               type=click.File(mode='rb', lazy=False),
-              default='-')
+              default='-',
+              help="Specify input file to process instead of stdin")
 @click.option('-z', '--compress-command',
-              metavar='<command>',
-              default='gzip -1')
-@click.option('-t', '--table', metavar='<glob pattern>', multiple=True)
-@click.option('-T', '--exclude-table', metavar='<glob pattern>', multiple=True)
-@click.option('--defer-indexes', is_flag=True)
-@click.option('--defer-foreign-keys', is_flag=True)
-@click.option('--write-binlog/--disable-binlog', default=True)
-@click.option('--table-data/--skip-table-data', default=True)
-@click.option('--master-data/--no-master-data', default=None)
-@click.option('-f', '--force', is_flag=True)
+              metavar='<name>',
+              default='gzip -1',
+              help="Specify compression command when --format=directory")
+@click.option('-t', '--table',
+              metavar='<glob>',
+              multiple=True,
+              help="Only output tables matching the given glob pattern")
+@click.option('-T', '--exclude-table',
+              metavar='<glob>',
+              multiple=True,
+              help="Excludes tables matching the given glob pattern")
+@click.option('--defer-indexes',
+              is_flag=True,
+              help="Add secondary indexes after loading table data")
+@click.option('--defer-foreign-keys',
+              is_flag=True,
+              help="Add foreign key constraints after loading table data")
+@click.option('--write-binlog/--disable-binlog',
+              default=True,
+              help="Include SQL_LOG_BIN = 0 in output to disable binlog")
+@click.option('--table-data/--skip-table-data',
+              default=True,
+              help="Include/skip writing table data to output")
+@click.option('--master-data/--no-master-data',
+              default=None,
+              help="Uncomment/comment CHANGE MASTER in input, if present")
+@click.option('-f', '--force', is_flag=True,
+              help="Force various behaviors in this command")
 @click.pass_context
 def sieve_cli(ctx,
               output_format,
@@ -53,7 +74,14 @@ def sieve_cli(ctx,
               table_data,
               master_data,
               force):
-    """Filter a mysqldump plaintext SQL stream"""
+    """Filter and transform mysqldump output.
+
+    sieve can extract single tables from a mysqldump file and perform useful
+    transformations, such as adding indexes after the table data is loaded
+    for InnoDB tables, where such indexes can be created much more efficiently
+    than the default incremental rebuild that mysqldump performs.
+
+    """
     from dbsake.core.mysql import sieve
 
     if output_format == 'stream' and sys.stdout.isatty() and not force:
