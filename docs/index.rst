@@ -19,11 +19,10 @@ tasks for MySQL.
 
 .. toctree::
    :maxdepth: 4
-   
+
    readme
    cli
    history
-   developing
    contributing
    appendix
 
