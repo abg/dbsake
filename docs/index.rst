@@ -13,7 +13,7 @@ tasks for MySQL.
 
 .. code-block:: bash
 
-   # curl http://get.dbsake.net > dbsake
+   # curl -s http://get.dbsake.net > dbsake
    # chmod u+x dbsake
    # dbsake sandbox
 
