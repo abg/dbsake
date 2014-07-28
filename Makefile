@@ -12,6 +12,7 @@ help:
 	@echo "dist - package"
 
 clean: clean-build clean-pyc
+	$(MAKE) -C docs clean
 	rm -fr htmlcov/
 	coverage erase
 
@@ -49,7 +50,6 @@ docs:
 	sphinx-apidoc -o docs/ dbsake dbsake.core.util
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	open docs/_build/html/index.html
 
 release: clean
 	python setup.py sdist upload
