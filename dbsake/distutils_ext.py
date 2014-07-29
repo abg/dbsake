@@ -69,7 +69,8 @@ def fetch_source(package, excludes=()):
           code (i.e. compiled modules), this method is insufficient.
     """
     pkg = __import__(package)
-    yield pkg.__name__ + '/__init__.py', pkgutil.get_loader(pkg).get_source(pkg.__name__)
+    yield (pkg.__name__ + '/__init__.py',
+           pkgutil.get_loader(pkg).get_source(pkg.__name__))
     for importer, name, is_pkg in pkgutil.walk_packages(pkg.__path__,
                                                         pkg.__name__ + '.'):
         if is_excluded(name, excludes):
