@@ -18,32 +18,33 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake frmdump [options] [path[, path...]]
+   Usage: dbsake.sh frmdump [options] [path[, path...]]
    
      Dump schema from MySQL frm files.
    
    Options:
-     -r, --raw-types
+     -t, --type-codes
      -R, --replace
-     -?, --help       Show this message and exit.
+     -?, --help        Show this message and exit.
+
 
 Example
 .......
 
 .. code-block:: bash
 
-
-   $ dbsake frmdump /var/lib/mysql/mysql/plugin.frm
+   $ dbsake frmdump --type-codes /var/lib/mysql/mysql/plugin.frm
    --
    -- Table structure for table `plugin`
-   -- Created with MySQL Version 5.6.15
+   -- Created with MySQL Version 5.5.35
    --
    
    CREATE TABLE `plugin` (
-     `name` varchar(64) NOT NULL DEFAULT '',
-     `dl` varchar(128) NOT NULL DEFAULT '',
+     `name` varchar(64) NOT NULL DEFAULT ''  /* MYSQL_TYPE_VARCHAR */,
+     `dl` varchar(128) NOT NULL DEFAULT ''  /* MYSQL_TYPE_VARCHAR */,
      PRIMARY KEY (`name`)
-   ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT 'MySQL plugins';
+   ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='MySQL plugins';
+
 
    $ dbsake frmdump /var/lib/mysql/sakila/actor_info.frm
    --
@@ -68,7 +69,7 @@ Options
    Output view as CREATE OR REPLACE so that running the DDL against MySQL will
    overwrite a view.
 
-.. option:: -r, --raw-types
+.. option:: -t, --type-codes
 
    Add comment to base tables noting the underlying mysql type code
    as MYSQL_TYPE_<name>.
@@ -90,8 +91,8 @@ Options
 .. versionchanged:: 1.0.2
    A -- Table structure for table \`<name>\` comment is added before each table
 
-.. versionadded:: 1.0.2
-   The :option:`frmdump --raw-types` option
+.. versionchanged:: 2.0.0
+   The :option:`frmdump --raw-types` option was renamed to --type-codes
 
 .. versionadded:: 1.0.2
    The :option:`frmdump --replace` option
