@@ -22,6 +22,7 @@ tasks for MySQL.
 
    readme
    cli
+   commands
    history
    contributing
    appendix

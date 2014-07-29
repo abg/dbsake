@@ -59,12 +59,3 @@ However, the following command will not::
 
  # eval $(_DBSAKE_COMPLETE=source dbsake)
  # python dbsake<TAB>
-
-
-dbsake Commands
----------------
-
-.. toctree::
-   :glob:
-
-   commands/*
