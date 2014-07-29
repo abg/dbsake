@@ -252,12 +252,32 @@ def shell_format(fmt, *args, **kwargs):
 
 
 @contextlib.contextmanager
-def stream_command(cmd, **kwargs):
-    kwargs.pop('stdin', None)
-    with run_async(cmd,
-                   stdin=subprocess.PIPE,
-                   **kwargs) as process:
-        yield process.stdin
+def piped_stdin(cmd, **kwargs):
+    """Start a command and yield its stdin
 
+    This runs as a contextmanager, starting a command and returning the
+    command's stdin pipe.  This is meant to provide an easy way to run
+    a command and programatically feed it input on stdin.
+    """
+    kwargs['stdin'] = subprocess.PIPE
+    with run_async(cmd, **kwargs) as process:
+        yield process.stdin
     if process.returncode != 0:
         raise CommandError("'%s' exited with non-zero status" % cmd)
+
+# XXX: compatibility hack
+stream_command = piped_stdin
+
+@contextlib.contextmanager
+def piped_stdout(command, **kwargs):
+    """Start a command and yield its stdout
+
+    This runs as a contextmanager, starting a command and returning
+    the command's stdout pipe.  This is meant to provide an easy way to run a
+    a command programatically process its output.
+    """
+    kwargs['stdout'] = subprocess.PIPE
+    with run_async(command, **kwargs) as process:
+        yield process.stdout
+    if process.returncode != 0:
+        raise CommandError("'%s' exited with non-zero status" % command)
