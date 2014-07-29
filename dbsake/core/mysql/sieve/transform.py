@@ -48,15 +48,9 @@ class SectionTransform(object):
         defer_fks = self.options.defer_foreign_keys
 
         if defer_indexes:
-            data = b''.join(section.iterable)
-            table_ddl = defer.extract_create_table(data)
-            if b'ENGINE=InnoDB' in table_ddl:
-                alter_table, create_table = defer.split_indexes(table_ddl,
-                                                                defer_fks)
-                data = data.replace(table_ddl, create_table)
-                self.pending_ddl = alter_table.splitlines(True) + \
-                    [b'\n', b'\n']
-            section.iterable = data.splitlines(True)
+            alter_table = defer.split_indexes(section, defer_fks)
+            self.pending_ddl = itertools.chain(alter_table.splitlines(True),
+                                               [b'\n', b'\n'])
 
     def transform_tabledata(self, section):
         if self.pending_ddl:

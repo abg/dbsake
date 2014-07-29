@@ -9,10 +9,13 @@ import io
 import logging
 import re
 
+debug = logging.debug
+warn = logging.warn
 
-def extract_create_table(table_structure):
+
+def extract_create_table(section):
     result = []
-    for line in table_structure.splitlines(True):
+    for line in section.iterable:
         if line.startswith(b'CREATE TABLE'):
             result.append(line)
         elif result:
@@ -103,7 +106,20 @@ def format_create_table(table_ddl, indexes):
     return b''.join(result)
 
 
-def split_indexes(table_ddl, defer_constraints=False):
+def split_indexes(section, defer_constraints=False):
+    """Remove indexes from a Table structure section
+
+
+    :returns: deferred constraints
+    """
+    # ensure iterable can be iterated multiple times
+    section.iterable = list(section.iterable)
+    table_ddl = extract_create_table(section)
+    # Only defer indexes for InnoDB
+    if b'ENGINE=InnoDB' not in table_ddl:
+        debug("%s.%s is not an innodb table. Skipping index rewrite.",
+              section.database, section.table)
+        return b''
     constraints = []
     indexes = extract_indexes(table_ddl)
     constraints = extract_constraints(table_ddl)
@@ -120,12 +136,15 @@ def split_indexes(table_ddl, defer_constraints=False):
                     preserved_indexes.add((name, columns, line, _name))
                     break
 
-        for name, columns, line, constraint in preserved_indexes:
-            logging.warn("Not deferring index `%s` - used by constraint `%s`",
-                         name, constraint)
-            indexes.remove((name, columns, line))
+        for index_name, columns, line, constraint in preserved_indexes:
+            warn("Not deferring %s.%s index `%s` - used by constraint `%s`",
+                 section.database, section.table, index_name, constraint)
+            indexes.remove((index_name, columns, line))
     else:
         indexes += constraints
 
-    return (format_alter_table(table_ddl, indexes),
-            format_create_table(table_ddl, indexes))
+    patched_create_table = format_create_table(table_ddl, indexes)
+    section_rewrite = b''.join(section.iterable)
+    section_rewrite = section_rewrite.replace(table_ddl, patched_create_table)
+    section.iterable = section_rewrite.splitlines(True)
+    return format_alter_table(table_ddl, indexes)
