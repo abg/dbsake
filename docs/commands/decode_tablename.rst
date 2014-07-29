@@ -8,7 +8,7 @@ As of MySQL 5.1, tablenames with special characters are encoded with a custom
 tablename.
 
 Usage
-~~~~~
+.....
 
 .. code-block:: bash
 
