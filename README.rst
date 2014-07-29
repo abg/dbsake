@@ -45,7 +45,9 @@ If you find a bug in dbsake please report the issue on the dbsake issue on
 `github <https://github.com/abg/dbsake/issues/new>`_
 
 If you know how to fix the problem feel free to fork dbsake and submit a pull
-request.  See CONTRIBUTING.rst for more information.
+request.  See `Contributing`_ for more information.
+
+.. _Contributing: http://dbsake.readthedocs.org/en/develop/contributing.html#report-bugs
 
 
 Quickstart

@@ -30,7 +30,7 @@ is open to whoever wants to implement it.
 Implement Features
 ~~~~~~~~~~~~~~~~~~
 
-Look through the GitHub issues for features. Anything tagged with "feature"
+Look through the GitHub issues for features. Anything tagged with "enhancement"
 is open to whoever wants to implement it.
 
 Write Documentation
@@ -108,4 +108,4 @@ Tips
 
 To run a subset of tests::
 
-    $ python -m unittest tests.test_dbsake
+    $ py.test tests/test_dbsake.py
