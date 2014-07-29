@@ -91,13 +91,13 @@ def check_options(**kwargs):
 
 def prepare_sandbox_paths(sbopts):
     start = time.time()
-    try:
-        for name in ('data', 'tmp'):
+    for name in ('data', 'tmp'):
+        try:
             if pathutil.makedirs(os.path.join(sbopts.basedir, name)):
                 info("    - Created %s/%s", sbopts.basedir, name)
-    except OSError as exc:
-        if exc.errno != errno.EEXIST or not sbopts.force:
-            raise SandboxError("%s" % exc)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST or not sbopts.force:
+                raise SandboxError("%s" % exc)
     info("    * Prepared sandbox in %.2f seconds", time.time() - start)
 
 # create a jinja2 environment we can load templates from
