@@ -24,12 +24,12 @@ Features
 * `Managing OS caching for a set of files`_
 
 
-.. _Parsing MySQL .frm files and output DDL: http://docs.dbsake.net/subcommands.html#frmdump
-.. _Filtering and transforming mysqldump output: http://docs.dbsake.net/subcommands.html#sieve
-.. _Patching a my.cnf to remove or convert deprecated options: http://docs.dbsake.net/subcommands.html#upgrade-mycnf
-.. _Deploying a new standalone MySQL "sandbox" instance: http://docs.dbsake.net/subcommands.html#mysql-sandbox
-.. _Decoding/encoding MySQL filenames: http://docs.dbsake.net/subcommands.html#decode
-.. _Managing OS caching for a set of files: http://docs.dbsake.net/subcommands.html#fincore
+.. _Parsing MySQL .frm files and output DDL: http://dbsake.readthedocs.org/en/develop/commands/frmdump.html
+.. _Filtering and transforming mysqldump output: http://dbsake.readthedocs.org/en/develop/commands/sieve.html
+.. _Patching a my.cnf to remove or convert deprecated options: http://dbsake.readthedocs.org/en/develop/commands/upgrade-mycnf.html
+.. _Deploying a new standalone MySQL "sandbox" instance: http://dbsake.readthedocs.org/en/develop/commands/sandbox.html
+.. _Decoding/encoding MySQL filenames: http://dbsake.readthedocs.org/en/develop/commands/decode_tablename.html
+.. _Managing OS caching for a set of files: http://dbsake.readthedocs.org/en/develop/commands/fincore.html
 
 Dependencies
 ------------
@@ -55,11 +55,7 @@ You can fetch dbsake easily from get.dbsake.net::
 
     $ curl -s get.dbsake.net > dbsake
 
-This is an executable python zipfile.  You can see the contents by running::
-
-    $ unzip -l dbsake
-    or
-    $ python -mzipfile -l dbsake
+This is an executable python zip archive with all dependencies included.
 
 You can run as a script by making it executable::
 
@@ -77,15 +73,15 @@ Run it with no arguments to see all possible commands::
       -?, --help     Show this message and exit.
 
     Commands:
-      decode         Decode a MySQL tablename as a unicode name.
-      encode         Encode a MySQL tablename
-      fincore        Report cached pages for a file.
-      frmdump        Dump schema from MySQL frm files.
-      help           Show help for a command.
-      sandbox        Create a sandboxed MySQL instance.
-      sieve          Filter a mysqldump plaintext SQL stream
-      uncache        Drop OS cached pages for a file.
-      upgrade-mycnf  Upgrade a MySQL option file
+      decode-tablename  Decode a MySQL filename.
+      encode-tablename  Encode a MySQL table identifier.
+      fincore           Report cached pages for a file.
+      frmdump           Dump schema from MySQL frm files.
+      help              Show help for a command.
+      sandbox           Create a sandboxed MySQL instance.
+      sieve             Filter and transform mysqldump output.
+      uncache           Uncache file(s) from the OS page cache.
+      upgrade-mycnf     Upgrade a MySQL option file.
 
 "Upgrading" a my.cnf
 ====================
