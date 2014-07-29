@@ -92,7 +92,7 @@ Options
    A -- Table structure for table \`<name>\` comment is added before each table
 
 .. versionchanged:: 2.0.0
-   The :option:`frmdump --raw-types` option was renamed to --type-codes
+   The ``--raw-types`` option was renamed to :option:`frmdump --type-codes`.
 
 .. versionadded:: 1.0.2
    The :option:`frmdump --replace` option
