@@ -268,6 +268,7 @@ def piped_stdin(cmd, **kwargs):
 # XXX: compatibility hack
 stream_command = piped_stdin
 
+
 @contextlib.contextmanager
 def piped_stdout(command, **kwargs):
     """Start a command and yield its stdout
