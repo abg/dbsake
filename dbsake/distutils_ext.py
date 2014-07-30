@@ -99,6 +99,8 @@ class DBSakeBundler(distutils.core.Command):
     user_options = [
         ('dist-dir=', 'd',
          "directory to put final built distributions in"),
+        ('tag=', 't',
+         "string to tag this build with"),
     ]
 
     # hardcoded, since there's not an easy way to look this up, afaik
@@ -110,6 +112,7 @@ class DBSakeBundler(distutils.core.Command):
 
     def initialize_options(self):
         self.dist_dir = None
+        self.tag = ''
 
     def finalize_options(self):
         if self.dist_dir is None:
@@ -142,7 +145,20 @@ class DBSakeBundler(distutils.core.Command):
                             arcname = path
                         else:
                             arcname = name
-                        archive.write(path, arcname)
+                        if path.endswith("dbsake/__init__.py"):
+                            tag = (" %s'" % self.tag).encode('utf-8')
+                            with open(path, 'rb') as _f:
+                                data = _f.read()
+                                version = [x
+                                           for x in data.splitlines(True)
+                                           if x.startswith(b'__version__ = ')]
+                                version_info = version[0].partition(b' = ')[2]
+                                version_info = version_info.rstrip()
+                                new_version = version_info[0:-1] + tag
+                                data = data.replace(version_info, new_version)
+                                archive.writestr(arcname, data)
+                        else:
+                            archive.write(path, arcname)
 
                 for depname, excludes in self.dependencies:
                     for name, source in fetch_source(depname, excludes):
