@@ -92,6 +92,9 @@ class DirectoryWriter(SimpleWriter):
                           mode='wb')
 
     def open_tablestructure(self, section):
+        if self._dump_header:
+            section.iterable = itertools.chain([self._dump_header],
+                                               section.iterable)
         return self._open([section.database, section.table + b'.sql'],
                           mode='wb')
 

@@ -56,8 +56,6 @@ class ByteReader(io.BytesIO):
             return struct.unpack('<I', self.read(3) + b'\x00')[0]
         elif endian == '>':
             return struct.unpack('>I', b'\x00' + self.read(3))[0]
-        else:
-            raise ValueError("Bad endian value %r" % endian)
 
     def sint24(self, endian="<"):
         data = self.read(3)
@@ -86,8 +84,6 @@ class ByteReader(io.BytesIO):
             return struct.unpack('<i', self.read(4))[0]
         elif endian == '>':
             return struct.unpack('>i', self.read(4))[0]
-        else:
-            raise ValueError("Bad endian value %r" % endian)
 
     def uint40(self, endian="<"):
         """Read an unsigned 5 byte integer"""
