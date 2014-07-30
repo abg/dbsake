@@ -122,6 +122,7 @@ def generate_initscript(sandbox_directory, **kwargs):
         # ensure initscript is executable by current user + group
         os.fchmod(fileobj.fileno(), 0o0755)
         fileobj.write(content)
+        fileobj.write("\n")
     info("    * Generated initscript in %.2f seconds", time.time() - start)
 
 
@@ -185,6 +186,7 @@ def generate_defaults(options, **kwargs):
     with codecs.open(defaults_file, 'wb', encoding='utf8') as stream:
         os.fchmod(stream.fileno(), 0o0660)
         stream.write(content)
+        stream.write("\n")
     info("    * Generated %s in %.2f seconds",
          defaults_file, time.time() - start)
     return defaults_file
