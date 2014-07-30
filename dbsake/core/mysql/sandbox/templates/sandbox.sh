@@ -22,6 +22,7 @@ STOP_TIMEOUT=300
 
 version_and_comment="{{distribution.version}} {{distribution.version.comment}}"
 version="{{distribution.version}}"
+basedir={{distribution.basedir}}
 mysqld_safe={{distribution.mysqld_safe}}
 mysql={{distribution.mysql}}
 datadir={{datadir}}
@@ -29,13 +30,7 @@ defaults_file={{defaults_file}}
 
 [ -f /etc/sysconfig/${NAME} ] && . /etc/sysconfig/${NAME}
 
-mysqld_safe_args="
---defaults-file=$defaults_file
---ledir={{distribution.libexecdir}}
---datadir=$datadir
---pid-file=$datadir/mysql.pid
---socket=$datadir/mysql.sock
---log-error=$datadir/mysqld.log"
+mysqld_safe_args="--defaults-file=$defaults_file"
 
 sandbox_start() {
     if [[ -s "${datadir}/mysqld.pid" ]]
@@ -45,8 +40,8 @@ sandbox_start() {
     fi
     echo -n "Starting sandbox: "
     # close stdin (0) and redirect stdout/stderr to /dev/null
-    MY_BASEDIR_VERSION={{distribution.basedir}} nohup $mysqld_safe \
-                $mysqld_safe_args "$@" 0<&- &>/dev/null &
+    MY_BASEDIR_VERSION=${basedir} \
+        nohup $mysqld_safe $mysqld_safe_args "$@" 0<&- &>/dev/null &
     local start_timeout=${START_TIMEOUT}
     until [[ -S "${datadir}/mysql.sock" || $start_timeout -le 0 ]]
     do

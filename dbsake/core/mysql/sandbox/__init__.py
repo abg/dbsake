@@ -63,6 +63,7 @@ def create(**options):
                              user='root',
                              password=password,
                              system_user=os.environ['USER'],
+                             distribution=dist,
                              basedir=dist.basedir,
                              datadir=os.path.join(sbdir, 'data'),
                              socket=os.path.join(sbdir, 'data', 'mysql.sock'),

@@ -19,6 +19,7 @@ basedir                         = {{basedir}}
 {% endif %}
 user                            = {{system_user}}
 datadir                         = {{datadir}}
+pid-file                        = {{datadir}}/mysql.pid
 tmpdir                          = {{tmpdir}}
 socket                          = {{socket}}
 skip-name-resolve
@@ -124,6 +125,7 @@ long-query-time                 = 2
 {% endif %}
 
 [mysqld_safe]
+ledir                           = {{distribution.libexecdir}}
 log-error                       = {{datadir}}/mysqld.log
 open-files-limit                = {{open_files_limit|default(65535)}}
 
