@@ -19,42 +19,57 @@ STOP_TIMEOUT=300
 
 version_and_comment="{{distribution.version}} {{distribution.version.comment}}"
 version="{{distribution.version}}"
+
 basedir={{distribution.basedir}}
+defaults_file={{defaults_file}}
+# mysql utilities used by this script
 mysqld_safe={{distribution.mysqld_safe}}
 mysql={{distribution.mysql}}
-datadir={{datadir}}
-defaults_file={{defaults_file}}
+my_print_defaults=${basedir}/bin/my_print_defaults
 
-mysqld_safe_args="--defaults-file=$defaults_file"
+
+# read an option from the mysql option file
+_mysqld_option() {
+    option=${1//-/_}
+    option=${option//_/[_-]}
+    shift
+    sections="$@"
+    ${my_print_defaults} --defaults-file=${defaults_file} ${sections} | \
+        sed -nr -e "s/^--${option}=//p" | tail -n1
+}
 
 sandbox_start() {
-    if [[ -s "${datadir}/mysqld.pid" ]]
+    pidfile=$(_mysqld_option pid-file mysqld mysqld_safe)
+    socket=$(_mysqld_option socket mysqld mysqld_safe)
+    if [[ -s "${pidfile}" ]]
     then
         echo "Starting sandbox: [OK]"
         return 0
     fi
     echo -n "Starting sandbox: "
     # close stdin (0) and redirect stdout/stderr to /dev/null
+    mysqld_safe_args="--defaults-file=$defaults_file"
     MY_BASEDIR_VERSION=${basedir} \
         nohup $mysqld_safe $mysqld_safe_args "$@" 0<&- &>/dev/null &
     local start_timeout=${START_TIMEOUT}
-    until [[ -S "${datadir}/mysql.sock" || $start_timeout -le 0 ]]
+    until [[ -S "${socket}" || $start_timeout -le 0 ]]
     do
       kill -0 $! &>/dev/null || break
       echo -n "."
       sleep 1
       (( start_timeout-- ))
     done
-    [[ -S "${datadir}/mysql.sock" ]]
+    [[ -S "${socket}" ]]
     ret=$?
     [[ $ret -eq 0 ]] && echo "[OK]" || echo "[FAILED]"
     return $ret
 }
 
 sandbox_status() {
-    if [[ -s "${datadir}/mysql.pid" ]]
+    pidfile=$(_mysqld_option pid-file mysqld mysqld_safe)
+    if [[ -s "${pidfile}" ]]
     then
-        { pid=$(<"${datadir}/mysql.pid"); } 2>/dev/null
+        { pid=$(<"${pidfile}"); } 2>/dev/null
     fi
     [[ -n "${pid}" ]] && kill -0 "${pid}" &>/dev/null
     ret=$?
@@ -63,9 +78,10 @@ sandbox_status() {
 }
 
 sandbox_stop() {
-    if [[ -s "${datadir}/mysql.pid" ]]
+    pidfile=$(_mysqld_option pid-file mysqld mysqld_safe)
+    if [[ -s "${pidfile}" ]]
     then
-        { pid=$(<"${datadir}/mysql.pid"); } 2>/dev/null
+        { pid=$(<"${pidfile}"); } 2>/dev/null
     fi
 
     if [[ -z "$pid" ]]
