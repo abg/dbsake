@@ -45,7 +45,8 @@ sandbox_start() {
     fi
     echo -n "Starting sandbox: "
     # close stdin (0) and redirect stdout/stderr to /dev/null
-    nohup $mysqld_safe $mysqld_safe_args "$@" 0<&- &>/dev/null &
+    MY_BASEDIR_VERSION={{distribution.basedir}} nohup $mysqld_safe \
+                $mysqld_safe_args "$@" 0<&- &>/dev/null &
     local start_timeout=${START_TIMEOUT}
     until [[ -S "${datadir}/mysql.sock" || $start_timeout -le 0 ]]
     do
