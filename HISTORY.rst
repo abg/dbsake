@@ -6,20 +6,45 @@ History
 2.0.0 (unreleased)
 ------------------
 
-New features:
+The 2.0.0 release is a major update to dbsake significantly updating
+various internals and introducing some backwards incompatible changes.
+
+Compatibility changes:
 
   * frm-to-schema command has been renamed to frmdump
+  * frmdump -r/--raw-types option was renamed to -t/--type-codes
   * mysql-sandbox command has been renamed to sandbox
   * filename-to-tablename command has been renamed to decode
   * tablename-to-filename command has been renamed to encode
   * importfrm command has been removed
   * read-ibbinlog command has been removed
-  * split-mysqldump was rewritten to support many more features
-    and is now renamed to sieve
-  * fincore and uncache no longer fail when no paths are passed.  This usage
-    is now considered a no-op.
+  * split-mysqldump has been renamed to "sieve"
   * dbsake now uses click instead of baker for option parsing, so some previous
     usage of dbsake may no longer work.
+
+New features:
+
+  * split-mysqldump was rewritten to support many more features
+    and is now renamed to sieve
+  * sandbox now uses system compression commands to decompress tarballs
+    from the --data-source option.  This should speed up creating a sandbox
+    from existing data in many cases. (Issue #64)
+  * sandbox now includes the mysql.* schema by default when performing
+    partial restores from existing data (e.g. -D backup.tar.gz -t mydb.*).
+    Restoring mysql tables to the sandbox can be suppressed with the
+    -T / --exclude-table option. (Issue #67)
+  * sandbox now handles 5.0 / 5.1 binary tarball installs more robustly.
+    Previously, mysqld_safe would fail to find my_print_defaults in the
+    sandbox directory and could fail if sandbox.sh was run when
+    the current working directory != sandbox directory. (Issue #66)
+  * sandbox now generates a simplified sandbox.sh shell script file.
+    The sandbox.sh script now read mysql server options from the my.sandbox.cnf
+    config file rather than hardcoding various options in sandbox.sh. This
+    would previously make it tedious to change the path for log-error or
+    other options.
+  * sandbox no longer generates a sandbox.sh which sources /etc/sysconfig.
+  * fincore and uncache no longer fail when no paths are passed.  This usage
+    is now considered a no-op.
   * The sandbox command now uses jinja2 to generate templates rather than
     tempita.
   * dbsake no longer uses the sarge library internally
@@ -27,6 +52,8 @@ New features:
 
 Bugs fixed:
 
+  * sandbox failed to create ./tmp/ when overwriting an existing sandbox
+    directory with --force, if ./data/ already existed but ./tmp did not.
   * frmdump incorrectly defaulted to SQL SECURITY INVOKER when decoding view
     .frm files.  This behavior has been changed to use MySQL's default of
     SQL SECURITY DEFINER.
