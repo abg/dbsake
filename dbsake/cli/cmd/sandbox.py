@@ -84,11 +84,17 @@ def sandbox_cli(sandbox_directory,
                            hide_input=True)
         password = click.prompt(**options)
 
+    # only add mysql.* if at least some inclusion pattern
+    # is specified, or *only* mysql.* tables will be
+    # extracted rather than everything by default.
+    if include_tables:
+        include_tables += ('mysql.*',)
+
     try:
         sandbox.create(sandbox_directory=sandbox_directory,
                        mysql_distribution=mysql_distribution,
                        data_source=data_source,
-                       include_tables=include_tables + ('mysql.*',),
+                       include_tables=include_tables,
                        exclude_tables=exclude_tables,
                        cache_policy=cache_policy,
                        skip_libcheck=skip_libcheck,
