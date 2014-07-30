@@ -12,6 +12,8 @@ import pkgutil
 
 import jinja2
 
+import dbsake
+
 
 def jinja2_version():
     version = jinja2.__version__.partition('-')[0]
@@ -82,4 +84,5 @@ def create_environment(package_name, package_path='templates', **kwargs):
     kwargs['trim_blocks'] = True
     environment = jinja2.Environment(loader=loader, **kwargs)
     environment.filters['escape_string'] = escape_string
+    environment.globals['__dbsake_version__'] = dbsake.__version__
     return environment
