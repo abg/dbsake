@@ -174,6 +174,12 @@ Options
 
 .. versionadded:: 1.0.4
 
+.. versionchanged:: 2.0.0
+   ``--table="mysql.*"`` is included by default in the list of table options
+   regardless of other :option:`sandbox --table` optons. Tables in the mysql
+   schema can be excluded by using the :option:`sandbox --exclude-table`
+   option.
+
 .. option:: -T, --exclude-table <glob>
 
    Specify a glob pattern to filter elements from the --data-source option.  If
