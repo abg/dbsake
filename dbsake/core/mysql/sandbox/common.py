@@ -177,6 +177,8 @@ def generate_defaults(options, **kwargs):
         info("    - Multiple ib_logfile* logs found.")
         info("    - Setting innodb-log-files-in-group=%s",
              kwargs['innodb_log_files_in_group'])
+    else:
+        kwargs['innodb_log_files_in_group'] = 2
 
     template = template_loader.get_template('my.sandbox.cnf')
     content = template.render(**kwargs)

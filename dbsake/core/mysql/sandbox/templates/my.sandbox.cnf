@@ -79,7 +79,7 @@ innodb-log-file-size            = {{innodb_log_file_size}}
 {% else %}
 innodb-log-file-size            = 32M
 {% endif %}
-{% if innodb_log_files_in_group != 2 %}
+{% if innodb_log_files_in_group > 2 %}
 innodb-log-files-in-group       = {{innodb_log_files_in_group}}
 {% endif %}
 innodb-log-buffer-size          = 8M
