@@ -42,7 +42,7 @@ coverage:
 	open htmlcov/index.html
 
 dbsake.sh:
-	python setup.py bundle_dbsake
+	python setup.py bundle_dbsake --tag='$(or $(TAG),"")'
 
 docs:
 	rm -f docs/dbsake.rst
