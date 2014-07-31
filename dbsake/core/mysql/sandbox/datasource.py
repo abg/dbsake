@@ -7,8 +7,6 @@ Support for importing data sources
 """
 from __future__ import print_function
 
-import errno
-import fcntl
 import fnmatch
 import logging
 import os
