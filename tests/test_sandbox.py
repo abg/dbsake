@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import os
 import tarfile
 
+import pytest
+
 from click.testing import CliRunner
 
 from dbsake.cli.cmd.sandbox import sandbox_cli
@@ -18,6 +20,8 @@ def test_sandbox_system():
     assert result.exit_code == 0
 
 
+@pytest.mark.skipif(os.environ.get('TRAVIS', 'false') == 'true',
+                    reason="Skipping sandbox CDN tests on travis-ci")
 def test_sandbox_50():
     runner = CliRunner()
     with runner.isolated_filesystem():
