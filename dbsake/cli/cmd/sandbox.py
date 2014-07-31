@@ -25,9 +25,13 @@ from dbsake.cli import dbsake
               metavar='<dist>',
               default='system',
               help="mysql distribution to install")
-@click.option('-D', '--data-source',
+@click.option('-D', '--datadir',
+              metavar='<path>',
+              type=click.Path(resolve_path=True, file_okay=False),
+              help="Path to datadir for sandbox")
+@click.option('-s', '--data-source',
               metavar='<source>',
-              type=click.Path(resolve_path=True, exists=True),
+              type=click.Path(resolve_path=True, exists=True, dir_okay=False),
               help="path to file to populate sandbox")
 @click.option('include_tables', '-t', '--table',
               metavar='<glob-pattern>',
@@ -58,6 +62,7 @@ from dbsake.cli import dbsake
               default='')
 def sandbox_cli(sandbox_directory,
                 mysql_distribution,
+                datadir,
                 data_source,
                 include_tables,
                 exclude_tables,
@@ -93,6 +98,7 @@ def sandbox_cli(sandbox_directory,
     try:
         sandbox.create(sandbox_directory=sandbox_directory,
                        mysql_distribution=mysql_distribution,
+                       datadir=datadir,
                        data_source=data_source,
                        include_tables=include_tables,
                        exclude_tables=exclude_tables,

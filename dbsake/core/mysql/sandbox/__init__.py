@@ -65,8 +65,8 @@ def create(**options):
                              system_user=os.environ['USER'],
                              distribution=dist,
                              basedir=dist.basedir,
-                             datadir=os.path.join(sbdir, 'data'),
-                             socket=os.path.join(sbdir, 'data', 'mysql.sock'),
+                             datadir=sbopts.datadir,
+                             socket=os.path.join(sbopts.datadir, 'mysql.sock'),
                              tmpdir=os.path.join(sbdir, 'tmp'),
                              mysql_version=dist.version,
                              port=dist.version.as_int(),
@@ -76,7 +76,7 @@ def create(**options):
     info("  Creating sandbox.sh initscript")
     common.generate_initscript(sbdir,
                                distribution=dist,
-                               datadir=os.path.join(sbdir, 'data'),
+                               datadir=sbopts.datadir,
                                defaults_file=os.path.join(sbdir,
                                                           'my.sandbox.cnf'))
 

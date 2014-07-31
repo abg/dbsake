@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import codecs
 import collections
 import errno
+import fcntl
 import glob
 import logging
 import os
@@ -33,7 +34,7 @@ class SandboxError(Exception):
     """Base sandbox exception"""
 
 SandboxOptions = collections.namedtuple('SandboxOptions',
-                                        ['basedir',
+                                        ['basedir', 'datadir',
                                          'distribution', 'datasource',
                                          'include_tables', 'exclude_tables',
                                          'cache_policy',
@@ -74,8 +75,16 @@ def check_options(**kwargs):
         raise SandboxError("Unknown --cache-policy '%s'" %
                            kwargs['cache_policy'])
 
+    if not kwargs.get('datadir'):
+        kwargs['datadir'] = os.path.join(basedir, 'data')
+    else:
+        kwargs['datadir'] = os.path.normpath(kwargs['datadir'])
+
+    check_mysql_datadir(kwargs['datadir'])
+
     return SandboxOptions(
         basedir=basedir,
+        datadir=kwargs['datadir'],
         distribution=dist,
         datasource=kwargs['data_source'],
         include_tables=kwargs['include_tables'],
@@ -89,15 +98,69 @@ def check_options(**kwargs):
     )
 
 
+def check_mysql_datadir(datadir, force=False):
+    """Check the given path for a MySQL datadir
+
+    If the datadir does not exist, it will be created
+
+    If the datadir is not empty, this will check if ib_logfile0
+    is in use (advisory locked).
+
+    If all else fails, ensure at least a mysql/user.frm is present
+    or the datadir is probably invalid.  This can still be overriden
+    by a correct --force option.
+
+    :param datadir: path to the new sandbox datadir
+    :raises: SandboxError on error
+    """
+    exists = os.path.exists
+    datadir = os.path.normpath(datadir)
+
+    # datadir doesn't exist yet
+    if not exists(datadir):
+        # will create it later
+        return
+
+    # datadir exists, but is empty
+    if exists(datadir) and not os.listdir(datadir):
+        # will bootstrap it later
+        return
+
+    # check for ib_logfile0 and ensure it's not locked
+    ib_logfile0 = os.path.join(datadir, 'ib_logfile0')
+    # first check that this is not an active datadir
+    try:
+        with open(ib_logfile0, 'rb') as fileobj:
+            fcntl.lockf(fileobj.fileno(), fcntl.LOCK_SH | fcntl.LOCK_NB)
+    except IOError as exc:
+        if exc.errno == errno.EAGAIN:
+            msg = "%s locked. %s seems to be used by another process" % \
+                (ib_logfile0, datadir)
+            raise SandboxError(msg)
+        # ignore errors from missing ib_logfile*, but raise unexpected IOError
+        if exc.errno != errno.ENOENT:
+            # This means ib_logfile0 either exists, or some more
+            # serious access restriction
+            raise SandboxError("Unable to read %s: %s" % (ib_logfile0, exc))
+
+    # non-empty datadir, so ensure at least ib_logfile0 or mysql/user.frm
+    mysql_user_frm = os.path.join(datadir, 'mysql', 'user.frm')
+    if not exists(ib_logfile0) and not exists(mysql_user_frm):
+        msg = "%s does not appear to be a valid MySQL datadir" % datadir
+        if not force:
+            raise SandboxError(msg)
+        else:
+            warn(msg)
+
+
 def prepare_sandbox_paths(sbopts):
     start = time.time()
-    for name in ('data', 'tmp'):
+    for path in (sbopts.datadir, os.path.join(sbopts.basedir, 'tmp')):
         try:
-            if pathutil.makedirs(os.path.join(sbopts.basedir, name)):
-                info("    - Created %s/%s", sbopts.basedir, name)
+            if pathutil.makedirs(path, exist_ok=True):
+                info("    - Created %s", path)
         except OSError as exc:
-            if exc.errno != errno.EEXIST or not sbopts.force:
-                raise SandboxError("%s" % exc)
+            raise SandboxError("%s" % exc)
     info("    * Prepared sandbox in %.2f seconds", time.time() - start)
 
 # create a jinja2 environment we can load templates from
@@ -146,7 +209,7 @@ def generate_defaults(options, **kwargs):
     defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
 
     # Check for innodb-log-file-size
-    ib_logfile0 = os.path.join(options.basedir, 'data', 'ib_logfile0')
+    ib_logfile0 = os.path.join(options.datadir, 'ib_logfile0')
     ib_logfile_size = None
     try:
         ib_logfile_size = os.path.getsize(ib_logfile0)
@@ -158,7 +221,7 @@ def generate_defaults(options, **kwargs):
         info("Setting innodb-log-file-size=%s", kwargs['innodb_log_file_size'])
 
     ibdata = []
-    ibdata_pattern = os.path.join(options.basedir, 'data', 'ibdata*')
+    ibdata_pattern = os.path.join(options.datadir, 'ibdata*')
     for path in sorted(glob.glob(ibdata_pattern)):
         rpath = os.path.basename(path)
         ibdata.append(rpath + ':' + _format_logsize(os.stat(path).st_size))
@@ -170,8 +233,7 @@ def generate_defaults(options, **kwargs):
         kwargs['innodb_data_file_path'] = None
 
     # Check for innodb_log_files_in_group
-    datadir = os.path.join(options.basedir, 'data')
-    innodb_log_files_in_group = sum(1 for name in os.listdir(datadir)
+    innodb_log_files_in_group = sum(1 for name in os.listdir(options.datadir)
                                     if name.startswith('ib_logfile'))
     if innodb_log_files_in_group > 2:
         kwargs['innodb_log_files_in_group'] = innodb_log_files_in_group
@@ -280,7 +342,7 @@ def bootstrap(options, dist, password, additional_options=()):
     if additional:
         bootstrap_cmd += ' ' + additional
 
-    datadir = os.path.join(options.basedir, 'data')
+    datadir = options.datadir
     user_dml = None
     if os.path.exists(os.path.join(datadir, 'mysql', 'user.frm')):
         info("    - User supplied mysql.user table detected.")

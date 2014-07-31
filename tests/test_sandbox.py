@@ -42,7 +42,7 @@ def test_sandbox_50():
                                ['--force',
                                 '-d', sbdir,
                                 '-m', '5.0.95',
-                                '-D', 'backup.tar.gz',
+                                '-s', 'backup.tar.gz',
                                 '-t', 'mysql.user'],
                                auto_envvar_prefix='DBSAKE', obj={})
         assert result.exit_code == 0

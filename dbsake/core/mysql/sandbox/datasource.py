@@ -93,8 +93,6 @@ def prepare_datadir(datadir, options):
 def preload(options):
     if not options.datasource:
         return
-    elif os.path.isdir(options.datasource):
-        datasource_from_directory(options)
     elif is_tarball(options.datasource):
         # build table filter from tables/exclude_tables
         # So here we want to map database.table to database/table
@@ -103,7 +101,7 @@ def preload(options):
         start = time.time()
         _filter = table_filter(options.include_tables, options.exclude_tables)
         info("  Preloading sandbox data from %s", options.datasource)
-        datadir = os.path.join(options.basedir, 'data')
+        datadir = options.datadir
         deploy_tarball(options.datasource, datadir, table_filter=_filter)
         ib_logfile = os.path.join(datadir, 'ib_logfile0')
         xb_logfile = os.path.join(datadir, 'xtrabackup_logfile')
@@ -114,30 +112,6 @@ def preload(options):
     else:
         raise common.SandboxError("Unsupported data source: %s" %
                                   options.datasource)
-
-
-def datasource_from_directory(options):
-    datadir = os.path.normpath(os.path.realpath(options.datasource))
-
-    # first check that this is not an active datadir
-    try:
-        with open(os.path.join(datadir, 'ib_logfile0'), 'rb') as fileobj:
-            fcntl.lockf(fileobj.fileno(), fcntl.LOCK_SH | fcntl.LOCK_NB)
-    except IOError as exc:
-        if exc.errno == errno.EAGAIN:
-            raise common.SandboxError(("Directory '%s' seems to be in active "
-                                       "use (ib_logfile0 locked)") % datadir)
-        # ignore errors from missing ib_logfile*, but raise unexpected IOError
-        if exc.errno != errno.ENOENT:
-            raise
-
-    # otherwise:
-    # 1) Remove the empty datadir
-    os.rmdir(os.path.join(options.basedir, 'data'))
-    # 2) symlink the datadir
-    os.symlink(datadir, os.path.join(options.basedir, 'data'))
-    info("  Symlinked datadir '%s' to %s",
-         datadir, os.path.join(options.basedir, 'data'))
 
 
 #: files required for the sandbox - and never filtered

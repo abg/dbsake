@@ -15,12 +15,19 @@ to the MySQL instance.
 .. versionchanged:: 1.0.5
    dbsake verifies the gpg signature of downloaded MySQL tarball distributions
 
+.. important::
+   As of dbsake 2.0.0, the sandbox options have changed.  -D is now an alias for
+   --datadir, although it was previously an alias for --data-source.  The -s
+   option is now an alias for --data-source in order to specify a tarball to
+   seed the sandbox instance with.  See :option:`sandbox --datadir` and
+   :option:`sandbox --data-source` for more information.
+
 Usage
 .....
 
 .. code-block:: bash
 
-   Usage: dbsake sandbox [OPTIONS]
+   Usage: dbsake.sh sandbox [OPTIONS]
    
      Create a sandboxed MySQL instance.
    
@@ -31,7 +38,8 @@ Usage
      -d, --sandbox-directory <path>  path where sandbox will be installed
      -m, --mysql-distribution <dist>
                                      mysql distribution to install
-     -D, --data-source <source>      path to file to populate sandbox
+     -D, --datadir <path>            Path to datadir for sandbox
+     -s, --data-source <source>      path to file to populate sandbox
      -t, --table <glob-pattern>      db.table glob pattern to include from
                                      --data-source
      -T, --exclude-table <glob-pattern>
@@ -142,15 +150,32 @@ Options
    via --mysql-distribution /path/to/my/tarball
 
 
-.. option:: -D, --data-source <tarball>
+.. option:: -D, --datadir <path>
 
-   Specify a tarball or directory that will be used for the sandbox datadir.
-   If a directory is specified, it will be symlinked to './data' under the
-   sandbox directory.  If a tarball is specified it will be extracted to
-   the ./data/ path under the sandbox directory, subject to any filtering
-   specified by the --table and --exclude-table options.
+   Specify the path to the datadir to be used for the sandbox.  If this path
+   does not exist, it will be created.  The datadir will be boostrapped using
+   the MySQL version specified via the :option:`sandbox --mysql-distribution`
+   option.  Sanity checks will be done against the path to verify that it
+   is either empty or seems to be a valid, unused MySQL datadir.
+
+.. versionadded:: 2.0.0
+
+.. option:: -s, --data-source <tarball>
+
+   Specify a tarball that will be used for the sandbox datadir. If a tarball
+   is specified it will be extracted to the ./data/ path under the sandbox
+   directory, subject to any filtering specified by the --table and
+   --exclude-table options.
 
 .. versionadded:: 1.0.4
+
+.. versionchanged:: 2.0.0
+   The ``-s`` short option was added.  In 1.0 this was ``-D``, but as of
+   2.0.0, -D is an alias for --datadir.
+
+.. versionchanged:: 2.0.0
+   --data-source now only takes a tarball option.  To use an existing datadir,
+   use the :option:`sandbox --datadir` option.
 
 .. versionchanged:: 1.0.5
    A directory may be specified for the --data-source option to use an
