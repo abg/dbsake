@@ -52,6 +52,10 @@ from dbsake.cli import dbsake
               help="skip gpg verification of download mysql distributions")
 @click.option('--force', default=False, is_flag=True,
               help="overwrite existing sandbox directory")
+@click.option('-u', '--mysql-user',
+              metavar='<user>',
+              default='root',
+              help="MySQL user to add to the sandbox instance")
 @click.option('-p', '--password',
               default=False,
               is_flag=True,
@@ -70,6 +74,7 @@ def sandbox_cli(sandbox_directory,
                 skip_libcheck,
                 skip_gpgcheck,
                 force,
+                mysql_user,
                 password,
                 innobackupex_options):
     """Create a sandboxed MySQL instance.
@@ -106,6 +111,7 @@ def sandbox_cli(sandbox_directory,
                        skip_libcheck=skip_libcheck,
                        skip_gpgcheck=skip_gpgcheck,
                        force=force,
+                       mysql_user=mysql_user,
                        password=password,
                        innobackupex_options=innobackupex_options)
     except sandbox.SandboxError as exc:

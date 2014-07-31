@@ -39,7 +39,7 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                          'include_tables', 'exclude_tables',
                                          'cache_policy',
                                          'skip_libcheck', 'skip_gpgcheck',
-                                         'force', 'password',
+                                         'force', 'mysql_user', 'password',
                                          'innobackupex_options',
                                          ])
 
@@ -82,6 +82,12 @@ def check_options(**kwargs):
 
     check_mysql_datadir(kwargs['datadir'])
 
+    password = kwargs.get('password', False)
+    if not password:
+        password = mkpassword(random.randint(13, 27))
+        info("    - Generated random password for mysql user %s@localhost",
+             kwargs['mysql_user'])
+
     return SandboxOptions(
         basedir=basedir,
         datadir=kwargs['datadir'],
@@ -93,7 +99,8 @@ def check_options(**kwargs):
         skip_libcheck=kwargs['skip_libcheck'],
         skip_gpgcheck=kwargs['skip_gpgcheck'],
         force=kwargs['force'],
-        password=kwargs['password'],
+        mysql_user=kwargs['mysql_user'],
+        password=password,
         innobackupex_options=kwargs['innobackupex_options']
     )
 
@@ -254,8 +261,23 @@ def generate_defaults(options, **kwargs):
     return defaults_file
 
 
-def generate_sandbox_user_grant(datadir, dist):
-    user_frm = os.path.join(datadir, 'mysql', 'user.frm')
+def user_grant_from_sql(options, mysql_system_tables_data):
+    for line in mysql_system_tables_data.splitlines():
+        if line.startswith("INSERT INTO tmp_user VALUES ('localhost'"):
+            sql = line
+            break
+    else:
+        raise SandboxError("Unable to generate mysql user grant")
+
+    sql = sql.replace('INSERT', 'REPLACE', 1)
+    sql = sql.replace('tmp_user', 'user', 1)
+    sql = sql.replace("'root'",
+                      "'%s'" % template.escape_string(options.mysql_user), 1)
+    return sql
+
+
+def user_grant_from_frm(options, distribution):
+    user_frm = os.path.join(options.datadir, 'mysql', 'user.frm')
     debug("    # Parsing binary frm: %s", user_frm)
     table = frm.parse(user_frm)
     debug("    # user.frm was created by MySQL %s", table.mysql_version)
@@ -269,17 +291,14 @@ def generate_sandbox_user_grant(datadir, dist):
         elif column.name == 'Host':
             values.append("'localhost'")
         elif column.name == 'User':
-            values.append("'root'")
+            values.append("'%s'" % template.escape_string(options.mysql_user))
         elif column.name == 'Password':
-            # this gets reset later in the bootstrap process
-            # initialize to a bad hash so at worst, the password
-            # does not work
-            values.append("'_invalid'")
+            values.append("'%s'" % template.escape_string(options.password))
         elif column.name == 'plugin':
             # Avoid setting mysql.user (plugin) field except for 5.7
             # MariaDB currently has very strange behaviors that can
             # lead to security problems if plugin is set.
-            if dist.version[0:2] == (5, 7):
+            if distribution.version[0:2] == (5, 7):
                 values.append("'mysql_native_password'")
             else:
                 values.append("''")
@@ -294,7 +313,7 @@ def generate_sandbox_user_grant(datadir, dist):
     )
 
 
-def mysql_install_db(distribution, **kwargs):
+def mysql_install_db(options, distribution, **kwargs):
     join = os.path.join
 
     def cat(path):
@@ -316,25 +335,33 @@ def mysql_install_db(distribution, **kwargs):
 
     fill_help_tables = cat(join(sharedir, 'fill_help_tables.sql'))
 
+    mysql_user_frm = os.path.join(options.datadir, 'mysql', 'user.frm')
+    bootstrap_data = not os.path.exists(mysql_user_frm)
+    if bootstrap_data:
+        user_dml = user_grant_from_sql(options, mysql_system_tables_data)
+    else:
+        user_dml = user_grant_from_frm(options, distribution)
+
     template = template_loader.get_template('bootstrap.sql')
     sql = template.render(distribution=distribution,
                           mysql_system_tables=mysql_system_tables,
                           mysql_system_tables_data=mysql_system_tables_data,
                           mysql_performance_tables=mysql_p_s_tables,
                           fill_help_tables=fill_help_tables,
+                          user_dml=user_dml,
                           **kwargs)
     for line in sql.splitlines():
         yield line
 
 
-def bootstrap(options, dist, password, additional_options=()):
+def bootstrap(options, distribution, additional_options=()):
     start = time.time()
     defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
     logfile = os.path.join(options.basedir, 'bootstrap.log')
     info("    - Logging bootstrap output to %s", logfile)
 
     bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1}",
-                                     dist.mysqld, defaults_file)
+                                     distribution.mysqld, defaults_file)
     additional_options = ('--bootstrap',
                           '--default-storage-engine=myisam') + \
         additional_options
@@ -342,26 +369,10 @@ def bootstrap(options, dist, password, additional_options=()):
     if additional:
         bootstrap_cmd += ' ' + additional
 
-    datadir = options.datadir
-    user_dml = None
-    if os.path.exists(os.path.join(datadir, 'mysql', 'user.frm')):
-        info("    - User supplied mysql.user table detected.")
-        info("    - Skipping normal load of system table data")
-        info("    - Ensuring root@localhost exists")
-        user_dml = generate_sandbox_user_grant(datadir, dist)
-        debug("    # DML: %s", user_dml)
-        bootstrap_data = False
-    else:
-        info("    - Will bootstrap the mysql database")
-        bootstrap_data = True  # at least no user table
-
     bootstrap_sql = os.path.join(options.basedir, 'bootstrap.sql')
     with codecs.open(bootstrap_sql, 'wb', 'utf8') as fileobj:
         os.fchmod(fileobj.fileno(), 0o0660)
-        for line in mysql_install_db(dist,
-                                     bootstrap_data=bootstrap_data,
-                                     password=password,
-                                     user_dml=user_dml):
+        for line in mysql_install_db(options, distribution):
             print(line, file=fileobj)
     info("    - Generated bootstrap SQL")
     with open(logfile, 'wb') as stderr:

@@ -28,6 +28,7 @@ SandboxError = common.SandboxError
 
 
 def create(**options):
+    info("Checking sandbox options")
     sbopts = common.check_options(**options)
 
     # a basic sanity check: make sure there's at least 1GB free (or 5%)
@@ -55,13 +56,9 @@ def create(**options):
     info("  Deploying MySQL distribution")
     dist = distribution.deploy(sbopts)
     info("  Generating my.sandbox.cnf")
-    password = sbopts.password
-    if not password:
-        password = common.mkpassword()
-        info("    - Generated random password for sandbox user root@localhost")
     common.generate_defaults(sbopts,
-                             user='root',
-                             password=password,
+                             mysql_user=sbopts.mysql_user,
+                             password=sbopts.password,
                              system_user=os.environ['USER'],
                              distribution=dist,
                              basedir=dist.basedir,
@@ -72,7 +69,7 @@ def create(**options):
                              port=dist.version.as_int(),
                              innodb_log_file_size=None)
     info("  Bootstrapping sandbox instance")
-    common.bootstrap(sbopts, dist, password)
+    common.bootstrap(sbopts, dist)
     info("  Creating sandbox.sh initscript")
     common.generate_initscript(sbdir,
                                distribution=dist,

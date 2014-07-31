@@ -3,8 +3,8 @@
 no-auto-rehash
 
 [client]
-{% if user %}
-user                            = "{{user|escape_string}}"
+{% if mysql_user %}
+user                            = "{{mysql_user|escape_string}}"
 {% endif %}
 {% if password %}
 password                        = "{{password|escape_string}}"
