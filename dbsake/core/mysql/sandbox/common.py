@@ -273,6 +273,9 @@ def user_grant_from_sql(options, mysql_system_tables_data):
     sql = sql.replace('tmp_user', 'user', 1)
     sql = sql.replace("'root'",
                       "'%s'" % template.escape_string(options.mysql_user), 1)
+    sql = sql.replace("''",
+                      "PASSWORD('%s')" %
+                      template.escape_string(options.password), 1)
     return sql
 
 
@@ -293,7 +296,7 @@ def user_grant_from_frm(options, distribution):
         elif column.name == 'User':
             values.append("'%s'" % template.escape_string(options.mysql_user))
         elif column.name == 'Password':
-            values.append("'%s'" % template.escape_string(options.password))
+            values.append("PASSWORD('%s')" % template.escape_string(options.password))
         elif column.name == 'plugin':
             # Avoid setting mysql.user (plugin) field except for 5.7
             # MariaDB currently has very strange behaviors that can

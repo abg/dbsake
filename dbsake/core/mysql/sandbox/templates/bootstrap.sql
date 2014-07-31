@@ -18,14 +18,6 @@ CREATE DATABASE IF NOT EXISTS `test`;
 {{fill_help_tables}}
 -- fill_help_tables.sql end --
 
--- dbsake: cleanup system users start --
-DELETE FROM `users` WHERE Host NOT IN ('localhost', '127.0.0.1', '::1');
-UPDATE `user` SET PASSWORD = PASSWORD('{{password|escape_string}}') WHERE User = 'root';
-DELETE FROM `db` WHERE (Db = 'test' OR Db = 'test\_%') AND User = '';
-DELETE FROM `user` WHERE User = '';
--- dbsake: cleanup system users end --
-{% endif %}
-
 -- Secure database during bootstrap by removing anonymous users
 -- and setting a password
 
@@ -33,6 +25,14 @@ DELETE FROM `user` WHERE User = '';
 -- should span more than one line.
 -- See /usr/share/mysql/mysql_system_tables*.sql for more complex examples of
 -- what can be added here.
+
+-- dbsake: cleanup system users start --
+DELETE FROM `users` WHERE Host NOT IN ('localhost', '127.0.0.1', '::1');
+UPDATE `user` SET PASSWORD = PASSWORD('{{password|escape_string}}') WHERE User = 'root';
+DELETE FROM `db` WHERE (Db = 'test' OR Db = 'test\_%') AND User = '';
+DELETE FROM `user` WHERE User = '';
+-- dbsake: cleanup system users end --
+{% endif %}
 
 {% if user_dml %}
 -- dbsake: user injection start --
