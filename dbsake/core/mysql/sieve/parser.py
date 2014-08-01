@@ -42,7 +42,7 @@ DISCRIMINATORS = [
     (b'-- Current Database', 'createdatabase'),
     (b'-- Table structure', 'tablestructure'),
     (b'-- Dumping data for table', 'tabledata'),
-    (b'-- Temporary table structure', 'view'),
+    (b'-- Temporary table structure', 'view_temporary'),
     (b'-- Dumping routines', 'routines'),
     (b'-- Dumping events', 'events'),
     (b'-- Final view structure', 'view'),
@@ -69,7 +69,7 @@ def discriminate(value):
         extra.update(database=extract_identifier(value), table=None)
     elif discriminator in ('tablestructure',
                            'tabledata',
-                           'view'):
+                           'view', 'view_temporary'):
         extra.update(table=extract_identifier(value))
     elif discriminator == 'flush_privileges':
         extra.update(table=None)

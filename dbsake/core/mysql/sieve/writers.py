@@ -117,6 +117,9 @@ class DirectoryWriter(SimpleWriter):
             mode = 'ab'
         return self._open([section.database, b'views.ddl'], mode=mode)
 
+    open_view_temporary = open_view
+
+
     def open_routines(self, section):
         if self._dump_header:
             section.iterable = itertools.chain([self._dump_header],
