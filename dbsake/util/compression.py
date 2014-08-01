@@ -78,5 +78,5 @@ def decompressed_fileobj(fileobj, ext=None):
     command = ext_to_command(ext)
     fileobj.seek(0)
     fileobj.flush()
-    with cmd.piped_stdout("%s -dc" % command, stdin=fileobj, close_fds=False) as stdout:
+    with cmd.piped_stdout("%s -dc" % command, stdin=fileobj) as stdout:
         yield stdout
