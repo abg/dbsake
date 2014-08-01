@@ -121,4 +121,4 @@ def sieve_cli(ctx,
                 # exit with SIGPIPE to indicate only partial output
                 sys.exit(128 + signal.SIGPIPE)
         except sieve.Error as exc:
-            click.fail(exc)
+            click.echo(exc, file=sys.stderr)
