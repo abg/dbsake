@@ -27,13 +27,13 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake.sh sandbox [OPTIONS]
-   
+   Usage: dbsake sandbox [OPTIONS]
+
      Create a sandboxed MySQL instance.
-   
+
      This command installs a new MySQL instance under the specified sandbox
      directory, or under ~/sandboxes/sandbox_<datetime> if none is specified.
-   
+
    Options:
      -d, --sandbox-directory <path>  path where sandbox will be installed
      -m, --mysql-distribution <dist>
@@ -51,6 +51,7 @@ Usage
      --skip-gpgcheck                 skip gpg verification of download mysql
                                      distributions
      --force                         overwrite existing sandbox directory
+     -u, --mysql-user <user>         MySQL user to add to the sandbox instance
      -p, --password                  prompt for password to create root@localhost
                                      with
      -x, --innobackupex-options <options>
@@ -101,7 +102,7 @@ Example
      Creating sandbox.sh initscript
        * Generated initscript in 0.01 seconds
    Sandbox created in 52.72 seconds
-   
+
    Here are some useful sandbox commands:
           Start sandbox: /opt/mysql-5.6.19/sandbox.sh start
            Stop sandbox: /opt/mysql-5.6.19/sandbox.sh stop
@@ -253,6 +254,15 @@ Options
 
 .. versionadded:: 1.0.9
 
+.. option:: -u, --mysql-user <name>
+
+   Specify the user to add to the sandbox instance.  By default this is
+   root@localhost but can be overriden with this option to avoid changing
+   the password for an existing root@localhost user when using the
+   :option:`sandbox --data-source` option.
+
+.. versionadded:: 2.0.0
+
 .. option:: -p, --password
 
    Prompt for the root@localhost password instead of generating a random
@@ -332,7 +342,7 @@ easier:
 - mysqldump [options]
 
   run mysqldump against the sandbox
-    
+
   Example: ./sandbox.sh mysqldump --all-databases | gzip > backup.sql.gz
 
 - upgrade [options]
@@ -356,7 +366,7 @@ easier:
    # chkconfig --add ${name} && chkconfig ${name} on
 
    Under ubuntu update-rc.d is used instead of chkconfig.
-                      
+
    install-service accept one argument as the name of the service to install.
    By default this will be called mysql-${version} where $version is the
    current mysqld version being used (e.g. 5.6.15)
