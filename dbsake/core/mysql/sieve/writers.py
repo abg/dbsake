@@ -119,7 +119,6 @@ class DirectoryWriter(SimpleWriter):
 
     open_view_temporary = open_view
 
-
     def open_routines(self, section):
         if self._dump_header:
             section.iterable = itertools.chain([self._dump_header],
