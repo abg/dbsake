@@ -6,6 +6,9 @@ Filtering API for mysqldump files
 """
 from __future__ import unicode_literals
 
+import collections
+import logging
+
 from dbsake.util import dotdict
 from dbsake.util import pathutil
 
@@ -16,6 +19,8 @@ from . import transform
 from . import writers
 
 Error = exc.SieveError
+
+info = logging.info
 
 
 class Options(dotdict.DotDict):
@@ -40,8 +45,17 @@ def sieve(options):
     transform_section = transform.SectionTransform(options)
     write_section = writers.load(options, context=transform_section)
 
+    stats = collections.defaultdict(int)
+
     for section in dump_parser:
         if filter_section(section):
             continue
+        stats[section.name] += 1
         transform_section(section)
         write_section(section)
+
+    info("Processed %s. Output: %d database(s) %d table(s) and %d view(s)",
+         options.input_stream.name,
+         stats['createdatabase'] or 1,
+         stats['tablestructure'],
+         stats['view'])
