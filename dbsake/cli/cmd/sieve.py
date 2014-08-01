@@ -84,6 +84,9 @@ def sieve_cli(ctx,
     """
     from dbsake.core.mysql import sieve
 
+    if hasattr(input_file, 'detach'):
+        input_file = input_file.detach()
+
     if output_format == 'stream' and sys.stdout.isatty() and not force:
         ctx.fail("stdout appears to be a terminal and --format=stream. "
                  "Aborting.")
@@ -107,18 +110,26 @@ def sieve_cli(ctx,
                             input_stream=input_file,
                             output_stream=click.get_binary_stream('stdout'))
 
-    with input_file:
-        try:
-            sieve.sieve(options)
-        except IOError as exc:
-            if exc.errno != errno.EPIPE:
-                raise  # generate a traceback, in case this is a bug
-            else:
-                # note broken pipe in debug mode
-                if ctx.obj['debug']:
-                    click.echo("Broken pipe (errno: %d)" % exc.errno,
-                               file=sys.stderr)
-                # exit with SIGPIPE to indicate only partial output
-                sys.exit(128 + signal.SIGPIPE)
-        except sieve.Error as exc:
-            click.echo(exc, file=sys.stderr)
+    try:
+        stats = sieve.sieve(options)
+    except IOError as exc:
+        if exc.errno != errno.EPIPE:
+            raise  # generate a traceback, in case this is a bug
+        else:
+            # note broken pipe in debug mode
+            if ctx.obj['debug']:
+                click.echo("Broken pipe (errno: %d)" % exc.errno,
+                           file=sys.stderr)
+            # exit with SIGPIPE to indicate only partial output
+            sys.exit(128 + signal.SIGPIPE)
+    except sieve.Error as exc:
+        click.echo(exc, file=sys.stderr)
+        sys.exit(1)
+    else:
+        click.echo(("Processed %s. "
+                    "Output: %d database(s) %d table(s) and %d view(s)") %
+                   (options.input_stream.name,
+                    stats['createdatabase'] or 1,
+                    stats['tablestructure'],
+                    stats['view']), file=sys.stderr)
+        sys.exit(0)
