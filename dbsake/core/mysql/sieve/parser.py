@@ -13,6 +13,8 @@ import collections
 import logging
 import re
 
+from . import exc
+
 try:
     _range = xrange
 except NameError:
@@ -23,10 +25,14 @@ debug = logging.debug
 IDENTIFIER = re.compile(br'''.*?([`'])(?P<ident>.*)\1$''')
 
 
+class SieveParseError(exc.SieveError):
+    """Error raised when parsing fails"""
+
+
 def extract_identifier(value):
     m = IDENTIFIER.match(value)
     if not m:
-        raise ValueError('No identifier in %r' % value)
+        raise SieveParseError(value)
     return m.group('ident')
 
 # map line prefixes to identifier names
@@ -48,12 +54,16 @@ DISCRIMINATORS = [
 
 
 def discriminate(value):
+    """Determine a section type given a line from mysqldump
+
+    :param value: current line to be examined
+    :raises: SieveParseError if a the context can't be determined
+    """
     for prefix, discriminator in DISCRIMINATORS:
         if value.startswith(prefix):
             break
     else:
-        # XXX: need a better exception
-        raise ValueError('No match for %r' % value)
+        raise SieveParseError('No match for %r' % value)
     extra = {'name': discriminator}
     if discriminator in ('createdatabase', 'routines', 'events'):
         extra.update(database=extract_identifier(value), table=None)
@@ -85,6 +95,7 @@ class LineReader(object):
     def __init__(self, stream):
         self.stream = stream
         self._cache = collections.deque()
+        self.line_no = 0
 
     def __iter__(self):
         return self
@@ -94,12 +105,14 @@ class LineReader(object):
             line = self._cache.popleft()
         else:
             line = next(self.stream)
+        self.line_no += 1
         return line
     # python 2.x shim
     next = __next__
 
     def pushback(self, value):
         self._cache.append(value)
+        self.line_no -= 1
 
     def expect_prefix(self, prefix):
         line = next(self)
@@ -213,10 +226,11 @@ class DumpParser(object):
                 pending.append(line)
                 try:
                     return discriminate(line)
-                except ValueError:
+                except SieveParseError:
                     continue
-            raise ValueError('Could not discriminate next section type: %r' %
-                             line)
+            raise SieveParseError('Unable to determine section type at line '
+                                  '%d: %s' % (self._stream.line_no,
+                                              line.decode('utf-8', 'ignore')))
         finally:
             for line in pending:
                 self._stream.pushback(line)
