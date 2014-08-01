@@ -95,12 +95,12 @@ def handle_uncaught_exception(exc_type, exc_value, traceback):
     from traceback import format_exception
     issues_url = 'https://github.com/abg/dbsake/issues'
     click.echo("Uncaught exception!", nl=False, file=sys.stderr)
-    click.echo(" (\u256f\xb0\u25a1\xb0)\u256f \ufe35 \u253b\u2501\u253b",
-               file=sys.stderr)
+    emoji0 = " (\u256f\xb0\u25a1\xb0)\u256f \ufe35 \u253b\u2501\u253b"
+    emoji1 = "\u252c\u2500\u252c\u30ce( \xba_ \xba\u30ce)"
+    click.echo(emoji0.encode('utf-8'), file=sys.stderr)
     for line in format_exception(exc_type, exc_value, traceback):
         click.echo(line, nl=False, file=sys.stderr)
-    click.echo("It's okay. \u252c\u2500\u252c\u30ce( \xba_ \xba\u30ce)",
-               file=sys.stderr)
+    click.echo(("It's okay. %s" % emoji1).encode('utf-8'), file=sys.stderr)
     click.echo("Consider filing a bug report at %s" % issues_url,
                file=sys.stderr)
 
