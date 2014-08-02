@@ -49,8 +49,11 @@ class SectionTransform(object):
 
         if defer_indexes:
             alter_table = defer.split_indexes(section, defer_fks)
-            self.pending_ddl = itertools.chain(alter_table.splitlines(True),
-                                               [b'\n', b'\n'])
+            if alter_table:
+                self.pending_ddl = itertools.chain(alter_table.splitlines(True),
+                                                   [b'\n', b'\n'])
+            else:
+                self.pending_ddl = []
 
     def transform_tabledata(self, section):
         if self.pending_ddl:
