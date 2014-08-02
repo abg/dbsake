@@ -39,7 +39,6 @@ def open_stream(options):
         # check for uncompressed input
         expected = b'-- MySQL dump'
         sanity_check = stream.read(len(expected))
-        print("Sanity check: %r" % (sanity_check,))
         stream.seek(0)
         if sanity_check != expected:
             return compression.decompressed_fileobj(stream)
