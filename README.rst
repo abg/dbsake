@@ -2,11 +2,11 @@
     酒 dbsake
 =================
 
-.. image:: https://travis-ci.org/abg/dbsake.png?branch=develop
-   :target: https://travis-ci.org/abg/dbsake?branch=develop
+.. image:: https://travis-ci.org/abg/dbsake.png
+   :target: https://travis-ci.org/abg/dbsake
 
-.. image:: https://coveralls.io/repos/abg/dbsake/badge.png?branch=develop
-   :target: https://coveralls.io/r/abg/dbsake?branch=develop
+.. image:: https://coveralls.io/repos/abg/dbsake/badge.png
+   :target: https://coveralls.io/r/abg/dbsake
 
 dbsake - a (s)wiss-(a)rmy-(k)nif(e) for MySQL
 
@@ -24,12 +24,12 @@ Features
 * `Managing OS caching for a set of files`_
 
 
-.. _Parsing MySQL .frm files and output DDL: http://dbsake.readthedocs.org/en/develop/commands/frmdump.html
-.. _Filtering and transforming mysqldump output: http://dbsake.readthedocs.org/en/develop/commands/sieve.html
-.. _Patching a my.cnf to remove or convert deprecated options: http://dbsake.readthedocs.org/en/develop/commands/upgrade-mycnf.html
-.. _Deploying a new standalone MySQL "sandbox" instance: http://dbsake.readthedocs.org/en/develop/commands/sandbox.html
-.. _Decoding/encoding MySQL filenames: http://dbsake.readthedocs.org/en/develop/commands/decode_tablename.html
-.. _Managing OS caching for a set of files: http://dbsake.readthedocs.org/en/develop/commands/fincore.html
+.. _Parsing MySQL .frm files and output DDL: http://dbsake.readthedocs.org/en/latest/commands/frmdump.html
+.. _Filtering and transforming mysqldump output: http://dbsake.readthedocs.org/en/latest/commands/sieve.html
+.. _Patching a my.cnf to remove or convert deprecated options: http://dbsake.readthedocs.org/en/latest/commands/upgrade-mycnf.html
+.. _Deploying a new standalone MySQL "sandbox" instance: http://dbsake.readthedocs.org/en/latest/commands/sandbox.html
+.. _Decoding/encoding MySQL filenames: http://dbsake.readthedocs.org/en/latest/commands/decode_tablename.html
+.. _Managing OS caching for a set of files: http://dbsake.readthedocs.org/en/latest/commands/fincore.html
 
 Dependencies
 ------------
@@ -47,7 +47,7 @@ If you find a bug in dbsake please report the issue on the dbsake issue on
 If you know how to fix the problem feel free to fork dbsake and submit a pull
 request.  See `Contributing`_ for more information.
 
-.. _Contributing: http://dbsake.readthedocs.org/en/develop/contributing.html#report-bugs
+.. _Contributing: http://dbsake.readthedocs.org/en/latest/contributing.html#report-bugs
 
 
 Quickstart
