@@ -29,9 +29,22 @@ class SectionFilter(object):
             return True
         return False
 
+    TABLE_SECTION_TYPES = (
+        'tablestructure',
+        'tabledata',
+        'triggers',
+        'view',
+        'view_temporary',
+    )
+
     def filtered_table(self, section):
         if not section.database:
             debug("# No database context, skipping table filters")
+            return False
+
+        # only filter tables - events, routines should be filtered
+        # via filtered_sections predicate
+        if section.name not in self.TABLE_SECTION_TYPES:
             return False
 
         identifier = b'.'.join([section.database or b'', section.table or b''])
