@@ -58,6 +58,9 @@ from dbsake.cli import dbsake
 @click.option('--routines/--no-routines',
               default=None,
               help="Include / exclude database routines from output")
+@click.option('--events/--no-events',
+              default=None,
+              help="Include / exclude database events from output")
 @click.option('--triggers/--no-triggers',
               default=None,
               help="Include/exclude table triggers from output")
@@ -79,6 +82,7 @@ def sieve_cli(ctx,
               write_binlog,
               table_data,
               routines,
+              events,
               triggers,
               master_data,
               force):
@@ -108,6 +112,7 @@ def sieve_cli(ctx,
     options = sieve.Options(output_format=output_format,
                             table_data=table_data,
                             routines=routines,
+                            events=events,
                             triggers=triggers,
                             master_data=master_data,
                             defer_indexes=defer_indexes,

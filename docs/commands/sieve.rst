@@ -238,8 +238,17 @@ Options
 
    Include or exclude routines from the output, if routines were found in
    the input file.  By default routines are not excluded and will ony be
-   excluded if the --no-routines option is specified.  --routines can be
+   excluded if the --no-routines option is specified. The --routines option
    used to cancel a previous --no-routines option.
+
+.. versionadded:: 2.0.0
+
+.. option::  --events / --no-events
+
+   Include or exclude events from the output, if events were found in
+   the input file.  By default events are not excluded and will ony be
+   excluded if the --no-events option is specified. The --events option
+   can be used to cancel a previous --no-events option.
 
 .. versionadded:: 2.0.0
 
@@ -250,6 +259,8 @@ Options
    output tables (subject to table filtering).   --no-triggers will
    disable output for all triggers and --triggers can be used to
    cancel the effects of an earlier --no-triggers option.
+
+.. versionadded:: 2.0.0
 
 .. option:: -f, --force
 

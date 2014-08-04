@@ -56,6 +56,9 @@ def sieve(options):
     if options.routines is False:
         options.exclude_section('routines')
 
+    if options.events is False:
+        options.exclude_section('events')
+
     if options.triggers is False:
         options.exclude_section('triggers')
 
