@@ -78,7 +78,11 @@ def dbsake(ctx, debug, quiet):
 def help(ctx, command):
     """Show help for a command."""
     if command:
-        cmd = dbsake.commands[command]
+        try:
+            cmd = dbsake.commands[command]
+        except KeyError:
+            click.echo("No such command: %s" % command, file=sys.stderr)
+            sys.exit(1)
         ctx.info_name = command
         click.echo(cmd.get_help(ctx))
     else:
