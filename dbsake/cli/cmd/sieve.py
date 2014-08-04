@@ -55,6 +55,9 @@ from dbsake.cli import dbsake
 @click.option('--table-data/--skip-table-data',
               default=True,
               help="Include/skip writing table data to output")
+@click.option('--routines/--no-routines',
+              default=None,
+              help="Include / exclude database routines from output")
 @click.option('--master-data/--no-master-data',
               default=None,
               help="Uncomment/comment CHANGE MASTER in input, if present")
@@ -72,6 +75,7 @@ def sieve_cli(ctx,
               defer_foreign_keys,
               write_binlog,
               table_data,
+              routines,
               master_data,
               force):
     """Filter and transform mysqldump output.
@@ -99,6 +103,7 @@ def sieve_cli(ctx,
 
     options = sieve.Options(output_format=output_format,
                             table_data=table_data,
+                            routines=routines,
                             master_data=master_data,
                             defer_indexes=defer_indexes,
                             defer_foreign_keys=defer_foreign_keys,
