@@ -53,8 +53,11 @@ def sieve(options):
     if not options.table_data:
         options.exclude_section('tabledata')
 
-    if not options.routines:
+    if options.routines is False:
         options.exclude_section('routines')
+
+    if options.triggers is False:
+        options.exclude_section('triggers')
 
     with open_stream(options) as input_stream:
         dump_parser = parser.DumpParser(stream=input_stream)
