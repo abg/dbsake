@@ -49,12 +49,12 @@ from dbsake.cli import dbsake
 @click.option('--defer-foreign-keys',
               is_flag=True,
               help="Add foreign key constraints after loading table data")
-@click.option('--write-binlog/--disable-binlog',
+@click.option('--write-binlog/--no-write-binlog',
               default=True,
               help="Include SQL_LOG_BIN = 0 in output to disable binlog")
-@click.option('--table-data/--skip-table-data',
+@click.option('--table-data/--no-table-data',
               default=True,
-              help="Include/skip writing table data to output")
+              help="Include/exclude table data from output")
 @click.option('--routines/--no-routines',
               default=None,
               help="Include / exclude database routines from output")

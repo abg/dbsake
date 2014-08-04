@@ -25,22 +25,41 @@ Usage
 .. code-block:: bash
 
    Usage: dbsake sieve [OPTIONS]
-
-     Filter a mysqldump plaintext SQL stream
-
+   
+     Filter and transform mysqldump output.
+   
+     sieve can extract single tables from a mysqldump file and perform useful
+     transformations, such as adding indexes after the table data is loaded for
+     InnoDB tables, where such indexes can be created much more efficiently
+     than the default incremental rebuild that mysqldump performs.
+   
    Options:
-     -F, --format <name>
-     -C, --directory <output directory>
-     -i, --input-file <path>
-     -z, --compress-command <command>
-     -t, --table <glob pattern>
-     -T, --exclude-table <glob pattern>
-     --defer-indexes
-     --defer-foreign-keys
-     --write-binlog / --disable-binlog
-     --table-data / --skip-table-data
+     -F, --format <name>             Select the output format (directory, stream)
+     -C, --directory <path>          Specify output directory when
+                                     --format=directory
+     -i, --input-file <path>         Specify input file to process instead of
+                                     stdin
+     -z, --compress-command <name>   Specify compression command when
+                                     --format=directory
+     -t, --table <glob>              Only output tables matching the given glob
+                                     pattern
+     -T, --exclude-table <glob>      Excludes tables matching the given glob
+                                     pattern
+     --defer-indexes                 Add secondary indexes after loading table
+                                     data
+     --defer-foreign-keys            Add foreign key constraints after loading
+                                     table data
+     --write-binlog / --no-write-binlog
+                                     Include SQL_LOG_BIN = 0 in output to disable
+                                     binlog
+     --table-data / --no-table-data  Include/exclude table data from output
+     --routines / --no-routines      Include / exclude database routines from
+                                     output
+     --triggers / --no-triggers      Include/exclude table triggers from output
      --master-data / --no-master-data
-     -f, --force
+                                     Uncomment/comment CHANGE MASTER in input, if
+                                     present
+     -f, --force                     Force various behaviors in this command
      -?, --help                      Show this message and exit.
 
 Example
@@ -186,7 +205,7 @@ Options
    adding indexes will require a full table rebuild and will end up being
    much slower than just reloading the mysqldump unaltered.
 
-.. option:: --write-binlog / --disable-binlog
+.. option:: --write-binlog / --no-write-binlog
 
    If ``--disable-binlog`` is set, sieve will output a SET SQL_LOG_BIN=0 SQL
    command to the beginning of the dump to avoid writing to the binary log
@@ -195,7 +214,7 @@ Options
 
 .. versionadded:: 2.0.0
 
-.. option:: --table-data / --skip-table-data
+.. option:: --table-data / --no-table-data
 
   If ``--skip-table-data`` is set, sieve will not output any table data
   sections and only output DDL.  Reloading such a dump will result in
@@ -214,6 +233,23 @@ Options
    This is useful for dumps created with --master-data[=1].
 
 .. versionadded:: 2.0.0
+
+.. option::  --routines / --no-routines
+
+   Include or exclude routines from the output, if routines were found in
+   the input file.  By default routines are not excluded and will ony be
+   excluded if the --no-routines option is specified.  --routines can be
+   used to cancel a previous --no-routines option.
+
+.. versionadded:: 2.0.0
+
+.. option:: --triggers / --no-triggers
+
+   Include or exclude table triggers from the output, if triggers were
+   found in the input file. By default triggers are included for any
+   output tables (subject to table filtering).   --no-triggers will
+   disable output for all triggers and --triggers can be used to
+   cancel the effects of an earlier --no-triggers option.
 
 .. option:: -f, --force
 
