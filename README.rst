@@ -120,7 +120,7 @@ Processing mysqldump output
 
 Here's how you filter a single table from a mysqldump::
 
-    $ mysqldump -A | dbsake sieve --force -t mysql.db
+    $ mysqldump -A | dbsake sieve --to-stdout -t mysql.db
     -- MySQL dump 10.14  Distrib 5.5.38-MariaDB, for Linux (x86_64)
     --
     -- Host: localhost    Database:
