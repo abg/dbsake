@@ -168,8 +168,10 @@ def unpack_keys(keyinfo, columns, parser_info=None):
         comment = None
         if flags & HA_USES_COMMENT:
             comment = comments.bytes_prefix16()
+            comment = comment.decode('utf-8')
         if flags & HA_USES_PARSER:
             parser = parser_info.bytes0()
+            parser = parser.decode('utf-8')
         else:
             parser = None
         parts = unpack_key_parts(parts_count, keyinfo, columns)
