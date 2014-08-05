@@ -3,57 +3,82 @@
 History
 =======
 
-2.0.0 (unreleased)
+2.0.0 (2014-08-05)
 ------------------
 
 The 2.0.0 release is a major update to dbsake significantly updating
 various internals and introducing some backwards incompatible changes.
+
+As of 2.0.0, dbsake uses `semantic versioning <http://semver.org/>`_ and new
+features will only be introduced in point releases (2.1, 2.2, 2.3, etc.) Only
+strict bug fixes will be introduced in patch releases (2.0.1, 2.0.2, etc.)
+going forward.  Incompatible changes will only be introduced in major version
+bumps (3.0, 4.0, etc.).
 
 Compatibility changes:
 
   * frm-to-schema command has been renamed to frmdump
   * frmdump -r/--raw-types option was renamed to -t/--type-codes
   * mysql-sandbox command has been renamed to sandbox
-  * filename-to-tablename command has been renamed to decode
-  * tablename-to-filename command has been renamed to encode
+  * filename-to-tablename command has been renamed to decode-tablename
+  * tablename-to-filename command has been renamed to encode-tablename
   * importfrm command has been removed
   * read-ibbinlog command has been removed
-  * split-mysqldump has been renamed to "sieve"
-  * dbsake now uses click instead of baker for option parsing, so some previous
-    usage of dbsake may no longer work.
+  * split-mysqldump has been completely redesigned and renamed to "sieve",
+    with many more capabilities than the old split-mysqldump command. Read the
+    `sieve documentation <http://docs.dbsake.net/en/latest/commands/sieve.html>`_
+    for more information.
+  * dbsake 2.0+ uses `click <http://click.pocoo.org/>`_ for option parsing
+    instead of `baker.py <https://pypi.python.org/pypi/Baker/1.3>`_ used
+    in 1.0. This provides a more standard option parsing experience, but
+    this means dbake no longer accepts position arguments interchangably
+    with options.
+  * The sandbox command now uses jinja2 to generate templates rather than
+    tempita.
+  * sandbox -D is now a short option for --datadir.  Use -s as a short
+    option for --data-source.
+  * sandbox --prompt-password was shortened to simply --password
+  * dbsake no longer uses the sarge library internally
+  * dbsake no longer uses the tempita library internally
 
 New features:
 
-  * split-mysqldump was rewritten to support many more features
-    and is now renamed to sieve
+  * dbsake now supports bash completion via click. See
+    `Enable bash completion <http://docs.dbsake.net/en/latest/cli.html#enabling-bash-completion>`_
+    for details.
   * sandbox now uses system compression commands to decompress tarballs
-    from the --data-source option.  This should speed up creating a sandbox
-    from existing data in many cases. (Issue #64)
+    from the --data-source option rather than strictly relying on the
+    python standard library.  This should speed up creating a sandbox
+    from existing data in some cases and supports more compression
+    formats (.gz,.bz2, .lzo, .xz)  (Issue #64)
   * sandbox now includes the mysql.* schema by default when performing
     partial restores from existing data (e.g. -D backup.tar.gz -t mydb.*).
     Restoring mysql tables to the sandbox can be suppressed with the
-    -T / --exclude-table option. (Issue #67)
-  * sandbox now handles 5.0 / 5.1 binary tarball installs more robustly.
-    Previously, mysqld_safe would fail to find my_print_defaults in the
-    sandbox directory and could fail if sandbox.sh was run when
-    the current working directory != sandbox directory. (Issue #66)
+    -T / --exclude-table 'mysql.*' option. (Issue #67)
   * sandbox now generates a simplified sandbox.sh shell script file.
     The sandbox.sh script now read mysql server options from the my.sandbox.cnf
     config file rather than hardcoding various options in sandbox.sh. This
     would previously make it tedious to change the path for log-error or
     other options.
   * sandbox no longer generates a sandbox.sh which sources /etc/sysconfig.
+  * sandbox now supports a -u/--mysql-user option for specifying the
+    database user created during sandbox setup.
+  * sandbox now supports a -D / --datadir option for specifying the MySQL
+    datadir that should be used for a sandbox.  This supersedes support for
+    --data-source=<directory>, which now only supports tarball targets.
+  * frmdump now handles MariaDB microsecond precision date/time types.
   * fincore and uncache no longer fail when no paths are passed.  This usage
     is now considered a no-op.
-  * The sandbox command now uses jinja2 to generate templates rather than
-    tempita.
-  * dbsake no longer uses the sarge library internally
-  * dbsake no longer uses the tempita library internally
 
 Bugs fixed:
 
   * sandbox failed to create ./tmp/ when overwriting an existing sandbox
     directory with --force, if ./data/ already existed but ./tmp did not.
+    (Issue #65)
+  * sandbox now handles 5.0 / 5.1 binary tarball installs more robustly.
+    Previously, mysqld_safe would fail to find my_print_defaults in the
+    sandbox directory and could fail if sandbox.sh was run when
+    the current working directory != sandbox directory. (Issue #66)
   * frmdump incorrectly defaulted to SQL SECURITY INVOKER when decoding view
     .frm files.  This behavior has been changed to use MySQL's default of
     SQL SECURITY DEFINER.
