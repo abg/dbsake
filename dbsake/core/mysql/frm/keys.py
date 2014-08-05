@@ -105,7 +105,8 @@ class Key(collections.namedtuple('Key',
         if self.comment:
             components.append("COMMENT '{0}'".format(self.comment))
         if self.parser not in (None, True):
-            components.append('/*!50100 WITH PARSER `%s` */' % self.parser)
+            # note mysql outputs this with a single trailing whitespace
+            components.append('/*!50100 WITH PARSER `%s` */ ' % self.parser)
         return ' '.join(components)
 
 
