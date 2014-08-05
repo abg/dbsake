@@ -6,34 +6,26 @@
 Welcome to dbsake
 =================
 
+.. image:: _static/sake-icon.png
+
 dbsake is a collection of command-line tools to perform various DBA related
 tasks for MySQL.
 
 .. code-block:: bash
 
-   # curl http://get.dbsake.net > dbsake
+   # curl -s http://get.dbsake.net > dbsake
    # chmod u+x dbsake
-   # mysqldump --all-databases | ./dbsake split-mysqldump -C /var/lib/backups/today/
-   ...
-   2014-01-03 21:01:15,228 Split input into 2 database(s) 35 table(s) and 0 view(s)
+   # dbsake sandbox
 
-.. only:: html
+.. toctree::
+   :maxdepth: 4
 
-   .. toctree::
-      :maxdepth: 4
-   
-      getting_started
-      subcommands
-      developing
-      frm_format
-
-.. only:: man
-
-   .. toctree::
-      :maxdepth: 4
-   
-      getting_started
-      subcommands
+   readme
+   cli
+   commands
+   history
+   contributing
+   appendix
 
 Indices and tables
 ==================

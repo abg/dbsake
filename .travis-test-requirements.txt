@@ -1,0 +1,2 @@
+# travis specific requirements go here
+coveralls
