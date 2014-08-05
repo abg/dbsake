@@ -50,6 +50,11 @@ def sieve(options):
     if options.output_format == 'directory':
         pathutil.makedirs(options.directory, exist_ok=True)
 
+    if not options.table_schema:
+        options.exclude_section('tablestructure')
+        options.exclude_section('view_temporary')
+        options.exclude_section('view')
+
     if not options.table_data:
         options.exclude_section('tabledata')
 

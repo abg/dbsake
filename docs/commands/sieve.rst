@@ -52,6 +52,8 @@ Usage
      --write-binlog / --no-write-binlog
                                      Include SQL_LOG_BIN = 0 in output to disable
                                      binlog
+     --table-schema / --no-table-schema
+                                     Include/exclude table schema from output.
      --table-data / --no-table-data  Include/exclude table data from output
      --routines / --no-routines      Include / exclude database routines from
                                      output
@@ -63,7 +65,6 @@ Usage
                                      present
      -O, --to-stdout                 Force output on stdout, even to a terminal.
      -?, --help                      Show this message and exit.
-
 
 Example
 .......
@@ -214,6 +215,14 @@ Options
    command to the beginning of the dump to avoid writing to the binary log
    when reloading the resulting output.  Use the option with care, as the
    resulting dump will not replicate to a slave if this option is set.
+
+.. versionadded:: 2.0.0
+
+.. option:: --table-schema / --no-table-schema
+
+   If ``--no-table-schema`` is used, sieve will not output any CREATE TABLE
+   statements and will not output any CREATE VIEW statements.  Only table
+   data, routines and events will be output (as dictated by other options).
 
 .. versionadded:: 2.0.0
 

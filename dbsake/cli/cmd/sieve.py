@@ -52,6 +52,9 @@ from dbsake.cli import dbsake
 @click.option('--write-binlog/--no-write-binlog',
               default=True,
               help="Include SQL_LOG_BIN = 0 in output to disable binlog")
+@click.option('--table-schema/--no-table-schema',
+              default=True,
+              help="Include/exclude table schema from output.")
 @click.option('--table-data/--no-table-data',
               default=True,
               help="Include/exclude table data from output")
@@ -80,6 +83,7 @@ def sieve_cli(ctx,
               defer_indexes,
               defer_foreign_keys,
               write_binlog,
+              table_schema,
               table_data,
               routines,
               events,
@@ -111,6 +115,7 @@ def sieve_cli(ctx,
         defer_foreign_keys = False
 
     options = sieve.Options(output_format=output_format,
+                            table_schema=table_schema,
                             table_data=table_data,
                             routines=routines,
                             events=events,
