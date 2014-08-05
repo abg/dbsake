@@ -1,5 +1,5 @@
-Command line interface
-======================
+Usage
+=====
 
 Synopsis
 --------
