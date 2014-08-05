@@ -67,8 +67,8 @@ from dbsake.cli import dbsake
 @click.option('--master-data/--no-master-data',
               default=None,
               help="Uncomment/comment CHANGE MASTER in input, if present")
-@click.option('-f', '--force', is_flag=True,
-              help="Force various behaviors in this command")
+@click.option('-O', '--to-stdout', is_flag=True,
+              help="Force output on stdout, even to a terminal.")
 @click.pass_context
 def sieve_cli(ctx,
               output_format,
@@ -85,7 +85,7 @@ def sieve_cli(ctx,
               events,
               triggers,
               master_data,
-              force):
+              to_stdout):
     """Filter and transform mysqldump output.
 
     sieve can extract single tables from a mysqldump file and perform useful
@@ -99,8 +99,9 @@ def sieve_cli(ctx,
     if hasattr(input_file, 'detach'):
         input_file = input_file.detach()
 
-    if output_format == 'stream' and sys.stdout.isatty() and not force:
+    if output_format == 'stream' and sys.stdout.isatty() and not to_stdout:
         ctx.fail("stdout appears to be a terminal and --format=stream. "
+                 "Use -O/--to-stdout to force output or redirect to a file. "
                  "Aborting.")
 
     if defer_indexes and not table_data:

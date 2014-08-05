@@ -24,7 +24,7 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake sieve [OPTIONS]
+   Usage: dbsake sieve [options]
    
      Filter and transform mysqldump output.
    
@@ -55,12 +55,15 @@ Usage
      --table-data / --no-table-data  Include/exclude table data from output
      --routines / --no-routines      Include / exclude database routines from
                                      output
+     --events / --no-events          Include / exclude database events from
+                                     output
      --triggers / --no-triggers      Include/exclude table triggers from output
      --master-data / --no-master-data
                                      Uncomment/comment CHANGE MASTER in input, if
                                      present
-     -f, --force                     Force various behaviors in this command
+     -O, --to-stdout                 Force output on stdout, even to a terminal.
      -?, --help                      Show this message and exit.
+
 
 Example
 .......
@@ -262,9 +265,11 @@ Options
 
 .. versionadded:: 2.0.0
 
-.. option:: -f, --force
+.. option:: -O, --to-stdout
 
-   The ``--force`` option will force output to be written to stdout even if it
-   appears that this will write to an active terminal. This can be useful in
-   cases when filtering the mysqldump output or when not outputing large
-   amounts of data and want to read it directly on the terminal.
+   The ``--to-stdout`` option will force output to be written to stdout even if
+   stdout appears to be an active terminal. This can be useful in cases when
+   filtering the mysqldump output or when not outputing large amounts of data
+   and want to read it directly on the terminal. By default, the sieve command
+   will abort if it detects that it would output to a terminal and --to-stdout
+   is not used.
