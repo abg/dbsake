@@ -97,6 +97,10 @@ def sieve_cli(ctx,
     for InnoDB tables, where such indexes can be created much more efficiently
     than the default incremental rebuild that mysqldump performs.
 
+    Example:
+
+        $ dbsake sieve --no-table-data < sakila.sql.gz > sakila_schema.sql
+        $ dbsake sieve --format=directory -i sakila.sql.gz -C extracted_sql/
     """
     from dbsake.core.mysql import sieve
 
