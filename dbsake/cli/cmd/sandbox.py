@@ -14,7 +14,7 @@ import click
 from dbsake.cli import dbsake
 
 
-@dbsake.command('sandbox')
+@dbsake.command('sandbox', options_metavar='[options]')
 @click.option('-d', '--sandbox-directory',
               metavar='<path>',
               type=click.Path(file_okay=False,

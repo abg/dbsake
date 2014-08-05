@@ -15,7 +15,7 @@ import click
 from dbsake.cli import dbsake
 
 
-@dbsake.command('sieve')
+@dbsake.command('sieve', options_metavar='[options]')
 @click.option('-F', '--format', 'output_format',
               metavar='<name>',
               default='stream',

@@ -72,8 +72,10 @@ def dbsake(ctx, debug, quiet):
         logging.basicConfig(format='%(message)s', level=level)
 
 
-@dbsake.command()
-@click.argument('command', required=False)
+@dbsake.command('help', options_metavar='[options]')
+@click.argument('command',
+                required=False,
+                metavar='<command>')
 @click.pass_context
 def help(ctx, command):
     """Show help for a command."""

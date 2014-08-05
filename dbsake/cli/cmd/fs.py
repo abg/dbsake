@@ -14,9 +14,9 @@ import click
 from dbsake.cli import dbsake
 
 
-@dbsake.command()
+@dbsake.command('fincore', options_metavar='[options]')
 @click.option('-v', '--verbose', is_flag=True)
-@click.argument('paths', nargs=-1)
+@click.argument('paths', nargs=-1, metavar="[path...]")
 def fincore(paths, verbose):
     """Report cached pages for a file."""
     from dbsake.core import fs
@@ -37,8 +37,8 @@ def fincore(paths, verbose):
         sys.exit(0)
 
 
-@dbsake.command()
-@click.argument('paths', nargs=-1)
+@dbsake.command('uncache', options_metavar='[options]')
+@click.argument('paths', nargs=-1, metavar='[path...]')
 def uncache(paths):
     """Uncache file(s) from the OS page cache.
 
