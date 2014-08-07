@@ -3,6 +3,14 @@
 History
 =======
 
+2.0.1 (unreleased)
+------------------
+
+Bugs fixed:
+
+  * sieve would fail on compressed input on platforms where flushing read-only
+    files results in an EBADF file.  (Issue #71)
+
 2.0.0 (2014-08-05)
 ------------------
 
