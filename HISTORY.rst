@@ -10,6 +10,8 @@ Bugs fixed:
 
   * sieve would fail on compressed input on platforms where flushing read-only
     files results in an EBADF file.  (Issue #71)
+  * sandbox.sh no longer uses the sed -r flag when processing my.cnf options
+    to make the script more compatible on non-GNU platforms. (issue #70)
 
 2.0.0 (2014-08-05)
 ------------------

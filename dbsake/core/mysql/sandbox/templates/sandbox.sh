@@ -35,7 +35,7 @@ _mysqld_option() {
     shift
     sections="$@"
     ${my_print_defaults} --defaults-file=${defaults_file} ${sections} | \
-        sed -nr -e "s/^--${option}=//p" | tail -n1
+        sed -n -e "s/^--${option}=//p" | tail -n1
 }
 
 sandbox_start() {
