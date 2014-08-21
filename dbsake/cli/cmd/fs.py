@@ -27,7 +27,7 @@ def fincore(paths, verbose):
             stats = fs.fincore(path, verbose)
             click.echo("%s: total_pages=%d cached=%d percent=%.2f" %
                        (path, stats.total, stats.cached, stats.percent))
-        except OSError as exc:
+        except (IOError, OSError) as exc:
             click.echo("fincore %s failed: %s" % (path, exc))
             errors += 1
             continue

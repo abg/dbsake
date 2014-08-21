@@ -9,6 +9,7 @@ from __future__ import division
 import collections
 import ctypes
 import ctypes.util
+import errno
 import os
 
 libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
@@ -110,7 +111,7 @@ def fincore(path, enumerate_pages=False):
 
     :returns: CacheStats instance
     """
-    with open(path, 'rb') as fileobj:
+    def _fincore(fileobj):
         st_size = os.fstat(fileobj.fileno()).st_size
 
         if not st_size:
@@ -143,6 +144,25 @@ def fincore(path, enumerate_pages=False):
                           for offset, page in enumerate(vec)
                           if page & 1)
         return CacheStats(total_pages, cached_count, pages)
+
+    try:
+        with open(path, 'rb') as fileobj:
+            return _fincore(fileobj)
+    except IOError as exc:
+        if exc.errno == errno.EISDIR:
+            raise IOError("Path '%s' is a directory (errno: %d)" %
+                          (path, exc.errno))
+        elif exc.errno == errno.ENOENT:
+            raise IOError("Path '%s' does not exist (errno: %d)" %
+                          (path, exc.errno))
+        elif exc.errno == errno.ENXIO:
+            raise IOError("Path '%s' is not a valid file (errno: %d)" %
+                          (path, exc.errno))
+        elif exc.errno == errno.EPERM:
+            raise IOError("Path '%s' cannot be read (errno: %d)" %
+                          (path, exc.errno))
+        else:
+            raise
 
 
 def uncache(path):
