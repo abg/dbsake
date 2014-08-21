@@ -101,8 +101,8 @@ def ctypes_os_error(msg):
 
     :param msg: msg to to prefix the OSError strerror with
     """
-    errno = ctypes.get_errno()
-    strerror = os.strerror(errno)
+    _errno = ctypes.get_errno()
+    strerror = os.strerror(_errno)
     return OSError(errno, "%s: %s" % (msg, strerror))
 
 
