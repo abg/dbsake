@@ -641,8 +641,8 @@ def initialize_gpg():
     if not ret.returncode:
         return  # all is well
     else:
-        for line in ret.stderr:
-            debug("    # gpg: %s", line.rstrip())
+        for line in ret.stderr.splitlines():
+            debug("    # gpg: %s", line)
 
     # else import the mysql key
     info("    - Importing mysql public key to %s", gpghome)
@@ -651,8 +651,8 @@ def initialize_gpg():
     gpg_cmd = cmd.shell_format('{0} --keyserver={1} --recv-keys {2}',
                                gpg, key_server, mysql_key_id)
     ret = cmd.capture_both(gpg_cmd, env={'GNUPGHOME': gpghome})
-    for line in ret.stderr:
-        debug("    # %s", line.rstrip())
+    for line in ret.stderr.splitlines():
+        debug("    # %s", line)
     if ret.returncode != 0:
         raise common.SandboxError("Failed to import mysql public key")
 
