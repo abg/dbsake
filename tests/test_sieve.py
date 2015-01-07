@@ -31,3 +31,13 @@ def test_sieve_directory():
     with runner.isolated_filesystem():
         result = runner.invoke(sieve_cli, args, obj={})
         assert result.exit_code == 0
+
+
+def test_sieve_w_mariadb10_gtid():
+    runner = CliRunner()
+    path = os.path.join(os.path.dirname(__file__),
+                        'mariadb_gtid_master_data.sql.gz')
+
+    args = ['--format=stream', '--input-file=' + path, '-O']
+    result = runner.invoke(sieve_cli, args, obj={})
+    assert result.exit_code == 0

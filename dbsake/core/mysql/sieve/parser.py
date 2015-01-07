@@ -39,6 +39,7 @@ def extract_identifier(value):
 DISCRIMINATORS = [
     (b'-- MySQL dump', 'header'),
     (b'-- Position', 'replication_info'),
+    (b'-- GTID to start replication from', 'replication_info'),
     (b'-- Current Database', 'createdatabase'),
     (b'-- Table structure', 'tablestructure'),
     (b'-- Dumping data for table', 'tabledata'),

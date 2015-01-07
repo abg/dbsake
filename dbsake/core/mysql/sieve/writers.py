@@ -64,6 +64,7 @@ def command_to_ext(command):
 class DirectoryWriter(SimpleWriter):
     # track the first view, so we can initialize a file as needed
     first_view = False
+    replication_info = False
 
     def _open(self, parts, mode='ab'):
         basedir = self.options.directory.encode('utf8')
@@ -85,7 +86,12 @@ class DirectoryWriter(SimpleWriter):
         return self.open_devnull(section)
 
     def open_replication_info(self, section):
-        return self._open([b'replication_info.sql'], mode='wb')
+        if not self.replication_info:
+            mode = 'wb'
+            self.replication_info = True
+        else:
+            mode = 'ab'
+        return self._open([b'replication_info.sql'], mode=mode)
 
     def open_createdatabase(self, section):
         return self._open([section.database, section.database + b'.createdb'],
