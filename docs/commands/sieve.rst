@@ -211,7 +211,7 @@ Options
 
 .. option:: --write-binlog / --no-write-binlog
 
-   If ``--disable-binlog`` is set, sieve will output a SET SQL_LOG_BIN=0 SQL
+   If ``--no-write-binlog`` is set, sieve will output a SET SQL_LOG_BIN=0 SQL
    command to the beginning of the dump to avoid writing to the binary log
    when reloading the resulting output.  Use the option with care, as the
    resulting dump will not replicate to a slave if this option is set.
