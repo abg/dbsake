@@ -77,6 +77,9 @@ def create(**options):
                                defaults_file=os.path.join(sbdir,
                                                           'my.sandbox.cnf'))
 
+    info("  Initializing database user")
+    common.initial_mysql_user(sbopts)
+
     info("Sandbox created in %.2f seconds", time.time() - start)
     info("")
     info("Here are some useful sandbox commands:")

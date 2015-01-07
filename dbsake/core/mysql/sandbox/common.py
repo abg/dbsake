@@ -17,13 +17,12 @@ import os
 import random
 import re
 import string
+import tempfile
 import time
 
 from dbsake.util import pathutil
 from dbsake.util import cmd
 from dbsake.util import template
-
-from dbsake.core.mysql import frm
 
 info = logging.info
 warn = logging.warn
@@ -261,62 +260,6 @@ def generate_defaults(options, **kwargs):
     return defaults_file
 
 
-def user_grant_from_sql(options, mysql_system_tables_data):
-    for line in mysql_system_tables_data.splitlines():
-        if line.startswith("INSERT INTO tmp_user VALUES ('localhost'"):
-            sql = line
-            break
-    else:
-        raise SandboxError("Unable to generate mysql user grant")
-
-    sql = sql.replace('INSERT', 'REPLACE', 1)
-    sql = sql.replace('tmp_user', 'user', 1)
-    sql = sql.replace("'root'",
-                      "'%s'" % template.escape_string(options.mysql_user), 1)
-    sql = sql.replace("''",
-                      "PASSWORD('%s')" %
-                      template.escape_string(options.password), 1)
-    return sql
-
-
-def user_grant_from_frm(options, distribution):
-    user_frm = os.path.join(options.datadir, 'mysql', 'user.frm')
-    debug("    # Parsing binary frm: %s", user_frm)
-    table = frm.parse(user_frm)
-    debug("    # user.frm was created by MySQL %s", table.mysql_version)
-    names = []
-    values = []
-
-    for column in table.columns:
-        names.append(column.name)
-        if column.name.endswith('_priv'):
-            values.append("'Y'")
-        elif column.name == 'Host':
-            values.append("'localhost'")
-        elif column.name == 'User':
-            values.append("'%s'" % template.escape_string(options.mysql_user))
-        elif column.name == 'Password':
-            values.append("PASSWORD('%s')" %
-                          template.escape_string(options.password))
-        elif column.name == 'plugin':
-            # Avoid setting mysql.user (plugin) field except for 5.7
-            # MariaDB currently has very strange behaviors that can
-            # lead to security problems if plugin is set.
-            if distribution.version[0:2] == (5, 7):
-                values.append("'mysql_native_password'")
-            else:
-                values.append("''")
-        elif column.default is not None:
-            values.append(column.default)
-        else:
-            values.append("''")
-
-    return 'REPLACE INTO `user` ({names}) VALUES ({values});'.format(
-        names=','.join("`{0}`".format(name) for name in names),
-        values=','.join("{0}".format(value) for value in values)
-    )
-
-
 def mysql_install_db(options, distribution, **kwargs):
     join = os.path.join
 
@@ -339,12 +282,12 @@ def mysql_install_db(options, distribution, **kwargs):
 
     fill_help_tables = cat(join(sharedir, 'fill_help_tables.sql'))
 
-    mysql_user_frm = os.path.join(options.datadir, 'mysql', 'user.frm')
-    bootstrap_data = not os.path.exists(mysql_user_frm)
-    if bootstrap_data:
-        user_dml = user_grant_from_sql(options, mysql_system_tables_data)
-    else:
-        user_dml = user_grant_from_frm(options, distribution)
+    # If the ./mysql/ system database does not exist under the datadir
+    # we run the bootstrap initialization logic
+    # This will instruct the template to ensure a `test` database exists
+    # and the basic mysql_secure_installation process is run.
+    bootstrap_data = not os.path.exists(os.path.join(options.datadir, 'mysql'))
+    print("bootstrapdata = %r" % bootstrap_data)
 
     template = template_loader.get_template('bootstrap.sql')
     sql = template.render(distribution=distribution,
@@ -352,7 +295,8 @@ def mysql_install_db(options, distribution, **kwargs):
                           mysql_system_tables_data=mysql_system_tables_data,
                           mysql_performance_tables=mysql_p_s_tables,
                           fill_help_tables=fill_help_tables,
-                          user_dml=user_dml,
+                          bootstrap_data=bootstrap_data,
+                          password=options.password,
                           **kwargs)
     for line in sql.splitlines():
         yield line
@@ -389,3 +333,32 @@ def bootstrap(options, distribution, additional_options=()):
     if returncode != 0:
         raise SandboxError("Bootstrapping failed. Details in %s" % stderr.name)
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
+
+
+def initial_mysql_user(options):
+    sbdir = options.basedir
+    sbuser = options.mysql_user
+    sbpass = options.password
+    start = time.time()
+
+    with tempfile.NamedTemporaryFile(dir=sbdir) as fileobj:
+        os.fchmod(fileobj.fileno(), 0o0660)
+        template = template_loader.get_template('init_file.sql')
+        sql = template.render(user=sbuser, password=sbpass, host='localhost')
+        print(sql.encode('utf-8'), file=fileobj)
+        fileobj.flush()
+        logging.info("    - Generated init-file: %s", fileobj.name)
+        with open(os.devnull, 'rb') as devnull:
+            sandbox_sh = "%s/sandbox.sh" % (sbdir,)
+            start_cmd = "%s start --init-file=%s" % (sandbox_sh, fileobj.name)
+            stop_cmd = "%s stop" % (sandbox_sh,)
+            logging.info("    - Running: %s", start_cmd)
+            status = cmd.run(start_cmd, stdout=devnull, stderr=devnull)
+            if status != 0:
+                logging.error("Failed to initialize sandbox. "
+                              "Check %s for details",
+                              os.path.join(sbdir, "data", "mysqld.log"))
+            logging.info("    - Running: %s", stop_cmd)
+            cmd.run(stop_cmd, stdout=devnull, stderr=devnull)
+    logging.info("    * Initialized MySQL user in %.2f seconds",
+                 time.time() - start)
