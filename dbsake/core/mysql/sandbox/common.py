@@ -19,7 +19,7 @@ import re
 import string
 import time
 
-from dbsake.util import pathutil
+from dbsake import pycompat
 from dbsake.util import cmd
 from dbsake.util import template
 
@@ -164,7 +164,7 @@ def prepare_sandbox_paths(sbopts):
     start = time.time()
     for path in (sbopts.datadir, os.path.join(sbopts.basedir, 'tmp')):
         try:
-            if pathutil.makedirs(path, exist_ok=True):
+            if pycompat.makedirs(path, exist_ok=True):
                 info("    - Created %s", path)
         except OSError as exc:
             raise SandboxError("%s" % exc)

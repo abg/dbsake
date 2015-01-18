@@ -8,7 +8,7 @@ from __future__ import print_function
 import difflib
 import os
 
-from dbsake.util import pathutil
+from dbsake import pycompat
 
 from . import parser
 
@@ -41,7 +41,7 @@ def upgrade(config, target, patch):
     for cfg_path, orig, modified in parser.upgrade_config(config, rewriter):
         if patch:
             # make patch file names pretty
-            from_file = pathutil.relpath(os.path.abspath(cfg_path), '/')
+            from_file = pycompat.relpath(os.path.abspath(cfg_path), '/')
             to_file = os.path.join('b', from_file)
             from_file = os.path.join('a', from_file)
             return ''.join(difflib.unified_diff(orig, modified,
