@@ -9,19 +9,26 @@ from __future__ import unicode_literals
 
 import collections
 import errno
+import grp
 import os
 import pwd
 import sys
 
 PY3 = sys.version_info[0] == 3
 
+if PY3:
+    string_types = str,
+    text_type = str
+else:
+    string_types = basestring,
+    text_type = unicode
 
 def _get_gid(name):
     """Returns a gid, given a group name."""
-    if pwd.getgrnam is None or name is None:
+    if grp.getgrnam is None or name is None:
         return None
     try:
-        result = pwd.getgrnam(name)
+        result = grp.getgrnam(name)
     except KeyError:
         result = None
     if result is not None:
@@ -59,7 +66,7 @@ def chown(path, user=None, group=None):
     if user is None:
         _user = -1
     # user can either be an int (the uid) or a string (the system username)
-    elif isinstance(user, str):
+    elif isinstance(user, string_types):
         _user = _get_uid(user)
         if _user is None:
             raise LookupError("no such user: {!r}".format(user))
