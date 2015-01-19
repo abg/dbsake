@@ -84,6 +84,13 @@ def chown(path, user=None, group=None):
         if _group is None:
             raise LookupError("no such group: {0!r}".format(group))
 
+    if not isinstance(_user, int):
+        raise TypeError("Expected integer user, but got %s" %
+                        type(_user).__name__)
+    if not isinstance(_group, int):
+        raise TypeError("Expected integer group, but got %s" %
+                        type(_group).__name__)
+
     os.chown(path, _user, _group)
 
 
