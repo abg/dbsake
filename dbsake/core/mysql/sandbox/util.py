@@ -6,7 +6,6 @@ Sandbox utilities
 """
 from __future__ import print_function, division
 
-import contextlib
 import sys
 import time
 
@@ -52,71 +51,37 @@ class StreamProxy(object):
         return chunk
 
 
-def progressbar(max=0, width=40, interval=0.5):
-    template = '({pct:6.2%})[{fill:.<{width}}]{cur_size:^10}/{max_size:^10}'
-    params = dict(length=0, last_update=0, complete=False)
+def progressbar(max=0, width=20, interval=0.5):
+    template = ('{pct:4.0%} {transfer:13s} {rate:6s}/s [{prog:.<{width}}] '
+                '{runtime} ETA: {eta}')
+
     max_size = util.format_filesize(max)
+    t0 = time.time()
+    metrics = dict(length=0, last_update=0, complete=False)
 
-    def _show_progress(data):
-        params['length'] += len(data)
-        if time.time() - params['last_update'] >= interval or \
-                (not data and not params['complete']):
-            params['last_update'] = time.time()
-            frac = params['length'] / max
-            units = int(frac*width)
-            cur_size = util.format_filesize(params['length'])
-            bar = template.format(pct=frac,
-                                  fill='='*units,
-                                  cur_size=cur_size,
-                                  max_size=max_size,
-                                  width=width)
-            print(bar, end="\r", file=sys.stderr)
+    def update(data):
+        n = len(data)
+        metrics['length'] += n
+        if time.time() - metrics['last_update'] >= interval or n == 0:
+            pct = metrics['length'] / max
+            units = int(pct*width)
+            n_filesize = util.format_filesize(metrics['length'])[:-1]
+            runtime = time.time() - t0
+            eta = (max / metrics['length'])*runtime
+            rate = util.format_filesize(metrics['length'] / runtime, False)
+            runtime_s = time.strftime('%H:%M:%S', time.gmtime(runtime))
+            eta_s = time.strftime("%H:%M:%S", time.gmtime(eta))
+
+            pbar = template.format(pct=pct,
+                                   transfer='%s/%s' % (n_filesize, max_size),
+                                   rate=rate,
+                                   prog='='*(units - 1) + '>',
+                                   width=width,
+                                   runtime=runtime_s,
+                                   eta=eta_s)
+            end = "\r" if pct < 1 else "\n"
+            print(pbar, end=end, file=sys.stderr)
+            metrics['last_update'] = time.time()
             sys.stderr.flush()
-        if not data and not params['complete']:
-            print(file=sys.stderr)
-            params['complete'] = True
-    return _show_progress
 
-
-# hack for python3
-# XXX: find a prettier way to handle this other than contextlib.nested
-@contextlib.contextmanager
-def nested(*managers):
-    """Combine multiple context managers into a single nested context manager.
-
-   This function has been deprecated in favour of the multiple manager form
-   of the with statement.
-
-   The one advantage of this function over the multiple manager form of the
-   with statement is that argument unpacking allows it to be
-   used with a variable number of context managers.
-
-    """
-    exits = []
-    vars = []
-    exc = (None, None, None)
-    try:
-        for mgr in managers:
-            exit = mgr.__exit__
-            enter = mgr.__enter__
-            vars.append(enter())
-            exits.append(exit)
-        yield vars
-    except:
-        exc = sys.exc_info()
-    finally:
-        while exits:
-            exit = exits.pop()
-            try:
-                if exit(*exc):
-                    exc = (None, None, None)
-            except:
-                exc = sys.exc_info()
-        if exc != (None, None, None):
-            # Don't rely on sys.exc_info() still containing
-            # the right information. Another exception may
-            # have been raised and caught by an exit method
-            if sys.version_info < (3,):
-                raise (exc[0], exc[1], exc[2])
-            else:
-                raise exc[1].with_traceback(exc[2])
+    return update

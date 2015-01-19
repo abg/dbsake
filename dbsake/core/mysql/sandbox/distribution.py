@@ -174,16 +174,15 @@ def deploy(options):
     """
 
     start = time.time()
-    try:
-        if options.distribution == 'system':
-            return distribution_from_system(options)
-        elif os.path.isfile(options.distribution):
-            return distribution_from_tarball(options)
-        else:
-            return distribution_from_download(options)
-    finally:
-        info("    * Deployed MySQL distribution in %.2f seconds",
-             time.time() - start)
+    if options.distribution == 'system':
+        dist = distribution_from_system(options)
+    elif os.path.isfile(options.distribution):
+        dist = distribution_from_tarball(options)
+    else:
+        dist = distribution_from_download(options)
+    info("    * Deployed MySQL distribution in %.2f seconds",
+         time.time() - start)
+    return dist
 
 
 def distribution_from_system(options):
@@ -268,6 +267,7 @@ def unpack_tarball_distribution(stream, destdir):
     :param destdir: destination directory files should be unpacked to
     """
     debug("    # unpacking tarball stream=%r destination=%r", stream, destdir)
+
     tar = tarfile.open(None, 'r|*', fileobj=stream)
     total_size = 0
     extracted_size = 0
@@ -712,31 +712,39 @@ def distribution_from_download(options):
     checksum = hashlib.new('md5')
 
     info("    - Deploying MySQL %s from download", version)
-    with download_mysql(version, 'x86_64', options.cache_policy) as stream:
+    with pycompat.ExitStack() as stack:
+        enter_ctx = stack.enter_context
+
+        stream = enter_ctx(download_mysql(version,
+                                          'x86_64',
+                                          options.cache_policy))
+
         debug("    # Streaming from %s", stream.geturl())
+
         if not options.skip_gpgcheck:
             initialize_gpg()
             signature = download_tarball_asc(options)
-        managers = []
+
         stream.add(checksum.update)
+
         if sys.stderr.isatty():
             stream_size = int(stream.info()['content-length'])
             stream.add(util.progressbar(max=stream_size))
-        if (options.cache_policy != 'never' and
-                stream.headers['x-dbsake-cache']):
-            managers.append(cache_download(stream.headers['x-dbsake-cache']))
+
+        cache_path = stream.headers['x-dbsake-cache']
+        if (options.cache_policy != 'never' and cache_path):
+            cache = enter_ctx(cache_download(cache_path))
+            stream.add(cache.write)
             debug("    # Caching download: %s",
                   stream.headers['x-dbsake-cache'])
         else:
             debug("    # Not caching download")
 
         if not options.skip_gpgcheck:
-            managers.append(gpg_verify_stream(signature))
-        with util.nested(*managers) as ctx:
-            for _f in ctx:
-                stream.add(_f.write)
-            info("    - Unpacking tar stream. This may take some time")
-            unpack_tarball_distribution(stream, options.basedir)
+            gpg_verify = enter_ctx(gpg_verify_stream(signature))
+            stream.add(gpg_verify.write)
+        info("    - Unpacking tar stream. This may take some time")
+        unpack_tarball_distribution(stream, options.basedir)
 
     if checksum.hexdigest() != stream.headers['x-dbsake-checksum']:
         warn("    ! Detected checksum error in download")

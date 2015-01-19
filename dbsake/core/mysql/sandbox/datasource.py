@@ -22,7 +22,6 @@ from dbsake.util import compression
 from dbsake.core.mysql.frm import tablename
 
 from . import common
-from . import util
 
 logger = logging.getLogger()
 info = logging.info
@@ -120,12 +119,13 @@ is_required = re.compile('(ibdata.*|ib_logfile[0-9]+|backup-my.cnf|'
 
 def deploy_tarball(datasource, datadir, table_filter):
     show_progress = sys.stderr.isatty()
-    datasource_bytes = os.stat(datasource).st_size
-    with compression.decompressed(datasource) as fileobj:
-        with util.StreamProxy(fileobj) as proxy:
-            if show_progress:
-                proxy.add(util.progressbar(max=datasource_bytes))
-        tar = tarfile.open(mode='r|', fileobj=proxy, ignore_zeros=True)
+    if show_progress:
+        decompress = compression.decompressed_w_progress
+    else:
+        decompress = compression.decompressed
+
+    with decompress(datasource) as fileobj:
+        tar = tarfile.open(mode='r|', fileobj=fileobj, ignore_zeros=True)
         for tarinfo in tar:
             if not tarinfo.isreg():
                 continue
