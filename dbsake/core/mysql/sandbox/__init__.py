@@ -13,6 +13,7 @@ import logging
 import os
 import time
 
+from dbsake import pycompat
 from dbsake.util import format_filesize
 from dbsake.util import pathutil
 
@@ -32,7 +33,7 @@ def create(**options):
     sbopts = common.check_options(**options)
 
     # a basic sanity check: make sure there's at least 1GB free (or 5%)
-    usage = pathutil.disk_usage(sbopts.basedir)
+    usage = pycompat.disk_usage(pathutil.resolve_mountpoint(sbopts.basedir))
 
     if usage.free < 1024**3:
         raise SandboxError(("Only {0} of {1} (<{2:.2%}) available on {3}. "

@@ -11,8 +11,9 @@ import errno
 import os
 import stat
 
+from dbsake import pycompat
+
 from . import cmd
-from . import pathutil
 
 # supported compression ext -> command names
 COMPRESSION_LOOKUP = {
@@ -34,7 +35,7 @@ COMPRESSION_MAGIC = {
 def ext_to_command(ext):
     """Given a filename extension, find command to decompress it"""
     for name in COMPRESSION_LOOKUP[ext]:
-        path = pathutil.which(name)
+        path = pycompat.which(name)
         if path:
             return path
     raise OSError(errno.ENOENT, "Not found: %s" % name)

@@ -1,4 +1,4 @@
 # test requirements go here
+coverage==3.7.1
 pytest
 pytest-cov
-coverage
