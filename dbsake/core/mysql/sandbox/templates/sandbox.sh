@@ -39,14 +39,13 @@ _mysqld_option() {
 }
 
 sandbox_start() {
-    pidfile=$(_mysqld_option pid-file mysqld mysqld_safe)
-    socket=$(_mysqld_option socket mysqld mysqld_safe)
-    if [[ -s "${pidfile}" ]]
+    if sandbox_status > /dev/null
     then
-        echo "Starting sandbox: [OK]"
+	echo "sandbox is already started"
         return 0
     fi
     echo -n "Starting sandbox: "
+    socket=$(_mysqld_option socket mysqld mysqld_safe)
     # close stdin (0) and redirect stdout/stderr to /dev/null
     mysqld_safe_args="--defaults-file=$defaults_file"
     MY_BASEDIR_VERSION=${basedir} \
@@ -67,7 +66,7 @@ sandbox_start() {
 
 sandbox_status() {
     pidfile=$(_mysqld_option pid-file mysqld mysqld_safe)
-    if [[ -s "${pidfile}" ]]
+    if [[ -s "${pidfile}" && $(ps ho comm $(cat ${pidfile})) == mysqld ]]
     then
         { pid=$(<"${pidfile}"); } 2>/dev/null
     fi
@@ -86,7 +85,7 @@ sandbox_stop() {
 
     if [[ -z "$pid" ]]
     then
-        echo "sandbox is stopped"
+        echo "sandbox is already stopped"
         return 0
     fi
 
