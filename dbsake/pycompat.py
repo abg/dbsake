@@ -23,6 +23,7 @@ else:
     string_types = basestring,
     text_type = unicode
 
+
 def _get_gid(name):
     """Returns a gid, given a group name."""
     if grp.getgrnam is None or name is None:
@@ -59,6 +60,11 @@ def chown(path, user=None, group=None):
     if user is None and group is None:
         raise ValueError("user and/or group must be set")
 
+    if not PY3 and isinstance(user, text_type):
+        user = user.encode('utf-8')
+    if not PY3 and isinstance(group, text_type):
+        group = group.encode('utf-8')
+
     _user = user
     _group = group
 
@@ -69,14 +75,14 @@ def chown(path, user=None, group=None):
     elif isinstance(user, string_types):
         _user = _get_uid(user)
         if _user is None:
-            raise LookupError("no such user: {!r}".format(user))
+            raise LookupError("no such user: {0!r}".format(user))
 
     if group is None:
         _group = -1
     elif not isinstance(group, int):
         _group = _get_gid(group)
         if _group is None:
-            raise LookupError("no such group: {!r}".format(group))
+            raise LookupError("no such group: {0!r}".format(group))
 
     os.chown(path, _user, _group)
 
