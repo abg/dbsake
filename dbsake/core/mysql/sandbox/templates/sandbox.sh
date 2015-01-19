@@ -144,7 +144,9 @@ case $1 in
         ;;
     shell|mysql|use)
         shift
-        MYSQL_PS1="mysql[sandbox]> " $mysql --defaults-file=$defaults_file "$@"
+        MYSQL_PS1="mysql[sandbox]> " \
+        MYSQL_HISTFILE="${basedir}/.mysql_history" \
+        $mysql --defaults-file=$defaults_file "$@"
         ;;
     mysqldump)
         shift
