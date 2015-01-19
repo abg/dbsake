@@ -8,9 +8,9 @@ from __future__ import unicode_literals
 
 import collections
 
+from dbsake import pycompat
 from dbsake.util import compression
 from dbsake.util import dotdict
-from dbsake.util import pathutil
 
 from . import exc
 from . import parser
@@ -48,7 +48,7 @@ def open_stream(options):
 
 def sieve(options):
     if options.output_format == 'directory':
-        pathutil.makedirs(options.directory, exist_ok=True)
+        pycompat.makedirs(options.directory, exist_ok=True)
 
     if not options.table_schema:
         options.exclude_section('tablestructure')

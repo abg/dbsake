@@ -15,9 +15,9 @@ import sys
 import tarfile
 import time
 
+from dbsake import pycompat
 from dbsake.util import cmd
 from dbsake.util import compression
-from dbsake.util import pathutil
 
 from dbsake.core.mysql.frm import tablename
 
@@ -65,7 +65,7 @@ def _is_sqldump(path):
 
 
 def prepare_datadir(datadir, options):
-    innobackupex = pathutil.which('innobackupex')
+    innobackupex = pycompat.which('innobackupex')
     if not innobackupex:
         raise common.SandboxError("innobackupex not found in path. Aborting.")
 

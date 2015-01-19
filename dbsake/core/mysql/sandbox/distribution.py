@@ -26,8 +26,8 @@ import shutil
 import sys
 import tempfile
 
+from dbsake import pycompat
 from dbsake.util import cmd
-from dbsake.util import pathutil
 
 from . import common
 from . import util
@@ -194,9 +194,9 @@ def distribution_from_system(options):
     envpath = os.pathsep.join(['/usr/libexec',
                                '/usr/sbin',
                                os.environ['PATH']])
-    mysqld = pathutil.which('mysqld', path=envpath)
-    mysql = pathutil.which('mysql', path=envpath)
-    mysqld_safe = pathutil.which('mysqld_safe', path=envpath)
+    mysqld = pycompat.which('mysqld', path=envpath)
+    mysql = pycompat.which('mysql', path=envpath)
+    mysqld_safe = pycompat.which('mysqld_safe', path=envpath)
 
     if None in (mysqld, mysql, mysqld_safe):
         raise common.SandboxError("Unable to find MySQL binaries")
@@ -239,7 +239,7 @@ def distribution_from_system(options):
     # now copy mysqld, mysql, mysqld_safe to sandbox_dir/bin
     # then return an appropriate MySQLDistribution instance
     bindir = os.path.join(options.basedir, 'bin')
-    pathutil.makedirs(bindir, 0o0770, exist_ok=True)
+    pycompat.makedirs(bindir, 0o0770, exist_ok=True)
     for name in [mysqld]:
         shutil.copy2(name, bindir)
     debug("    # Copied minimal MySQL commands to %s", bindir)
@@ -576,7 +576,7 @@ def cache_download(name):
 
     :param name: path to write a cached download ot
     """
-    pathutil.makedirs(os.path.dirname(name), exist_ok=True)
+    pycompat.makedirs(os.path.dirname(name), exist_ok=True)
     with open(name, 'wb') as fileobj:
         yield fileobj
 
@@ -622,7 +622,7 @@ def download_tarball_asc(options):
         raise common.SandboxError("GPG signature not found for %s" % version)
 
     asc_path = discover_cache_path(cdn.name + '.asc')
-    pathutil.makedirs(os.path.dirname(asc_path), exist_ok=True)
+    pycompat.makedirs(os.path.dirname(asc_path), exist_ok=True)
     with open(asc_path, 'wb') as fileobj:
         fileobj.write(stream.read())
         debug("    # Wrote %s", fileobj.name)
@@ -631,8 +631,8 @@ def download_tarball_asc(options):
 
 def initialize_gpg():
     gpghome = os.path.expanduser('~/.dbsake/gpg')
-    pathutil.makedirs(gpghome, mode=0o0700, exist_ok=True)
-    gpg = pathutil.which('gpg') or pathutil.which('gpg2')
+    pycompat.makedirs(gpghome, mode=0o0700, exist_ok=True)
+    gpg = pycompat.which('gpg') or pycompat.which('gpg2')
     if not gpg:
         raise common.SandboxError("Failed to find gpg")
     gpg_cmd = cmd.shell_format('{0} -k 5072E1F5', gpg)
@@ -660,7 +660,7 @@ def initialize_gpg():
 @contextlib.contextmanager
 def gpg_verify_stream(signature):
     gpghome = os.path.expanduser('~/.dbsake/gpg')
-    gpg = pathutil.which('gpg') or pathutil.which('gpg2')
+    gpg = pycompat.which('gpg') or pycompat.which('gpg2')
     verify_cmd = cmd.shell_format('{0} --verify {1} -', gpg, signature)
     info("    - Verifying gpg signature via: %s", verify_cmd)
     try:
