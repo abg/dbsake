@@ -10,10 +10,12 @@ from __future__ import unicode_literals
 
 import fnmatch
 import io
+import os
 import re
 import sys
 
 from dbsake import pycompat
+from dbsake.util import compression
 
 from . import common
 from . import tar
@@ -69,17 +71,12 @@ def inclusion_exclusion_filter(include=(), exclude=(), mode='glob'):
     return apply_filter
 
 
-def load_unpacker(datasource):
-    """Load an unpacker from a datasource
-
-    ``datasource`` is expeted to be a string representing the
-    underlying datasource. If the special string '-' is read,
-    it is assumed to be stdin and appropriate channel to read
-    a buffered byte stream from stdin will be used.  Otherwise,
-    the underlying file is opened.
+def load_unpacker(stream):
+    """Load an unpacker from a binary stream
 
     BufferedReader.peek() is used to peek at the underlying stream
-    to detect the appropriate unpack method.
+    to detect the appropriate unpack method.  Stream is expected
+    to support the io.BufferedReader interface.
 
     Currently only tar and xbstream archives are supported.  tar
     archives are used if the first 512 bytes can be decoded via
@@ -91,31 +88,34 @@ def load_unpacker(datasource):
     :raises: UnpackError if no suitable unpacker could be found
     :returns: generator yielding Entry instances
     """
-    if datasource == '-' and pycompat.PY3:
-        datasource = sys.stdin.buffer
-    elif datasource == '-' and not pycompat.PY3:
-        datasource = io.open(sys.stdin.fileno(), 'rb', buffering=4096)
-    else:
-        datasource = io.open(datasource, 'rb')
-
-    header = datasource.peek(512)
+    header = stream.peek(512)
 
     if tar.is_tarfile(header):
-        return tar.unpack(datasource)
+        return tar.unpack(stream)
     elif xbs.is_xbstream(header):
-        return xbs.unpack(datasource)
+        return xbs.unpack(stream)
 
-    raise common.UnpackError("Unknown datasource: %s" % datasource.name)
+    raise common.UnpackError("Unknown format for input stream")
 
 
 def unpack(datasource, destination, include=(), exclude=()):
     name_filter = inclusion_exclusion_filter(include, exclude)
-    for entry in load_unpacker(datasource):
-        if not entry.required and name_filter(entry.name):
-            print("Skipping: %s (table=%s)" % (entry.path, entry.name),
-                  file=sys.stderr)
-            continue
 
-        if not entry.chunk:
-            print("%s" % entry.path, file=sys.stderr)
-        entry.extract(destination)
+    with pycompat.ExitStack() as stack:
+        enter_ctx = stack.enter_context
+
+        if datasource == '-' and pycompat.PY3:
+            stream = sys.stdin.buffer
+        elif datasource == '-' and not pycompat.PY3:
+            stream = enter_ctx(io.open(sys.stdin.fileno(), 'rb'))
+        elif os.path.splitext(datasource)[-1] in compression.COMPRESSION_LOOKUP:
+            stream = enter_ctx(compression.decompressed_w_progress(datasource))
+            stream = io.open(stream.fileno(), 'rb')
+        else:
+            stream = enter_ctx(io.open(datasource, 'rb'))
+
+        for entry in load_unpacker(stream):
+            if not entry.required and name_filter(entry.name):
+                continue
+
+            entry.extract(destination)

@@ -9,13 +9,13 @@ similar to tar archives.
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import binascii
 import collections
 import errno
 import logging
 import os
 import struct
 import sys
+import zlib
 
 from . import common
 
@@ -70,7 +70,7 @@ def read_xbs_chunk(stream):
     checksum, = struct.unpack(b'<I', stream.read(4))
     payload = stream.read(payload_length)
 
-    computed_checksum = binascii.crc32(payload) & 0xffffffff
+    computed_checksum = zlib.crc32(payload) & 0xffffffff
 
     if checksum != computed_checksum:
         raise common.UnpackError("Invalid checksum(offset=%d path=%s)" %
@@ -79,7 +79,7 @@ def read_xbs_chunk(stream):
     return XBSChunk(flags, _type, path, payload, payload_offset)
 
 
-def unpack(datasource):
+def unpack(stream):
     """Unpack an Percona XtraBackup xbstream archive.
 
     :raises: UnpackError on error
@@ -108,16 +108,15 @@ def unpack(datasource):
                 dstf.write(chunk.payload)
         return _extract
 
-    with datasource as fileobj:
-        chunk = read_xbs_chunk(fileobj)
-        while chunk:
-            path = common.normalize(chunk.path)
-            yield common.Entry(path=path,
-                               name=common.qualified_name(path),
-                               required=common.is_required(path),
-                               chunk=chunk.offset is not None,
-                               extract=extractor(chunk))
-            if chunk.eof() and chunk.path in files:
-                files[chunk.path].close()
-                del files[chunk.path]
-            chunk = read_xbs_chunk(fileobj)
+    chunk = read_xbs_chunk(stream)
+    while chunk:
+        path = common.normalize(chunk.path)
+        yield common.Entry(path=path,
+                           name=common.qualified_name(path),
+                           required=common.is_required(path),
+                           chunk=chunk.offset is not None,
+                           extract=extractor(chunk))
+        if chunk.eof() and chunk.path in files:
+            files[chunk.path].close()
+            del files[chunk.path]
+        chunk = read_xbs_chunk(stream)

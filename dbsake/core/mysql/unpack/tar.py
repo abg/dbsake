@@ -33,8 +33,8 @@ def entry_extractor(archive, tarinfo):
     return _extract
 
 
-def unpack(datasource):
-    kwargs = dict(fileobj=datasource, mode='r|')
+def unpack(stream):
+    kwargs = dict(fileobj=stream, mode='r|')
     with contextlib.closing(tarfile.open(**kwargs)) as tar:
         for entry in tar:
             entry.name = common.normalize(entry.name)
