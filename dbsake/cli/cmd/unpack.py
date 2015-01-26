@@ -24,11 +24,11 @@ from dbsake.cli import dbsake
               help="Directory to output to (default: $PWD)")
 @click.option('-t', '--table', multiple=True, metavar='<db.table>',
               default=[],
-              help="Only extract table datafiles matching specified " + \
+              help="Only extract table datafiles matching specified " +
                    "database.table glob patterns.")
 @click.option('-T', '--exclude-table', multiple=True, metavar='<db.table>',
               default=[],
-              help="Exclude table data files matching specified " + \
+              help="Exclude table data files matching specified " +
                    "databsae.table glob patterns.")
 @click.argument('archive', metavar="<path>",
                 default="-",
