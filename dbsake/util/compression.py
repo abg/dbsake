@@ -1,6 +1,6 @@
 """
 dbsake.util.compression
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Access to compression commands
 
@@ -10,16 +10,15 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import contextlib
-import errno
+import io
 import os
 import stat
 import sys
 import threading
 import time
 
-from dbsake import pycompat
-
 from . import cmd
+from . import fmt
 
 # supported compression ext -> command names
 COMPRESSION_LOOKUP = {
@@ -38,156 +37,227 @@ COMPRESSION_MAGIC = {
 }
 
 
-def ext_to_command(ext):
-    """Given a filename extension, find command to decompress it"""
-    for name in COMPRESSION_LOOKUP[ext]:
-        path = pycompat.which(name)
-        if path:
-            return path
-    raise OSError(errno.ENOENT, "Not found: %s" % name)
-
-
-@contextlib.contextmanager
-def decompressed(path):
-    """Open path via a compression command
-
-    """
-    ext = os.path.splitext(path)[-1]
-    with open(path, 'rb') as stdin:
-        with decompressed_fileobj(stdin, ext=ext) as stdout:
-            yield stdout
-
-
 def is_seekable(stream):
     """Determine if a stream is seekable"""
     mode = os.fstat(stream.fileno()).st_mode
     return stat.S_ISREG(mode) != 0
 
 
-def magic_to_ext(fileobj):
-    """Determine compression extension basic on file magic bytes"""
-    for ext, expected in COMPRESSION_MAGIC.items():
-        fileobj.seek(0)
-        magic = fileobj.read(len(expected))
-        if magic == expected:
-            return ext
-    else:
-        raise OSError(errno.EIO, "Failed to detect compression type")
+def rate_bar():
+    """Create a new rate bar
+
+    This computes how many bytes have passed through it and the
+    rate its received bytes, but does not show progress as it
+    has no information about the total number of bytes.
+    """
+    start = time.time()
+    ctx = {'nbytes': 0}
+
+    template = '{elapsed:>9s} {rate:>7s}/s {transferred:>7s} copied'
+
+    def update(ndelta):
+        """Update the number of bytes and output a new progress bar"""
+        nbytes = ctx['nbytes'] + ndelta
+        ctx['nbytes'] = nbytes
+        runtime = time.time() - start
+        end = "\r" if ndelta != 0 else "\n"
+        barstr = template.format(
+            elapsed=fmt.timespan(runtime),
+            rate=fmt.filesize(nbytes/runtime),
+            transferred=fmt.filesize(nbytes)
+        )
+        print(barstr, end=end, file=sys.stderr)
+    return update
 
 
-@contextlib.contextmanager
-def decompressed_fileobj(fileobj, ext=None):
-    if ext is None and not is_seekable(fileobj):
-        raise OSError("No compression was specified and %s is not seekable.")
+def progress_bar(maxsize, width=25):
+    """Create a progressbar to measure progress to some maximum size
 
-    if ext is None:
-        ext = magic_to_ext(fileobj)
-        os.lseek(fileobj.fileno(), 0, os.SEEK_SET)
-    command = ext_to_command(ext)
-    with cmd.piped_stdout("%s -dc" % command, stdin=fileobj) as stdout:
-        yield stdout
+    """
+    start = time.time()
+    ctx = {'nbytes': 0}
+    samples = []
+
+    template = ('{pct:<6s} [{prog:.<{width}}] '
+                '{rate:>7s}/s {transferred:>15s} '
+                '{elapsed:<9s} ETA:{eta:<9s} ')
+
+    def update(n):
+        """Update the progress bar"""
+        nbytes = ctx['nbytes'] + n
+        ctx['nbytes'] = nbytes
+
+        elapsed = time.time() - start
+        if not samples:
+            samples.extend([(nbytes, elapsed)]*10)
+        samples.append((nbytes, elapsed))
+        pct = nbytes/maxsize
+        eta = elapsed*(maxsize / nbytes) - elapsed
+        nbytes1, elapsed1 = samples.pop(0)
+        if nbytes > nbytes1:
+            etasamp = ((elapsed - elapsed1)*(maxsize - nbytes1) /
+                       (nbytes - nbytes1) - (elapsed - elapsed1))
+            weight = (nbytes / maxsize)**0.5
+            eta = (1 - weight)*eta + weight*etasamp
+        transferred = fmt.filesize(nbytes) + '/' + fmt.filesize(maxsize)
+        barstr = template.format(
+            elapsed=fmt.timespan(elapsed),
+            eta=fmt.timespan(eta),
+            pct='{0:4.1%}'.format(nbytes/maxsize),
+            rate=fmt.filesize(nbytes/elapsed),
+            transferred=transferred,
+            prog='='*int(pct*(width - 1)) + '>',
+            width=width
+        )
+        end = "\r" if n != 0 else "\n"
+        print(barstr, end=end, file=sys.stderr)
+    return update
 
 
-class PVProxy(threading.Thread):
-    def __init__(self, source, block_size=8192, total_bytes=None):
-        super(PVProxy, self).__init__()
-        self.daemon = True
-        self.block_size = block_size
-        self.source = source
+class ProxyStream(threading.Thread):
+    def __init__(self,
+                 stream,
+                 widget=None,
+                 interval=0.5,
+                 block_size=io.DEFAULT_BUFFER_SIZE):
+        super(ProxyStream, self).__init__()
+        self.stream = stream
+        self.widget = widget
+        self.interval = interval
         rd, wr = os.pipe()
-        self.pipe_rd = rd
-        self.pipe_wr = os.fdopen(wr, 'wb')
-        self.bytes_read = 0
-
-        src_st = os.fstat(source.fileno())
-        if total_bytes is None and stat.S_ISREG(src_st.st_mode):
-            self.total_bytes = src_st.st_size
-        else:
-            self.total_bytes = total_bytes
-        self.t0 = time.time()
+        self.rd = rd
+        self.wr = os.fdopen(wr, 'wb')
+        self.block_size = block_size
+        self.daemon = True
 
     def __enter__(self):
         self.start()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print(file=sys.stderr)
-        try:
-            os.close(self.fileno())
-        except OSError:
-            pass
-        try:
-            self.pipe_wr.close()
-        except IOError:
-            pass
-
-    def progress_bar(self):
-        if self.total_bytes is not None:
-            return self.eta
-        else:
-            return self.rate
-
-    def rate(self, n):
-        print("Total bytes read: %s" % self.bytes_read)
-
-    def eta(self):
-        from dbsake.util import format_filesize
-
-        tpl = ('{pct:4.0%} {transfer:13s} {rate:6s}/s [{prog:.<{width}}] '
-               '{runtime} ETA: {eta}')
-
-        pct = self.bytes_read / self.total_bytes
-        runtime = time.time() - self.t0
-        eta = (self.total_bytes / self.bytes_read)*runtime
-        copied = format_filesize(self.bytes_read, False).replace("B", "")
-        total = format_filesize(self.total_bytes, False).replace("B", "")
-        rate = format_filesize(self.bytes_read / runtime, False)
-        runtime_s = time.strftime('%H:%M:%S', time.gmtime(runtime))
-        eta_s = time.strftime("%H:%M:%S", time.gmtime(eta))
-        width = 20  # width of the progress bar -> 1 unit = ~5% progress
-
-        pbar = tpl.format(pct=pct,
-                          transfer='%s/%s' % (copied, total),
-                          rate=rate,
-                          prog='='*(int(pct*width) - 1) + '>',
-                          width=width,
-                          runtime=runtime_s,
-                          eta=eta_s)
-        end = "\r" if pct < 1 else "\n"
-        print(pbar, end=end, file=sys.stderr)
+        os.close(self.rd)
+        self.join()
+        self.wr.close()
 
     def fileno(self):
-        return self.pipe_rd
+        return self.rd
 
     def run(self):
-        progress_bar = self.progress_bar()
-        block = self.source.read(self.block_size)
-        last = None
-        while block:
-            try:
-                self.pipe_wr.write(block)
-            except IOError:
-                print(file=sys.stderr)
-                block = ''
-                continue
-            n = len(block)
-            self.bytes_read += n
-            if not last or time.time() - last >= 0.25:
-                progress_bar()
-                last = time.time()
-            block = self.source.read(self.block_size)
-        progress_bar()
+        widget = self.widget
+        interval = self.interval
+        read = self.stream.read
+        write = self.wr.write
+        block_size = self.block_size
+        last_update = 0
+        n = 0
+
         try:
-            self.pipe_wr.close()
-        except IOError:
-            pass
+            block = read(block_size)
+            while block:
+                write(block)
+                if widget:
+                    n += len(block)
+                    now = time.time()
+                    if (now - last_update) > interval:
+                        widget(n)
+                        last_update = now
+                        n = 0
+                block = read(block_size)
+            if widget:
+                widget(n)
+                widget(0)
+        finally:
+            self.wr.close()
+
+
+def detect_filetype(fileobj):
+    """Detect the compression type for the file stream
+
+    This requires fileobj to be of type BufferedReader, so that the
+    first few bytes can be peeked at to detect known magic values
+    for compression.
+
+    If magic values are detected this method will return the expected
+    extension type that can be fed into ``filetype_to_command`` to
+    generate a commandline that would decompress this stream.
+
+    If no magic value is matched, this method returns 'None'.
+
+    :param fileobj: io.BufferedReader instance
+    :returns: extension string, if found otherwise None
+    """
+
+    prefix = fileobj.peek(512)
+
+    for ext, magic in COMPRESSION_MAGIC.items():
+        if prefix.startswith(magic):
+            return ext
+
+    return None
+
+
+def filetype_to_command(ext):
+    """Given a filetype extensions, return a commandline for decompression
+
+    :param ext: compression extension
+    :returns: commandline to decompress or None if an unknown compression
+              method is detected.
+    """
+    zcmds = {
+        '.gz': ('pigz', 'gzip'),
+        '.bz2': ('pbzip2', 'bzip2', 'lbzip2'),
+        '.lzo': ('lzop',),
+        '.xz': ('pxz', 'xz')
+    }
+
+    if ext in zcmds:
+        return zcmds[ext][0] + ' -dc'
+    else:
+        return None
 
 
 @contextlib.contextmanager
-def decompressed_w_progress(path):
-    with open(path, 'rb') as srcf:
-        ext = magic_to_ext(srcf)
-        srcf.seek(0)
-        with PVProxy(srcf) as proxyf:
-            with decompressed_fileobj(proxyf, ext=ext) as stdout:
-                yield stdout
+def decompressed(stream, report_progress=False, sizehint=None, filetype=None):
+    """Context manager to decompress a stream of bytes.
+
+    Note: This method will convert a stream to an io.BufferedReader() instance
+          and peek at the first few bytes, if filetype is not provided. The
+          original stream should not be used afterwards, because its position
+          will be in an undefined state.
+
+    :param stream: input stream to decompress
+    :param report_progress: bool flag to indicate whether progress reads from
+                            the streaming will be emitted to sys.stderr.
+    :param sizehint: (optional) integer value to indicate the expected size of
+                     the stream.  If not provided and the underlying stream
+                     does not provide os.fstat().st_size information, progress
+                     will only show transfer rate + bytes transferred but no
+                     eta related information.
+    :param filetype: (optional) string indicating the filetype of the stream
+                     This should be a compression extension:
+                     .gz, .bz2, .lzo, .xz
+                     If not provided, it will be looked up.
+    """
+    # convert to a BufferedReader
+    # note: closefd=False because we assume called is managing stream lifetime
+    #       if this code closes the stream, a future fileobj.close() will
+    #       fail with an EBADF as python tries to flush a closed file object.
+    #       This causes a very confusing and difficult to debug error
+    if filetype is None:
+        stream = io.open(stream.fileno(), 'rb', closefd=False)
+        filetype = detect_filetype(stream)
+    command = filetype_to_command(filetype)
+    if report_progress and (sizehint or is_seekable(stream)):
+        streamsize = sizehint or os.fstat(stream.fileno()).st_size
+        widget = progress_bar(streamsize)
+    elif report_progress:
+        widget = rate_bar()
+    else:
+        widget = None
+
+    if filetype is not None:
+        with ProxyStream(stream, widget) as fileobj:
+            with cmd.piped_stdout(command, stdin=fileobj) as output:
+                yield output
+    else:
+        yield stream
