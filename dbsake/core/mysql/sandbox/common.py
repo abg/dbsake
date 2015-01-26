@@ -216,7 +216,7 @@ def generate_defaults(options, **kwargs):
     if ib_logfile_size:
         kwargs['innodb_log_file_size'] = _format_logsize(ib_logfile_size)
         info("    + Existing ib_logfile0 detected.")
-        info("Setting innodb-log-file-size=%s", kwargs['innodb_log_file_size'])
+        info("    + Setting innodb-log-file-size=%s", kwargs['innodb_log_file_size'])
 
     ibdata = []
     ibdata_pattern = os.path.join(options.datadir, 'ibdata*')
@@ -225,8 +225,9 @@ def generate_defaults(options, **kwargs):
         ibdata.append(rpath + ':' + _format_logsize(os.stat(path).st_size))
     if ibdata:
         kwargs['innodb_data_file_path'] = ';'.join(ibdata) + ':autoextend'
-        info("    + Found existing shared innodb tablespace: %s",
-             kwargs['innodb_data_file_path'])
+        info("    + Found existing shared innodb tablespace(s).")
+        logging.info("    + Setting innodb-data-file-path=%s",
+                     ';'.join(ibdata) + ':autoextend')
     else:
         kwargs['innodb_data_file_path'] = None
 
@@ -279,7 +280,6 @@ def mysql_install_db(options, distribution, **kwargs):
     # This will instruct the template to ensure a `test` database exists
     # and the basic mysql_secure_installation process is run.
     bootstrap_data = not os.path.exists(os.path.join(options.datadir, 'mysql'))
-    print("bootstrapdata = %r" % bootstrap_data)
 
     template = template_loader.get_template('bootstrap.sql')
     sql = template.render(distribution=distribution,
@@ -335,9 +335,10 @@ def initial_mysql_user(options):
 
     with tempfile.NamedTemporaryFile(dir=sbdir) as fileobj:
         os.fchmod(fileobj.fileno(), 0o0660)
+        fileobj = codecs.getwriter('utf-8')(fileobj)
         template = template_loader.get_template('init_file.sql')
         sql = template.render(user=sbuser, password=sbpass, host='localhost')
-        print(sql.encode('utf-8'), file=fileobj)
+        print(sql, file=fileobj)
         fileobj.flush()
         logging.info("    - Generated init-file: %s", fileobj.name)
         with open(os.devnull, 'rb') as devnull:
