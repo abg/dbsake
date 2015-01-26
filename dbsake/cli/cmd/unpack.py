@@ -16,12 +16,24 @@ from dbsake.cli import dbsake
 
 
 @dbsake.command('unpack', options_metavar='[options]')
-@click.option('-v', '--verbose', is_flag=True)
-@click.option('-C', '--directory', default='.')
-@click.option('-t', '--table', multiple=True, default=[])
-@click.option('-T', '--exclude-table', multiple=True, default=[])
-@click.argument('archive', metavar="<path>")
-def _unpack(archive, directory, table, exclude_table, verbose):
+@click.option('--progress/--no-progress', 'report_progress',
+              default=sys.stderr.isatty(),
+              help="Enable/disable progress bar when unpacking.")
+@click.option('-C', '--directory', metavar='<path>',
+              default='.',
+              help="Directory to output to (default: $PWD)")
+@click.option('-t', '--table', multiple=True, metavar='<db.table>',
+              default=[],
+              help="Only extract table datafiles matching specified " + \
+                   "database.table glob patterns.")
+@click.option('-T', '--exclude-table', multiple=True, metavar='<db.table>',
+              default=[],
+              help="Exclude table data files matching specified " + \
+                   "databsae.table glob patterns.")
+@click.argument('archive', metavar="<path>",
+                default="-",
+                type=click.File('rb'))
+def _unpack(archive, directory, table, exclude_table, report_progress):
     """Unpack a MySQL backup archive.
 
     This command will unpack tar or Percona XtraBackup xbstream
@@ -31,11 +43,20 @@ def _unpack(archive, directory, table, exclude_table, verbose):
     """
     from dbsake.core.mysql import unpack
 
+    if archive.fileno() == 0 and sys.stdin.isatty():
+        print("Refusing to read stdin from console.", file=sys.stderr)
+        print("Please redirect stdin or specified the archive to unpack.",
+              file=sys.stderr)
+        sys.exit(1)
+
     if table:
         table += ('mysql.*',)
 
     try:
-        unpack.unpack(archive, directory, table, exclude_table)
+        unpack.unpack(archive, directory,
+                      include_tables=table,
+                      exclude_tables=exclude_table,
+                      report_progress=report_progress)
     except unpack.UnpackError as exc:
         print("%s" % exc, file=sys.stderr)
         sys.exit(1)

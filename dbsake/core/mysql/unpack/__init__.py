@@ -10,11 +10,11 @@ from __future__ import unicode_literals
 
 import fnmatch
 import io
+import logging
 import os
 import re
 import sys
 
-from dbsake import pycompat
 from dbsake.util import compression
 
 from . import common
@@ -22,6 +22,8 @@ from . import tar
 from . import xbs
 
 UnpackError = common.UnpackError
+
+debug = logging.debug
 
 
 def inclusion_exclusion_filter(include=(), exclude=(), mode='glob'):
@@ -98,24 +100,28 @@ def load_unpacker(stream):
     raise common.UnpackError("Unknown format for input stream")
 
 
-def unpack(datasource, destination, include=(), exclude=()):
-    name_filter = inclusion_exclusion_filter(include, exclude)
+def unpack(datasource,
+           destination,
+           include_tables=(),
+           exclude_tables=(),
+           report_progress=False):
+    """Unpack a MySQL tar or xbstream based datasource
 
-    with pycompat.ExitStack() as stack:
-        enter_ctx = stack.enter_context
+    :param datasource: file object stream to unpack
+    :param destination: directory to unpack archive contents to
+    :param include_tables: sequence of tables to include (db.tablename)
+    :param exclude_tables: sequences of tables to exclude (db.tablename)
+    :param report_progress: boolean flag whether to report progress reading
+                            stream to stderr
 
-        if datasource == '-' and pycompat.PY3:
-            stream = sys.stdin.buffer
-        elif datasource == '-' and not pycompat.PY3:
-            stream = enter_ctx(io.open(sys.stdin.fileno(), 'rb'))
-        elif os.path.splitext(datasource)[-1] in compression.COMPRESSION_LOOKUP:
-            stream = enter_ctx(compression.decompressed_w_progress(datasource))
-            stream = io.open(stream.fileno(), 'rb')
-        else:
-            stream = enter_ctx(io.open(datasource, 'rb'))
+    :raises: UnpackError on error
+    """
+    name_filter = inclusion_exclusion_filter(include_tables, exclude_tables)
 
+    with compression.decompressed(datasource, report_progress) as stream:
+        stream = io.open(stream.fileno(), 'rb', closefd=False)
         for entry in load_unpacker(stream):
             if not entry.required and name_filter(entry.name):
+                debug("# Skipping: %s" % entry.path)
                 continue
-
             entry.extract(destination)
