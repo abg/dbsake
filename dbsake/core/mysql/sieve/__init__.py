@@ -31,21 +31,6 @@ class Options(dotdict.DotDict):
         self.exclude_sections.append(name)
 
 
-def open_stream(options):
-    stream = options.input_stream
-    if not compression.is_seekable(stream):
-        return stream
-    else:
-        # check for uncompressed input
-        expected = b'-- MySQL dump'
-        sanity_check = stream.read(len(expected))
-        stream.seek(0)
-        if sanity_check != expected:
-            return compression.decompressed_fileobj(stream)
-        else:
-            return stream
-
-
 def sieve(options):
     if options.output_format == 'directory':
         pycompat.makedirs(options.directory, exist_ok=True)
@@ -67,7 +52,7 @@ def sieve(options):
     if options.triggers is False:
         options.exclude_section('triggers')
 
-    with open_stream(options) as input_stream:
+    with compression.decompressed(options.input_stream) as input_stream:
         dump_parser = parser.DumpParser(stream=input_stream)
         filter_section = filters.SectionFilter(options)
         transform_section = transform.SectionTransform(options)
