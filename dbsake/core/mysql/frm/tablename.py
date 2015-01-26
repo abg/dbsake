@@ -3,6 +3,7 @@ dbsake.core.mysql.frm.tablename
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Convert between unicode and MySQL's filename encoding
 """
+from __future__ import unicode_literals
 
 import binascii
 import re
@@ -763,34 +764,34 @@ MAP_TO_UNICODE = [
 
 categories = [
     # Latin-1 Supplement + Latin Extended-A
-    r'[@][0-4][g-zG-Z]',
+    br'[@][0-4][g-zG-Z]',
     # Greek and Coptic
-    r'[@][5-9][g-zG-Z]',
+    br'[@][5-9][g-zG-Z]',
     # Cyrillic + Cyrillic Supplement
-    r'[@][g-zG-Z][0-6]',
+    br'[@][g-zG-Z][0-6]',
     # Armenian
-    r'[@][g-zG-Z][7-8]',
+    br'[@][g-zG-Z][7-8]',
     # Number Forms
-    r'[@][g-zG-Z][9]',
+    br'[@][g-zG-Z][9]',
     # Latin Extended-B + IPA Extensions
-    r'[@][g-zG-Z][a-kA-K]',
+    br'[@][g-zG-Z][a-kA-K]',
     # Latin Extended Additional
-    r'[@][g-zG-Z][l-rL-R]',
+    br'[@][g-zG-Z][l-rL-R]',
     # Greek Extended
-    r'[@][g-zG-Z][s-zS-Z]',
+    br'[@][g-zG-Z][s-zS-Z]',
     # Reserved
-    r'[@][a-fA-F][g-zG-Z]',
+    br'[@][a-fA-F][g-zG-Z]',
     # Enclosed Alphanumerics
-    r'[@][@][a-zA-Z]',
+    br'[@][@][a-zA-Z]',
     # Halfwidth and Fullwidth forms
-    r'[@][a-zA-Z][@]',
+    br'[@][a-zA-Z][@]',
     # ucs2 encodings
-    r'[@][0-9a-f]{4}',
+    br'[@][0-9a-f]{4}',
     # windows special name encoding
-    r'[@]{3}',
+    br'[@]{3}',
 ]
 
-encoding_cre = re.compile('({0})'.format('|'.join(categories)))
+encoding_cre = re.compile(b'(' + b'|'.join(categories) + b')')
 
 try:
     _unichr = unichr
@@ -801,20 +802,20 @@ except NameError:
 def filename_to_tablename(path):
     def assemble_parts(name):
         for name in encoding_cre.split(name):
-            if name.startswith('@'):
-                byte1, byte2 = struct.unpack_from('BB', name, 1)
+            if name.startswith(b'@'):
+                byte1, byte2 = struct.unpack_from(b'BB', name, 1)
                 if 0x30 <= byte1 <= 0x7f and 0x30 <= byte2 <= 0x7f:
                     code = (byte1 - 0x30) * 80 + byte2 - 0x30
                     char = MAP_TO_UNICODE[code]
                     if code < 5994 and char:
                         yield _unichr(char)
                         continue
-                if name == '@@@':
+                if name == b'@@@':
                     break
-                code, = struct.unpack('>H', binascii.unhexlify(name[1:]))
+                code, = struct.unpack(b'>H', binascii.unhexlify(name[1:]))
                 yield _unichr(code)
             else:
-                yield name
+                yield name.decode('utf-8')
     return ''.join(assemble_parts(path))
 
 # tablename_to_filename
@@ -1099,7 +1100,7 @@ uni_FF20_FF5F = [
 
 
 def tablename_to_filename(value):
-    return ''.join(iter_tablename_to_filename(value))
+    return b''.join(iter_tablename_to_filename(value))
 
 
 def iter_tablename_to_filename(value):
@@ -1123,10 +1124,10 @@ def iter_tablename_to_filename(value):
         if code:
             char1 = _unichr((code // 80) + 0x30)
             char2 = _unichr((code % 80) + 0x30)
-            yield '@{0}{1}'.format(char1, char2)
+            yield '@{0}{1}'.format(char1, char2).encode('utf-8')
             continue
 
-        yield '@{0:04x}'.format(ordinal)
+        yield '@{0:04x}'.format(ordinal).encode('utf-8')
 
 
 decode = filename_to_tablename

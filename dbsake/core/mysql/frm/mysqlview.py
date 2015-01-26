@@ -114,7 +114,9 @@ def parse(path):
     definer_user = cfg.get('view', 'definer_user')
     definer_host = cfg.get('view', 'definer_host')
     suid = ViewSUID(cfg.getint('view', 'suid'))
-    name = tablename.decode(os.path.splitext(os.path.basename(path))[0])
+    name = os.path.splitext(os.path.basename(path))[0]
+    # path is always a string - so encode it to bytes before decoding
+    name = tablename.decode(name.encode('utf-8'))
     # use "query" to match SHOW CREATE VIEW output
     view_body = util.unescape(cfg.get('view', 'query'))
 

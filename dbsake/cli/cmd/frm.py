@@ -57,6 +57,7 @@ def decode_tablename(names):
     from dbsake.core.mysql.frm import tablename
 
     for name in names:
+        name = name.encode('utf-8')
         click.echo(tablename.filename_to_tablename(name))
 
     return 0
