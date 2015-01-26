@@ -41,6 +41,7 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
                                          'skip_libcheck', 'skip_gpgcheck',
                                          'force', 'mysql_user', 'password',
                                          'innobackupex_options',
+                                         'report_progress',
                                          ])
 
 
@@ -91,7 +92,8 @@ def check_options(**kwargs):
         force=kwargs['force'],
         mysql_user=kwargs['mysql_user'],
         password=password,
-        innobackupex_options=kwargs['innobackupex_options']
+        innobackupex_options=kwargs['innobackupex_options'],
+        report_progress=kwargs['report_progress'],
     )
 
 
