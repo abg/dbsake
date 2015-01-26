@@ -46,10 +46,6 @@ SandboxOptions = collections.namedtuple('SandboxOptions',
 
 VERSION_CRE = re.compile(r'\d+[.]\d+[.]\d+')
 
-# only support gzip or bzip2 data sources for now
-# may be either a tarball or a sql
-DATASOURCE_CRE = re.compile(r'.*[.](tar|sql)([.](gz|bz2))?$')
-
 
 def check_options(**kwargs):
     """Check sandbox options"""
@@ -64,12 +60,6 @@ def check_options(**kwargs):
     if dist != 'system' and not (os.path.exists(dist) or
                                  VERSION_CRE.match(dist)):
             raise SandboxError("Invalid MySQL distribution '%s'" % dist)
-
-    if (kwargs['data_source'] and
-            not DATASOURCE_CRE.match(kwargs['data_source']) and
-            not os.path.isdir(kwargs['data_source'])):
-        raise SandboxError("Unsupported data source %s" %
-                           kwargs['data_source'])
 
     if kwargs['cache_policy'] not in ('always', 'never', 'local', 'refresh'):
         raise SandboxError("Unknown --cache-policy '%s'" %
