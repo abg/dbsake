@@ -119,36 +119,33 @@ is_required = re.compile('(ibdata.*|ib_logfile[0-9]+|backup-my.cnf|'
 
 def deploy_tarball(datasource, datadir, table_filter):
     show_progress = sys.stderr.isatty()
-    if show_progress:
-        decompress = compression.decompressed_w_progress
-    else:
-        decompress = compression.decompressed
 
-    with decompress(datasource) as fileobj:
-        tar = tarfile.open(mode='r|', fileobj=fileobj, ignore_zeros=True)
-        for tarinfo in tar:
-            if not tarinfo.isreg():
-                continue
-            tarinfo.name = os.path.normpath(tarinfo.name)
-            if is_required.match(tarinfo.name):
-                if logger.isEnabledFor(logging.DEBUG) and show_progress:
-                    print(" "*80, file=sys.stderr, end="\r")
-                debug("    # Extracting required file: %s", tarinfo.name)
-                tar.extract(tarinfo, datadir)
-                continue
-            # otherwise treat it like a table
-            name, _ = os.path.splitext(tarinfo.name)  # remove extension
-            # remove partition portion
-            name = name.partition('#P')[0]
-            name = name.replace('/', '.')
-            name = tablename.decode(name)
-            if table_filter(name):
+    with open(datasource, 'rb') as fileobj:
+        with compression.decompressed(fileobj, show_progress) as stream:
+            tar = tarfile.open(mode='r|', fileobj=stream, ignore_zeros=True)
+            for tarinfo in tar:
+                if not tarinfo.isreg():
+                    continue
+                tarinfo.name = os.path.normpath(tarinfo.name)
+                if is_required.match(tarinfo.name):
+                    if logger.isEnabledFor(logging.DEBUG) and show_progress:
+                        print(" "*80, file=sys.stderr, end="\r")
+                    debug("    # Extracting required file: %s", tarinfo.name)
+                    tar.extract(tarinfo, datadir)
+                    continue
+                # otherwise treat it like a table
+                name, _ = os.path.splitext(tarinfo.name)  # remove extension
+                # remove partition portion
+                name = name.partition('#P')[0]
+                name = name.replace('/', '.')
+                name = tablename.decode(name)
+                if table_filter(name):
+                    if logger.isEnabledFor(logging.DEBUG):
+                        print(" "*80, file=sys.stderr, end="\r")
+                        debug("    # Excluding %s - excluded by table filters",
+                              tarinfo.name)
+                    continue
                 if logger.isEnabledFor(logging.DEBUG):
                     print(" "*80, file=sys.stderr, end="\r")
-                    debug("    # Excluding %s - excluded by table filters",
-                          tarinfo.name)
-                continue
-            if logger.isEnabledFor(logging.DEBUG):
-                print(" "*80, file=sys.stderr, end="\r")
-                debug("    # Extracting %s", tarinfo.name)
-            tar.extract(tarinfo, datadir)
+                    debug("    # Extracting %s", tarinfo.name)
+                tar.extract(tarinfo, datadir)
