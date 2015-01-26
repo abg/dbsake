@@ -16,7 +16,7 @@ from dbsake.cli import dbsake
 
 
 @dbsake.command('unpack', options_metavar='[options]')
-@click.option('-l', '--list', 'list_contents', is_flag=True,
+@click.option('-l', '--list-contents', 'list_contents', is_flag=True,
               help="List the contents of the archive, but don't extract.")
 @click.option('--progress/--no-progress', 'report_progress',
               default=sys.stderr.isatty(),
