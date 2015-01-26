@@ -28,6 +28,8 @@ import tempfile
 
 from dbsake import pycompat
 from dbsake.util import cmd
+from dbsake.util import compression
+from dbsake.util import fmt
 
 from . import common
 from . import util
@@ -254,7 +256,7 @@ def distribution_from_system(options):
     )
 
 
-def unpack_tarball_distribution(stream, destdir):
+def unpack_tarball_distribution(stream, destdir, report_progress):
     """Unpack a MySQL tar distribution in a directory
 
     This method filters several items from the tarball:
@@ -268,55 +270,58 @@ def unpack_tarball_distribution(stream, destdir):
     """
     debug("    # unpacking tarball stream=%r destination=%r", stream, destdir)
 
-    tar = tarfile.open(None, 'r|*', fileobj=stream)
     total_size = 0
     extracted_size = 0
     # python 2.6's tarfile does not support the context manager protocol
     # so try...finally is used here
-    try:
-        for tarinfo in tar:
-            total_size += tarinfo.size
-            if not (tarinfo.isreg() or tarinfo.issym()):
-                continue
-            name = os.path.normpath(tarinfo.name).partition(os.sep)[2]
-            name0 = name.partition(os.sep)[0]
-            if (name0 == 'bin' and
-                not name.endswith('_embedded') and
-                not name.endswith('mysqld-debug')) or \
-               (name0 == 'lib' and not name.endswith('.a')) or \
-               name0 == 'share':
-                tarinfo.name = name
-            elif name0 == 'scripts':
-                tarinfo.name = os.path.join('bin', os.path.basename(name))
-            elif name in ('COPYING', 'README', 'INSTALL-BINARY',
-                          'docs/ChangeLog'):
-                tarinfo.name = os.path.join('docs.mysql',
-                                            os.path.basename(name))
-            else:
-                debug("    # Filtering: %s", name)
-                continue
-            # reset the user to something sane
-            tarinfo.uname = 'mysql'
-            tarinfo.gname = 'mysql'
-            tarinfo.uid = 0
-            tarinfo.gid = 0
-            # finally extract the element
-            debug("    # Extracting: %s", name)
-            # http://bugs.python.org/issue12800
-            if tarinfo.issym():
-                dest_path = os.path.join(destdir, name)
-                try:
-                    os.unlink(dest_path)
-                except OSError as exc:
-                    if exc.errno != errno.ENOENT:
-                        raise
-            tar.extract(tarinfo, destdir)
-            extracted_size += tarinfo.size
-    finally:
-        tar.close()
-        from dbsake.util import format_filesize
-        debug("    # Uncompressed tarball size: %s Extracted size: %s",
-              format_filesize(total_size), format_filesize(extracted_size))
+    sizehint = int(stream.info()['content-length'])
+    with compression.decompressed(stream,
+                                  report_progress=report_progress,
+                                  sizehint=sizehint,
+                                  filetype='.gz') as stream:
+        with contextlib.closing(tarfile.open(None,
+                                             'r|*',
+                                             fileobj=stream)) as tar:
+            for tarinfo in tar:
+                total_size += tarinfo.size
+                if not (tarinfo.isreg() or tarinfo.issym()):
+                    continue
+                name = os.path.normpath(tarinfo.name).partition(os.sep)[2]
+                name0 = name.partition(os.sep)[0]
+                if (name0 == 'bin' and
+                    not name.endswith('_embedded') and
+                    not name.endswith('mysqld-debug')) or \
+                   (name0 == 'lib' and not name.endswith('.a')) or \
+                   name0 == 'share':
+                    tarinfo.name = name
+                elif name0 == 'scripts':
+                    tarinfo.name = os.path.join('bin', os.path.basename(name))
+                elif name in ('COPYING', 'README', 'INSTALL-BINARY',
+                              'docs/ChangeLog'):
+                    tarinfo.name = os.path.join('docs.mysql',
+                                                os.path.basename(name))
+                else:
+                    debug("    # Filtering: %s", name)
+                    continue
+                # reset the user to something sane
+                tarinfo.uname = 'mysql'
+                tarinfo.gname = 'mysql'
+                tarinfo.uid = 0
+                tarinfo.gid = 0
+                # finally extract the element
+                debug("    # Extracting: %s", name)
+                # http://bugs.python.org/issue12800
+                if tarinfo.issym():
+                    dest_path = os.path.join(destdir, name)
+                    try:
+                        os.unlink(dest_path)
+                    except OSError as exc:
+                        if exc.errno != errno.ENOENT:
+                            raise
+                tar.extract(tarinfo, destdir)
+                extracted_size += tarinfo.size
+            debug("    # Uncompressed tarball size: %s Extracted size: %s",
+                  fmt.filesize(total_size), fmt.filesize(extracted_size))
 
 
 def distribution_from_tarball(options):
@@ -326,10 +331,9 @@ def distribution_from_tarball(options):
     info("    - Deploying distribution from binary tarball: %s",
          options.distribution)
     with util.StreamProxy(open(options.distribution, 'rb')) as stream:
-        if sys.stderr.isatty():
-            size = os.fstat(stream.fileno()).st_size
-            stream.add(util.progressbar(max=size))
-        unpack_tarball_distribution(stream, options.basedir)
+        unpack_tarball_distribution(stream,
+                                    options.basedir,
+                                    options.report_progress)
 
     bindir = os.path.join(options.basedir, 'bin')
     version = mysqld_version(os.path.join(bindir, 'mysqld'))
@@ -727,10 +731,6 @@ def distribution_from_download(options):
 
         stream.add(checksum.update)
 
-        if sys.stderr.isatty():
-            stream_size = int(stream.info()['content-length'])
-            stream.add(util.progressbar(max=stream_size))
-
         cache_path = stream.headers['x-dbsake-cache']
         if (options.cache_policy != 'never' and cache_path):
             cache = enter_ctx(cache_download(cache_path))
@@ -744,7 +744,9 @@ def distribution_from_download(options):
             gpg_verify = enter_ctx(gpg_verify_stream(signature))
             stream.add(gpg_verify.write)
         info("    - Unpacking tar stream. This may take some time")
-        unpack_tarball_distribution(stream, options.basedir)
+        unpack_tarball_distribution(stream,
+                                    options.basedir,
+                                    options.report_progress)
 
     if checksum.hexdigest() != stream.headers['x-dbsake-checksum']:
         warn("    ! Detected checksum error in download")

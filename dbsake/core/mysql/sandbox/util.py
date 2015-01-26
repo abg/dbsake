@@ -49,39 +49,3 @@ class StreamProxy(object):
         for listener in self._listeners:
             listener(chunk)
         return chunk
-
-
-def progressbar(max=0, width=20, interval=0.5):
-    template = ('{pct:4.0%} {transfer:13s} {rate:6s}/s [{prog:.<{width}}] '
-                '{runtime} ETA: {eta}')
-
-    max_size = util.format_filesize(max)
-    t0 = time.time()
-    metrics = dict(length=0, last_update=0, complete=False)
-
-    def update(data):
-        n = len(data)
-        metrics['length'] += n
-        if time.time() - metrics['last_update'] >= interval or n == 0:
-            pct = metrics['length'] / max
-            units = int(pct*width)
-            n_filesize = util.format_filesize(metrics['length'])[:-1]
-            runtime = time.time() - t0
-            eta = (max / metrics['length'])*runtime
-            rate = util.format_filesize(metrics['length'] / runtime, False)
-            runtime_s = time.strftime('%H:%M:%S', time.gmtime(runtime))
-            eta_s = time.strftime("%H:%M:%S", time.gmtime(eta))
-
-            pbar = template.format(pct=pct,
-                                   transfer='%s/%s' % (n_filesize, max_size),
-                                   rate=rate,
-                                   prog='='*(units - 1) + '>',
-                                   width=width,
-                                   runtime=runtime_s,
-                                   eta=eta_s)
-            end = "\r" if pct < 1 else "\n"
-            print(pbar, end=end, file=sys.stderr)
-            metrics['last_update'] = time.time()
-            sys.stderr.flush()
-
-    return update
