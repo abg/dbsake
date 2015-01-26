@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import contextlib
+import errno
 import io
 import os
 import stat
@@ -166,6 +167,9 @@ class ProxyStream(threading.Thread):
             if widget:
                 widget(n)
                 widget(0)
+        except IOError as exc:
+            if exc.errno != errno.EPIPE:
+                raise
         finally:
             self.wr.close()
 
