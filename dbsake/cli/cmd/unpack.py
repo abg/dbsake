@@ -16,6 +16,8 @@ from dbsake.cli import dbsake
 
 
 @dbsake.command('unpack', options_metavar='[options]')
+@click.option('-l', '--list', 'list_contents', is_flag=True,
+              help="List the contents of the archive, but don't extract.")
 @click.option('--progress/--no-progress', 'report_progress',
               default=sys.stderr.isatty(),
               help="Enable/disable progress bar when unpacking.")
@@ -33,7 +35,7 @@ from dbsake.cli import dbsake
 @click.argument('archive', metavar="<path>",
                 default="-",
                 type=click.File('rb'))
-def _unpack(archive, directory, table, exclude_table, report_progress):
+def _unpack(archive, list_contents, directory, table, exclude_table, report_progress):
     """Unpack a MySQL backup archive.
 
     This command will unpack tar or Percona XtraBackup xbstream
@@ -54,6 +56,7 @@ def _unpack(archive, directory, table, exclude_table, report_progress):
 
     try:
         unpack.unpack(archive, directory,
+                      list_contents=list_contents,
                       include_tables=table,
                       exclude_tables=exclude_table,
                       report_progress=report_progress)

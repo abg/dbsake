@@ -100,6 +100,7 @@ def load_unpacker(stream):
 
 def unpack(datasource,
            destination,
+           list_contents=False,
            include_tables=(),
            exclude_tables=(),
            report_progress=False):
@@ -119,7 +120,10 @@ def unpack(datasource,
     with compression.decompressed(datasource, report_progress) as stream:
         stream = io.open(stream.fileno(), 'rb', closefd=False)
         for entry in load_unpacker(stream):
-            if not entry.required and name_filter(entry.name):
+            if entry.name is not None and name_filter(entry.name):
                 debug("# Skipping: %s" % entry.path)
                 continue
-            entry.extract(destination)
+            if list_contents:
+                print(entry.path.decode('utf-8'))
+            else:
+                entry.extract(destination)

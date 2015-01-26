@@ -14,34 +14,13 @@ import re
 
 from dbsake.core.mysql.frm import tablename
 
-# File patterns considered "required"
-# This includes standard mysql files along with "shared" InnoDB tablespaces
-# and Percona XtraBackup control files.
-MYSQL_FILE_CRE = re.compile(br'''
-    ^mysql_upgrade_info$|       # info written by mysql_upgrade
-    ^auto[.]cnf$|               # MySQL 5.6 uuid config
-    ^ibdata.*$|                 # InnoDB shared tablespace
-    ^ib_logfile.*$|             # InnoDB redo logs
-    ^undo.*$|                   # InnoDB undo logs
-    ^[^/]+/db[.]opt$|           # database option files
-    ^.+[.]tokudb$|              # TokuDB files
-    ^tokudb[.].*$|              # TokuDB metadata files
-    ^__tokudb_lock.*$|          # TokuDB lock files
-    ^log\d+[.]tokulog\d+$|      # TokuDB log files
-    ^aria_log.+$|               # Aria log files
-    ^backup-my.cnf$|            # Percona XtraBackup backup-my.cnf
-    ^xtrabackup.*$|             # Percona XtraBackup data file
-    ^mysql/slave_.*$|           # MySQL 5.6 slave info table
-    ^mysql/innodb_.*$           # MySQL 5.6 InnoDB system table
-''', re.X)
+TABLE_FILE_CRE = re.compile(br'''
+^.*[.](frm|isl|MYD|MYI|MAD|MAI|MRG|TRG|TRN|ARM|ARZ|CSM|CSV|par)$
+''')
 
 
 def normalize(path):
     return os.path.normpath(path)
-
-
-def is_required(path):
-    return MYSQL_FILE_CRE.match(path) is not None
 
 
 def qualified_name(path):
@@ -49,7 +28,7 @@ def qualified_name(path):
 
     :returns: qualified database.tablename
     """
-    if MYSQL_FILE_CRE.match(path):
+    if not TABLE_FILE_CRE.match(path):
         return None
 
     tbl = os.path.basename(path)
@@ -61,7 +40,7 @@ def qualified_name(path):
                       tablename.decode(tbl))
 
 
-Entry = collections.namedtuple('Entry', 'path name required chunk extract')
+Entry = collections.namedtuple('Entry', 'path name chunk extract')
 
 
 class UnpackError(Exception):

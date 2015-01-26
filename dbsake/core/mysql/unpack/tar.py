@@ -40,6 +40,5 @@ def unpack(stream):
             path = common.normalize(entry.name).encode('utf-8')
             yield common.Entry(path=path,
                                name=common.qualified_name(path),
-                               required=common.is_required(path),
                                chunk=0,
                                extract=entry_extractor(tar, entry))

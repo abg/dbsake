@@ -112,7 +112,6 @@ def unpack(stream):
         path = common.normalize(chunk.path)
         yield common.Entry(path=path,
                            name=common.qualified_name(path),
-                           required=common.is_required(path),
                            chunk=chunk.offset is not None,
                            extract=extractor(chunk))
         if chunk.eof() and chunk.path in files:
