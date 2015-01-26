@@ -33,6 +33,9 @@ from dbsake.cli import dbsake
               metavar='<source>',
               type=click.Path(resolve_path=True, exists=True, dir_okay=False),
               help="path to file to populate sandbox")
+@click.option('--progress/--no-progress', 'report_progress',
+              default=sys.stderr.isatty(),
+              help='Enable/disable progressbars when unpacking archives.')
 @click.option('include_tables', '-t', '--table',
               metavar='<glob-pattern>',
               multiple=True,
@@ -76,7 +79,8 @@ def sandbox_cli(sandbox_directory,
                 force,
                 mysql_user,
                 password,
-                innobackupex_options):
+                innobackupex_options,
+                report_progress):
     """Create a sandboxed MySQL instance.
 
     This command installs a new MySQL instance under the specified sandbox
@@ -113,7 +117,8 @@ def sandbox_cli(sandbox_directory,
                        force=force,
                        mysql_user=mysql_user,
                        password=password,
-                       innobackupex_options=innobackupex_options)
+                       innobackupex_options=innobackupex_options,
+                       report_progress=report_progress)
     except sandbox.SandboxError as exc:
         click.echo("%s" % exc, file=sys.stderr)
         sys.exit(os.EX_SOFTWARE)
