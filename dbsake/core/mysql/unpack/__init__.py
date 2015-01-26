@@ -123,7 +123,8 @@ def unpack(datasource,
             if entry.name is not None and name_filter(entry.name):
                 debug("# Skipping: %s" % entry.path)
                 continue
-            if list_contents and entry.chunk == 0:
-                print(entry.path.decode('utf-8'))
+            if list_contents:
+                if entry.chunk == 0:
+                    print(entry.path.decode('utf-8'))
             else:
                 entry.extract(destination)
