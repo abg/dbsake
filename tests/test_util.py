@@ -12,7 +12,7 @@ def test_progress_bar(capsys):
 
     for _ in range(100):
         p(1)
-    p(0) # <- indicate finished progress bar
+    p(0)  # <- indicate finished progress bar
 
     out, err = capsys.readouterr()
 
@@ -33,7 +33,7 @@ def test_rate_bar(capsys):
 
     for _ in range(100):
         p(1)
-    p(0) # <- indicate finished progress bar
+    p(0)  # <- indicate finished progress bar
 
     out, err = capsys.readouterr()
 
@@ -41,4 +41,4 @@ def test_rate_bar(capsys):
 
     assert err.endswith("\n")
 
-    assert len(err.split("\r")) == 101 # 101 updates
+    assert len(err.split("\r")) == 101  # 101 updates
