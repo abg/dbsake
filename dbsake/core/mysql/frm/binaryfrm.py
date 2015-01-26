@@ -153,7 +153,7 @@ class Table(collections.namedtuple('Table',
             engine = constants.LegacyDBType(data.uint8_at(0x003d)).name
 
         return cls(
-            name=tablename.filename_to_tablename(name),
+            name=tablename.filename_to_tablename(name.encode('utf-8')),
             mysql_version=mysql_version,
             charset=charset,
             options=TableOptions(
