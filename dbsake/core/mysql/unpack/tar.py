@@ -37,9 +37,9 @@ def unpack(stream):
     kwargs = dict(fileobj=stream, mode='r|')
     with contextlib.closing(tarfile.open(**kwargs)) as tar:
         for entry in tar:
-            entry.name = common.normalize(entry.name)
-            yield common.Entry(path=entry.name,
-                               name=common.qualified_name(entry.name),
-                               required=common.is_required(entry.name),
+            path = common.normalize(entry.name).encode('utf-8')
+            yield common.Entry(path=path,
+                               name=common.qualified_name(path),
+                               required=common.is_required(path),
                                chunk=0,
                                extract=entry_extractor(tar, entry))

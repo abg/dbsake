@@ -17,7 +17,7 @@ from dbsake.core.mysql.frm import tablename
 # File patterns considered "required"
 # This includes standard mysql files along with "shared" InnoDB tablespaces
 # and Percona XtraBackup control files.
-MYSQL_FILE_CRE = re.compile(r'''
+MYSQL_FILE_CRE = re.compile(br'''
     ^mysql_upgrade_info$|       # info written by mysql_upgrade
     ^auto[.]cnf$|               # MySQL 5.6 uuid config
     ^ibdata.*$|                 # InnoDB shared tablespace
@@ -41,7 +41,6 @@ def normalize(path):
 
 
 def is_required(path):
-    path = path.decode('utf-8')
     return MYSQL_FILE_CRE.match(path) is not None
 
 
@@ -50,13 +49,12 @@ def qualified_name(path):
 
     :returns: qualified database.tablename
     """
-    path = path.decode('utf-8')
     if MYSQL_FILE_CRE.match(path):
         return None
 
     tbl = os.path.basename(path)
     tbl, _ = os.path.splitext(tbl)
-    tbl = tbl.partition('#P')[0]
+    tbl = tbl.partition(b'#P')[0]
     dbname = os.path.basename(os.path.dirname(path))
 
     return '%s.%s' % (tablename.decode(dbname),
