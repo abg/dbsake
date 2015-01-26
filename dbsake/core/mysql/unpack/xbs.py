@@ -14,7 +14,6 @@ import errno
 import logging
 import os
 import struct
-import sys
 import zlib
 
 from . import common
