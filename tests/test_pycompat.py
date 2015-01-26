@@ -3,6 +3,7 @@ Test dbsake.pycompat
 """
 from __future__ import unicode_literals
 
+import errno
 import os
 import shutil
 import stat
@@ -36,11 +37,13 @@ def test_makedir(base):
     with pytest.raises(OSError):
         pycompat.makedirs(os.curdir)
 
-    path = os.path.join(base, 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', os.curdir)
+    path = os.path.join(base, 'dir1', 'dir2', 'dir3', 'dir4', 'dir5',
+                        os.curdir)
     pycompat.makedirs(path)
     path = os.path.join(base, 'dir1', os.curdir, 'dir2', 'dir3', 'dir4',
                         'dir5', 'dir6')
     pycompat.makedirs(path)
+
 
 def test_exist_ok_existing_directory(base):
     path = os.path.join(base, 'dir1')
@@ -54,6 +57,7 @@ def test_exist_ok_existing_directory(base):
     pycompat.makedirs(path, mode=mode, exist_ok=True)
     os.umask(old_mask)
 
+
 def test_exist_ok_s_isgid_directory(base):
     path = os.path.join(base, 'dir1')
     S_ISGID = stat.S_ISGID
@@ -63,10 +67,14 @@ def test_exist_ok_s_isgid_directory(base):
         existing_testfn_mode = stat.S_IMODE(os.lstat(base).st_mode)
         try:
             os.chmod(base, existing_testfn_mode | S_ISGID)
-        except PermissionError:
-            raise unittest.SkipTest('Cannot set S_ISGID for dir.')
+        except OSError as exc:
+            if exc.errno == errno.EPERM:
+                pytest.skip('Cannot set S_ISGID for dir.')
+            else:
+                raise
+
         if (os.lstat(base).st_mode & S_ISGID != S_ISGID):
-            raise unittest.SkipTest('No support for S_ISGID dir mode.')
+            pytest.skip('No support for S_ISGID dir mode.')
         # The os should apply S_ISGID from the parent dir for us, but
         # this test need not depend on that behavior.  Be explicit.
         pycompat.makedirs(path, mode | S_ISGID)
@@ -79,6 +87,7 @@ def test_exist_ok_s_isgid_directory(base):
         pycompat.makedirs(path, mode | S_ISGID, exist_ok=True)
     finally:
         os.umask(old_mask)
+
 
 def test_exist_ok_existing_regular_file(base):
     base = base
@@ -166,7 +175,8 @@ def test_disk_usage(base):
 
 def test_relpath(base):
     assert pycompat.relpath("/foo/bar/baz", "/") == "foo/bar/baz"
-    assert pycompat.relpath("/opt/sandboxes/mysql-5.6/data/mysql", "/opt/sandboxes/mysql-5.6") == "data/mysql"
+    assert pycompat.relpath("/opt/sandboxes/mysql-5.6/data/mysql",
+                            "/opt/sandboxes/mysql-5.6") == "data/mysql"
 
     with pytest.raises(ValueError):
         pycompat.relpath('')
