@@ -34,7 +34,7 @@ def entry_extractor(archive, tarinfo):
 
 
 def unpack(stream):
-    kwargs = dict(fileobj=stream, mode='r|')
+    kwargs = dict(fileobj=stream, mode='r|', ignore_zeros=True)
     with contextlib.closing(tarfile.open(**kwargs)) as tar:
         for entry in tar:
             path = common.normalize(entry.name).encode('utf-8')
