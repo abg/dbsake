@@ -15,8 +15,8 @@ import re
 from dbsake.core.mysql.frm import tablename
 
 TABLE_FILE_CRE = re.compile(br'''
-^.*[.](frm|isl|MYD|MYI|MAD|MAI|MRG|TRG|TRN|ARM|ARZ|CSM|CSV|par)$
-''')
+^.*[.](frm|isl|ibd|MYD|MYI|MAD|MAI|MRG|TRG|TRN|ARM|ARZ|CSM|CSV|par)$
+''', re.VERBOSE)
 
 
 def normalize(path):
