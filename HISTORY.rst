@@ -8,7 +8,7 @@ History
 
 New features
     * unpack command added to help extracting files from .tar or .xb archives
-      See docs.dbsake.net/en/latest/commands/unpack.html for for details.
+      See http://docs.dbsake.net/en/latest/commands/unpack.html for for details.
 
     * "make dbsake.sh" would fail under python2.6 due to some assumptions
       around python's zipfile module.
