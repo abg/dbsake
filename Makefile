@@ -1,4 +1,4 @@
-.PHONY: clean-pyc clean-build docs clean
+.PHONY: clean-pyc clean-build docs clean dbsake.sh
 
 help:
 	@echo "clean-build - remove build artifacts"
