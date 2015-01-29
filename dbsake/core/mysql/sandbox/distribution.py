@@ -23,11 +23,12 @@ except ImportError:
     import urllib2 as _urllib
 import re
 import shutil
-import sys
 import tempfile
 
+from dbsake import pycompat
 from dbsake.util import cmd
-from dbsake.util import pathutil
+from dbsake.util import compression
+from dbsake.util import fmt
 
 from . import common
 from . import util
@@ -174,16 +175,15 @@ def deploy(options):
     """
 
     start = time.time()
-    try:
-        if options.distribution == 'system':
-            return distribution_from_system(options)
-        elif os.path.isfile(options.distribution):
-            return distribution_from_tarball(options)
-        else:
-            return distribution_from_download(options)
-    finally:
-        info("    * Deployed MySQL distribution in %.2f seconds",
-             time.time() - start)
+    if options.distribution == 'system':
+        dist = distribution_from_system(options)
+    elif os.path.isfile(options.distribution):
+        dist = distribution_from_tarball(options)
+    else:
+        dist = distribution_from_download(options)
+    info("    * Deployed MySQL distribution in %.2f seconds",
+         time.time() - start)
+    return dist
 
 
 def distribution_from_system(options):
@@ -194,9 +194,9 @@ def distribution_from_system(options):
     envpath = os.pathsep.join(['/usr/libexec',
                                '/usr/sbin',
                                os.environ['PATH']])
-    mysqld = pathutil.which('mysqld', path=envpath)
-    mysql = pathutil.which('mysql', path=envpath)
-    mysqld_safe = pathutil.which('mysqld_safe', path=envpath)
+    mysqld = pycompat.which('mysqld', path=envpath)
+    mysql = pycompat.which('mysql', path=envpath)
+    mysqld_safe = pycompat.which('mysqld_safe', path=envpath)
 
     if None in (mysqld, mysql, mysqld_safe):
         raise common.SandboxError("Unable to find MySQL binaries")
@@ -239,7 +239,7 @@ def distribution_from_system(options):
     # now copy mysqld, mysql, mysqld_safe to sandbox_dir/bin
     # then return an appropriate MySQLDistribution instance
     bindir = os.path.join(options.basedir, 'bin')
-    pathutil.makedirs(bindir, 0o0770, exist_ok=True)
+    pycompat.makedirs(bindir, 0o0770, exist_ok=True)
     for name in [mysqld]:
         shutil.copy2(name, bindir)
     debug("    # Copied minimal MySQL commands to %s", bindir)
@@ -255,7 +255,7 @@ def distribution_from_system(options):
     )
 
 
-def unpack_tarball_distribution(stream, destdir):
+def unpack_tarball_distribution(stream, destdir, report_progress):
     """Unpack a MySQL tar distribution in a directory
 
     This method filters several items from the tarball:
@@ -268,55 +268,59 @@ def unpack_tarball_distribution(stream, destdir):
     :param destdir: destination directory files should be unpacked to
     """
     debug("    # unpacking tarball stream=%r destination=%r", stream, destdir)
-    tar = tarfile.open(None, 'r|*', fileobj=stream)
+
     total_size = 0
     extracted_size = 0
     # python 2.6's tarfile does not support the context manager protocol
     # so try...finally is used here
-    try:
-        for tarinfo in tar:
-            total_size += tarinfo.size
-            if not (tarinfo.isreg() or tarinfo.issym()):
-                continue
-            name = os.path.normpath(tarinfo.name).partition(os.sep)[2]
-            name0 = name.partition(os.sep)[0]
-            if (name0 == 'bin' and
-                not name.endswith('_embedded') and
-                not name.endswith('mysqld-debug')) or \
-               (name0 == 'lib' and not name.endswith('.a')) or \
-               name0 == 'share':
-                tarinfo.name = name
-            elif name0 == 'scripts':
-                tarinfo.name = os.path.join('bin', os.path.basename(name))
-            elif name in ('COPYING', 'README', 'INSTALL-BINARY',
-                          'docs/ChangeLog'):
-                tarinfo.name = os.path.join('docs.mysql',
-                                            os.path.basename(name))
-            else:
-                debug("    # Filtering: %s", name)
-                continue
-            # reset the user to something sane
-            tarinfo.uname = 'mysql'
-            tarinfo.gname = 'mysql'
-            tarinfo.uid = 0
-            tarinfo.gid = 0
-            # finally extract the element
-            debug("    # Extracting: %s", name)
-            # http://bugs.python.org/issue12800
-            if tarinfo.issym():
-                dest_path = os.path.join(destdir, name)
-                try:
-                    os.unlink(dest_path)
-                except OSError as exc:
-                    if exc.errno != errno.ENOENT:
-                        raise
-            tar.extract(tarinfo, destdir)
-            extracted_size += tarinfo.size
-    finally:
-        tar.close()
-        from dbsake.util import format_filesize
-        debug("    # Uncompressed tarball size: %s Extracted size: %s",
-              format_filesize(total_size), format_filesize(extracted_size))
+    sizehint = int(stream.info()['content-length'])
+    with compression.decompressed(stream,
+                                  report_progress=report_progress,
+                                  sizehint=sizehint,
+                                  filetype='.gz') as stream:
+        with contextlib.closing(tarfile.open(None,
+                                             'r|*',
+                                             fileobj=stream)) as tar:
+            for tarinfo in tar:
+                total_size += tarinfo.size
+                if not (tarinfo.isreg() or tarinfo.issym()):
+                    continue
+                name = os.path.normpath(tarinfo.name).partition(os.sep)[2]
+                name0 = name.partition(os.sep)[0]
+                if (name0 == 'bin' and
+                    not name.endswith('_embedded') and
+                    not name.endswith('mysqld-debug')) or \
+                   (name0 == 'lib' and not name.endswith('.a')) or \
+                   name0 == 'share':
+                    tarinfo.name = name
+                elif name0 == 'scripts':
+                    tarinfo.name = os.path.join('bin', os.path.basename(name))
+                elif name in ('COPYING', 'README', 'INSTALL-BINARY',
+                              'docs/ChangeLog'):
+                    tarinfo.name = os.path.join('docs.mysql',
+                                                os.path.basename(name))
+                else:
+                    debug("    # Filtering: %s", name)
+                    continue
+                # reset the user to something sane
+                tarinfo.uname = 'mysql'
+                tarinfo.gname = 'mysql'
+                tarinfo.uid = 0
+                tarinfo.gid = 0
+                # finally extract the element
+                debug("    # Extracting: %s", name)
+                # http://bugs.python.org/issue12800
+                if tarinfo.issym():
+                    dest_path = os.path.join(destdir, name)
+                    try:
+                        os.unlink(dest_path)
+                    except OSError as exc:
+                        if exc.errno != errno.ENOENT:
+                            raise
+                tar.extract(tarinfo, destdir)
+                extracted_size += tarinfo.size
+            debug("    # Uncompressed tarball size: %s Extracted size: %s",
+                  fmt.filesize(total_size), fmt.filesize(extracted_size))
 
 
 def distribution_from_tarball(options):
@@ -325,11 +329,11 @@ def distribution_from_tarball(options):
     """
     info("    - Deploying distribution from binary tarball: %s",
          options.distribution)
-    with util.StreamProxy(open(options.distribution, 'rb')) as stream:
-        if sys.stderr.isatty():
-            size = os.fstat(stream.fileno()).st_size
-            stream.add(util.progressbar(max=size))
-        unpack_tarball_distribution(stream, options.basedir)
+    file_url = 'file://' + os.path.abspath(options.distribution)
+    with util.StreamProxy(_urllib.urlopen(file_url)) as stream:
+        unpack_tarball_distribution(stream,
+                                    options.basedir,
+                                    options.report_progress)
 
     bindir = os.path.join(options.basedir, 'bin')
     version = mysqld_version(os.path.join(bindir, 'mysqld'))
@@ -576,7 +580,7 @@ def cache_download(name):
 
     :param name: path to write a cached download ot
     """
-    pathutil.makedirs(os.path.dirname(name), exist_ok=True)
+    pycompat.makedirs(os.path.dirname(name), exist_ok=True)
     with open(name, 'wb') as fileobj:
         yield fileobj
 
@@ -622,7 +626,7 @@ def download_tarball_asc(options):
         raise common.SandboxError("GPG signature not found for %s" % version)
 
     asc_path = discover_cache_path(cdn.name + '.asc')
-    pathutil.makedirs(os.path.dirname(asc_path), exist_ok=True)
+    pycompat.makedirs(os.path.dirname(asc_path), exist_ok=True)
     with open(asc_path, 'wb') as fileobj:
         fileobj.write(stream.read())
         debug("    # Wrote %s", fileobj.name)
@@ -631,8 +635,8 @@ def download_tarball_asc(options):
 
 def initialize_gpg():
     gpghome = os.path.expanduser('~/.dbsake/gpg')
-    pathutil.makedirs(gpghome, mode=0o0700, exist_ok=True)
-    gpg = pathutil.which('gpg') or pathutil.which('gpg2')
+    pycompat.makedirs(gpghome, mode=0o0700, exist_ok=True)
+    gpg = pycompat.which('gpg') or pycompat.which('gpg2')
     if not gpg:
         raise common.SandboxError("Failed to find gpg")
     gpg_cmd = cmd.shell_format('{0} -k 5072E1F5', gpg)
@@ -641,8 +645,8 @@ def initialize_gpg():
     if not ret.returncode:
         return  # all is well
     else:
-        for line in ret.stderr:
-            debug("    # gpg: %s", line.rstrip())
+        for line in ret.stderr.splitlines():
+            debug("    # gpg: %s", line)
 
     # else import the mysql key
     info("    - Importing mysql public key to %s", gpghome)
@@ -651,8 +655,8 @@ def initialize_gpg():
     gpg_cmd = cmd.shell_format('{0} --keyserver={1} --recv-keys {2}',
                                gpg, key_server, mysql_key_id)
     ret = cmd.capture_both(gpg_cmd, env={'GNUPGHOME': gpghome})
-    for line in ret.stderr:
-        debug("    # %s", line.rstrip())
+    for line in ret.stderr.splitlines():
+        debug("    # %s", line)
     if ret.returncode != 0:
         raise common.SandboxError("Failed to import mysql public key")
 
@@ -660,7 +664,7 @@ def initialize_gpg():
 @contextlib.contextmanager
 def gpg_verify_stream(signature):
     gpghome = os.path.expanduser('~/.dbsake/gpg')
-    gpg = pathutil.which('gpg') or pathutil.which('gpg2')
+    gpg = pycompat.which('gpg') or pycompat.which('gpg2')
     verify_cmd = cmd.shell_format('{0} --verify {1} -', gpg, signature)
     info("    - Verifying gpg signature via: %s", verify_cmd)
     try:
@@ -712,31 +716,37 @@ def distribution_from_download(options):
     checksum = hashlib.new('md5')
 
     info("    - Deploying MySQL %s from download", version)
-    with download_mysql(version, 'x86_64', options.cache_policy) as stream:
+    with pycompat.ExitStack() as stack:
+        enter_ctx = stack.enter_context
+
+        stream = enter_ctx(download_mysql(version,
+                                          'x86_64',
+                                          options.cache_policy))
+
         debug("    # Streaming from %s", stream.geturl())
+
         if not options.skip_gpgcheck:
             initialize_gpg()
             signature = download_tarball_asc(options)
-        managers = []
+
         stream.add(checksum.update)
-        if sys.stderr.isatty():
-            stream_size = int(stream.info()['content-length'])
-            stream.add(util.progressbar(max=stream_size))
-        if (options.cache_policy != 'never' and
-                stream.headers['x-dbsake-cache']):
-            managers.append(cache_download(stream.headers['x-dbsake-cache']))
+
+        cache_path = stream.headers['x-dbsake-cache']
+        if (options.cache_policy != 'never' and cache_path):
+            cache = enter_ctx(cache_download(cache_path))
+            stream.add(cache.write)
             debug("    # Caching download: %s",
                   stream.headers['x-dbsake-cache'])
         else:
             debug("    # Not caching download")
 
         if not options.skip_gpgcheck:
-            managers.append(gpg_verify_stream(signature))
-        with util.nested(*managers) as ctx:
-            for _f in ctx:
-                stream.add(_f.write)
-            info("    - Unpacking tar stream. This may take some time")
-            unpack_tarball_distribution(stream, options.basedir)
+            gpg_verify = enter_ctx(gpg_verify_stream(signature))
+            stream.add(gpg_verify.write)
+        info("    - Unpacking tar stream. This may take some time")
+        unpack_tarball_distribution(stream,
+                                    options.basedir,
+                                    options.report_progress)
 
     if checksum.hexdigest() != stream.headers['x-dbsake-checksum']:
         warn("    ! Detected checksum error in download")

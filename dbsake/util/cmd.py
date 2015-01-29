@@ -281,4 +281,5 @@ def piped_stdout(command, **kwargs):
     with run_async(command, **kwargs) as process:
         yield process.stdout
     if process.returncode != 0:
-        raise CommandError("'%s' exited with non-zero status" % command)
+        raise CommandError("'%s' exited with non-zero status(%d)" %
+                           (command, process.returncode))

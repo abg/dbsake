@@ -11,3 +11,4 @@ Commands
    commands/upgrade-mycnf
    commands/fincore
    commands/uncache
+   commands/unpack

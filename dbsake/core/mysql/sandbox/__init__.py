@@ -13,6 +13,7 @@ import logging
 import os
 import time
 
+from dbsake import pycompat
 from dbsake.util import format_filesize
 from dbsake.util import pathutil
 
@@ -32,7 +33,7 @@ def create(**options):
     sbopts = common.check_options(**options)
 
     # a basic sanity check: make sure there's at least 1GB free (or 5%)
-    usage = pathutil.disk_usage(sbopts.basedir)
+    usage = pycompat.disk_usage(pathutil.resolve_mountpoint(sbopts.basedir))
 
     if usage.free < 1024**3:
         raise SandboxError(("Only {0} of {1} (<{2:.2%}) available on {3}. "
@@ -66,8 +67,7 @@ def create(**options):
                              socket=os.path.join(sbopts.datadir, 'mysql.sock'),
                              tmpdir=os.path.join(sbdir, 'tmp'),
                              mysql_version=dist.version,
-                             port=dist.version.as_int(),
-                             innodb_log_file_size=None)
+                             port=dist.version.as_int())
     info("  Bootstrapping sandbox instance")
     common.bootstrap(sbopts, dist)
     info("  Creating sandbox.sh initscript")
@@ -76,6 +76,9 @@ def create(**options):
                                datadir=sbopts.datadir,
                                defaults_file=os.path.join(sbdir,
                                                           'my.sandbox.cnf'))
+
+    info("  Initializing database user")
+    common.initial_mysql_user(sbopts)
 
     info("Sandbox created in %.2f seconds", time.time() - start)
     info("")

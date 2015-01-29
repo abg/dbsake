@@ -27,15 +27,9 @@ CREATE DATABASE IF NOT EXISTS `test`;
 -- what can be added here.
 
 -- dbsake: cleanup system users start --
-DELETE FROM `users` WHERE Host NOT IN ('localhost', '127.0.0.1', '::1');
+DELETE FROM `user` WHERE Host NOT IN ('localhost', '127.0.0.1', '::1');
+DELETE FROM `user` WHERE User = '';
 UPDATE `user` SET PASSWORD = PASSWORD('{{password|escape_string}}') WHERE User = 'root';
 DELETE FROM `db` WHERE (Db = 'test' OR Db = 'test\_%') AND User = '';
-DELETE FROM `user` WHERE User = '';
 -- dbsake: cleanup system users end --
-{% endif %}
-
-{% if user_dml %}
--- dbsake: user injection start --
-{{user_dml}}
--- dbsake: user injection end --
 {% endif %}
