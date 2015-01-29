@@ -100,10 +100,10 @@ def load_unpacker(stream):
 
 def unpack(datasource,
            destination,
-           list_contents=False,
            include_tables=(),
            exclude_tables=(),
-           report_progress=False):
+           report_progress=False,
+           list_contents=False):
     """Unpack a MySQL tar or xbstream based datasource
 
     :param datasource: file object stream to unpack
