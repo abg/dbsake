@@ -23,7 +23,6 @@ except ImportError:
     import urllib2 as _urllib
 import re
 import shutil
-import sys
 import tempfile
 
 from dbsake import pycompat

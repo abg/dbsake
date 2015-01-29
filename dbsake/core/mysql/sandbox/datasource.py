@@ -7,17 +7,12 @@ Support for importing data sources
 """
 from __future__ import print_function
 
-import fnmatch
 import logging
 import os
-import re
-import sys
-import tarfile
 import time
 
 from dbsake import pycompat
 from dbsake.util import cmd
-from dbsake.util import compression
 
 from dbsake.core.mysql import unpack
 
@@ -25,6 +20,7 @@ from . import common
 
 info = logging.info
 error = logging.error
+
 
 def prepare_datadir(datadir, options):
     innobackupex = pycompat.which('innobackupex')

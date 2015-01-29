@@ -4,12 +4,7 @@ dbsake.core.mysql.sandbox.util
 
 Sandbox utilities
 """
-from __future__ import print_function, division
-
-import sys
-import time
-
-import dbsake.util as util
+from __future__ import unicode_literals
 
 
 class StreamProxy(object):
