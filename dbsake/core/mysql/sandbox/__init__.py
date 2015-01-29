@@ -67,8 +67,7 @@ def create(**options):
                              socket=os.path.join(sbopts.datadir, 'mysql.sock'),
                              tmpdir=os.path.join(sbdir, 'tmp'),
                              mysql_version=dist.version,
-                             port=dist.version.as_int(),
-                             innodb_log_file_size=None)
+                             port=dist.version.as_int())
     info("  Bootstrapping sandbox instance")
     common.bootstrap(sbopts, dist)
     info("  Creating sandbox.sh initscript")
