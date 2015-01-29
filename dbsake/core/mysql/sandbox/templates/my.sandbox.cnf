@@ -4,117 +4,116 @@ no-auto-rehash
 
 [client]
 {% if mysql_user %}
-user                            = "{{mysql_user|escape_string}}"
+user                                = "{{mysql_user|escape_string}}"
 {% endif %}
 {% if password %}
-password                        = "{{password|escape_string}}"
+password                            = "{{password|escape_string}}"
 {% endif %}
 {% if socket %}
-socket                          = {{socket}}
+socket                              = {{socket}}
 {% endif %}
 
 [mysqld]
 {% if basedir %}
-basedir                         = {{basedir}}
+basedir                             = {{basedir}}
 {% endif %}
-user                            = {{system_user}}
-datadir                         = {{datadir}}
-pid-file                        = {{datadir}}/mysql.pid
-tmpdir                          = {{tmpdir}}
-socket                          = {{socket}}
+user                                = {{system_user}}
+datadir                             = {{datadir}}
+pid-file                            = {{datadir}}/mysql.pid
+tmpdir                              = {{tmpdir}}
+socket                              = {{socket}}
 skip-name-resolve
-sql-mode                        = NO_ENGINE_SUBSTITUTION
-#event-scheduler                = 1
+sql-mode                            = NO_ENGINE_SUBSTITUTION
+#event-scheduler                    = 1
 
 ## Cache
-thread-cache-size               = 0
+thread-cache-size                   = 0
 {% if mysql_version < (5,1) %}
-table-cache                     = 512
+table-cache                         = 512
 {% else %}
-table-open-cache                = 512
-table-definition-cache          = 512
+table-open-cache                    = 512
+table-definition-cache              = 512
 {% endif %}
-query-cache-size                = 0
-query-cache-type                = 0
+query-cache-size                    = 0
+query-cache-type                    = 0
 
 ## Per-thread Buffers
-#sort-buffer-size               = 2M
+#sort-buffer-size                   = 2M
 
 ## Temp Tables
-#tmp-table-size                 = 16M
-#max-heap-table-size            = 16M
+#tmp-table-size                     = 16M
+#max-heap-table-size                = 16M
 
 ## Networking
 {% if not networking %}
 skip-networking
-#port                           = {{port}}
+#port                               = {{port}}
 {% else %}
-port                            = {{port}}
-bind-address                    = {{bind_address}}
+port                                = {{port}}
+bind-address                        = {{bind_address}}
 {% endif %}
-back-log                        = 50
-max-connections                 = 64
-max-connect-errors              = 10000
-max-allowed-packet              = 16M
-interactive-timeout             = 3600
-wait-timeout                    = 600
+#back-log                           = 50
+max-connections                     = 64
+max-connect-errors                  = 10000
+max-allowed-packet                  = 16M
+#interactive-timeout                = 28800
+#wait-timeout                       = 28800
 
 ### Storage Engines
 
 ## MyISAM
-key-buffer-size                 = 8M
-myisam-sort-buffer-size         = 128M
+key-buffer-size                     = 8M
+myisam-sort-buffer-size             = 128M
 {% if mysql_version < (5,5,3) %}
-myisam-recover                  = DEFAULT
+myisam-recover                      = DEFAULT
 {% else %}
-myisam-recover-options          = DEFAULT
+myisam-recover-options              = DEFAULT
 {% endif %}
 
 ## InnoDB
-innodb-buffer-pool-size         = 64M
+innodb-buffer-pool-size             = 64M
 {% if innodb_data_file_path %}
-innodb-data-file-path           = {{innodb_data_file_path}}
+innodb-data-file-path               = {{innodb_data_file_path}}
 {% endif %}
-{% if innodb_log_file_size %}
-innodb-log-file-size            = {{innodb_log_file_size}}
-{% else %}
-innodb-log-file-size            = 32M
-{% endif %}
+innodb-log-file-size                = {{innodb_log_file_size|default('32M')}}
 {% if innodb_log_files_in_group > 2 %}
-innodb-log-files-in-group       = {{innodb_log_files_in_group}}
+innodb-log-files-in-group           = {{innodb_log_files_in_group}}
 {% endif %}
-innodb-log-buffer-size          = 8M
-innodb-file-per-table           = 1
-innodb-open-files               = 300
+innodb-log-buffer-size              = 8M
+innodb-file-per-table               = 1
+innodb-open-files                   = 300
 {% if (5,1,32) < mysql_version < (5, 5) %}
 ignore-builtin-innodb
-plugin-load                     = ha_innodb_plugin.so
+plugin-load                         = ha_innodb_plugin.so
+{% endif %}
+{% if mysql_version >= (5,6,3) %}
+innodb-buffer-pool-dump-at-shutdown = 1
+innodb-buffer-pool-load-at-startup  = 1
 {% endif %}
 
 ## Replication
-server-id                       = 1
-#log-bin                        = bin-log
-#relay-log                      = relay-log
-relay-log-space-limit           = 16G
-expire-logs-days                = 7
-#read-only                      = 1
-#sync-binlog                    = 1
-#log-slave-updates              = 1
-#binlog-format                  = MIXED
-#auto-increment-offset          = 1
-#auto-increment-increment       = 2
+server-id                           = {{server_id|default(port)}}
+#log-bin                            = bin-log
+#relay-log                          = relay-log
+expire-logs-days                    = 7
+#read-only                          = 1
+#sync-binlog                        = 1
+#log-slave-updates                  = 1
+#binlog-format                      = ROW
+#auto-increment-offset              = 1
+#auto-increment-increment           = 2
 
 ## Logging
 {% if mysql_version < (5,1) %}
-log-slow-queries                = {{datadir}}/slow.log
+log-slow-queries                    = {{datadir}}/slow.log
 {% else %}
-log-output                      = FILE
-slow-query-log                  = 1
-slow-query-log-file             = {{datadir}}/slow.log
+log-output                          = FILE
+slow-query-log                      = 1
+slow-query-log-file                 = {{datadir}}/slow.log
 log-slow-slave-statements
 log-slow-admin-statements
 {% endif %}
-long-query-time                 = 2
+long-query-time                     = 2
 
 {% if additional_options %}
 
@@ -125,7 +124,6 @@ long-query-time                 = 2
 {% endif %}
 
 [mysqld_safe]
-ledir                           = {{distribution.libexecdir}}
-log-error                       = {{datadir}}/mysqld.log
-open-files-limit                = {{open_files_limit|default(65535)}}
-
+ledir                               = {{distribution.libexecdir}}
+log-error                           = {{datadir}}/mysqld.log
+open-files-limit                    = {{open_files_limit|default(65535)}}
