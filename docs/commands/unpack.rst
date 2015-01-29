@@ -1,6 +1,8 @@
 unpack
 ------
 
+.. versionadded:: 2.1.0
+
 Unpack a datadir archive for MySQL.
 
 This expects a .tar or .xb based file archive of a MySQL datadir, whose paths
