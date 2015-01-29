@@ -330,7 +330,8 @@ def distribution_from_tarball(options):
     """
     info("    - Deploying distribution from binary tarball: %s",
          options.distribution)
-    with util.StreamProxy(open(options.distribution, 'rb')) as stream:
+    file_url = 'file://' + os.path.abspath(options.distribution)
+    with util.StreamProxy(_urllib.urlopen(file_url)) as stream:
         unpack_tarball_distribution(stream,
                                     options.basedir,
                                     options.report_progress)
