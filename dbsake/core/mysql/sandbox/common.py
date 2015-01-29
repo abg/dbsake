@@ -216,7 +216,8 @@ def generate_defaults(options, **kwargs):
     if ib_logfile_size:
         kwargs['innodb_log_file_size'] = _format_logsize(ib_logfile_size)
         info("    + Existing ib_logfile0 detected.")
-        info("    + Setting innodb-log-file-size=%s", kwargs['innodb_log_file_size'])
+        info("    + Setting innodb-log-file-size=%s",
+             kwargs['innodb_log_file_size'])
 
     ibdata = []
     ibdata_pattern = os.path.join(options.datadir, 'ibdata*')

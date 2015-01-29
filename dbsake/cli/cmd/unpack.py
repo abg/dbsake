@@ -24,18 +24,25 @@ from dbsake.cli import dbsake
 @click.option('-C', '--directory', metavar='<path>',
               default='.',
               help="Directory to output to (default: $PWD)")
-@click.option('-t', '--table', multiple=True, metavar='<db.table>',
+@click.option('-t', '--table', 'include_tables',
+              multiple=True, metavar='<db.table>',
               default=[],
               help="Only extract table datafiles matching specified " +
                    "database.table glob patterns.")
-@click.option('-T', '--exclude-table', multiple=True, metavar='<db.table>',
+@click.option('-T', '--exclude-table', 'exclude_tables',
+              multiple=True, metavar='<db.table>',
               default=[],
               help="Exclude table data files matching specified " +
                    "databsae.table glob patterns.")
 @click.argument('archive', metavar="<path>",
                 default="-",
                 type=click.File('rb'))
-def _unpack(archive, list_contents, directory, table, exclude_table, report_progress):
+def _unpack(archive,
+            list_contents,
+            directory,
+            include_tables,
+            exclude_tables,
+            report_progress):
     """Unpack a MySQL backup archive.
 
     This command will unpack tar or Percona XtraBackup xbstream
@@ -51,14 +58,14 @@ def _unpack(archive, list_contents, directory, table, exclude_table, report_prog
               file=sys.stderr)
         sys.exit(1)
 
-    if table:
-        table += ('mysql.*',)
+    if include_tables:
+        include_tables += ('mysql.*',)
 
     try:
         unpack.unpack(archive, directory,
                       list_contents=list_contents,
-                      include_tables=table,
-                      exclude_tables=exclude_table,
+                      include_tables=include_tables,
+                      exclude_tables=exclude_tables,
                       report_progress=report_progress)
     except unpack.UnpackError as exc:
         print("%s" % exc, file=sys.stderr)
