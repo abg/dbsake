@@ -3,15 +3,84 @@
 History
 =======
 
-2.0.1 (unreleased)
+2.1.0 (2015-01-28)
 ------------------
+
+New features
+    * unpack command added to help extracting files from .tar or .xb archives
+      See docs.dbsake.net/en/latest/commands/unpack.html for for details.
+
+    * "make dbsake.sh" would fail under python2.6 due to some assumptions
+      around python's zipfile module.
+
+    * "make test-all" will now test against python2.6, python3.4 environments,
+      if available.
 
 Bugs fixed:
 
-  * sieve would fail on compressed input on platforms where flushing read-only
-    files results in an EBADF file.  (Issue #71)
-  * sandbox.sh no longer uses the sed -r flag when processing my.cnf options
-    to make the script more compatible on non-GNU platforms. (issue #70)
+  * fincore: handle io errors more gracefully (issue #72)
+
+  * frmdump: decoding/encoding _filename encoding MySQL names is now
+             compatible with python3.  This would previously fail under
+             python3 in some circumstances.
+
+  * sandbox: sandbox.sh no longer uses the sed -r flag when processing my.cnf
+             options to make the script more compatible on non-GNU platforms.
+             (issue #70)
+
+  * sandbox: gpg stderr output was previously logged incorrectly
+             (issue #74)
+
+  * sandbox: mysqld --init-file is now used to generate the database user
+             rather than parsing the user.frm or injecting SQL into the
+             bootstrap process.  This resolves an issue with recent MySQL
+             5.7 releases and should generally be more robust.
+
+  * sandbox: "sandbox.sh mysql" now sets MYSQL_HISTFILE to .mysql_history
+             relative to the sandbox base directory, rather than appending
+             to ~/.mysql_history.  This avoids problems mixing libedit w/
+             libreadline (issue #76)
+
+  * sandbox: stale pidfiles are now detected and handled gracefully.
+             Previously a stale pidfile would require manual intervention
+             to remove the mysql.pid or ./sandbox.sh start would fail
+             to automatically restart a crashed instance. (issue #75)
+
+  * sandbox: The --datasource option now correctly display progress
+             when unpacking a compressed datasource. (issue #73)
+
+  * sandbox: The --datasource option now handles xbstream archives in
+             addition to .tar archives and supports more compression
+             options for both (.gz, .bz2, .xz and .lzo)
+
+  * sandbox: --progress / --no-progress options have been added to
+             control the display of progressbars
+
+  * sandbox: logging more consistently uses whitespace when subtasks
+             are completed during sandbox creation.
+
+  * sandbox: The generated my.sandbox.cnf now generates a somewhat
+             cleanear default config.  wait-timeout / interactive-timeout
+             now use the MySQL defaults rather than being 600 / 3600
+             (respectively). The buggy relay-log-space-limit is avoided
+             and innodb-buffer-pool-{dump,restore} options are set by
+             default on MySQL 5.6+.
+
+  * sandbox: Extracting --datasource archives are now handled via the
+             internal unpack command for consistency.
+
+  * sieve: Decompressing compressed input would fail on platforms where
+           flushing read-only files results in an EBADF file.  (Issue #71)
+
+  * sieve: documentation incorrectly referenced "--no-write-binlog" as
+           "--disable-binlog" (issue #81)
+
+  * sieve: mariadb gtid information in mysqldump output is now handled
+           properly (issue #78)
+
+  * upgrade-mycnf: The example in the documentation was incorrectly missing
+                   the -c / --config option. (issue #82)
+
 
 2.0.0 (2014-08-05)
 ------------------

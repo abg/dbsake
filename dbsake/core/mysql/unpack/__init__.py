@@ -102,7 +102,8 @@ def unpack(datasource,
            destination,
            include_tables=(),
            exclude_tables=(),
-           report_progress=False):
+           report_progress=False,
+           list_contents=False):
     """Unpack a MySQL tar or xbstream based datasource
 
     :param datasource: file object stream to unpack
@@ -119,7 +120,11 @@ def unpack(datasource,
     with compression.decompressed(datasource, report_progress) as stream:
         stream = io.open(stream.fileno(), 'rb', closefd=False)
         for entry in load_unpacker(stream):
-            if not entry.required and name_filter(entry.name):
+            if entry.name is not None and name_filter(entry.name):
                 debug("# Skipping: %s" % entry.path)
                 continue
-            entry.extract(destination)
+            if list_contents:
+                if entry.chunk == 0:
+                    print(entry.path.decode('utf-8'))
+            else:
+                entry.extract(destination)

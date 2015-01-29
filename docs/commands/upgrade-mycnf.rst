@@ -33,7 +33,7 @@ Example
 
 .. code-block:: bash
 
-   $ dbsake upgrade-mycnf -t 5.6 --patch /etc/my.cnf
+   $ dbsake upgrade-mycnf -t 5.6 --patch -c /etc/my.cnf
    2014-01-04 05:36:34,757 Removing option 'skip-external-locking'. Reason: Default behavior in MySQL 4.1+
    --- a/etc/my.cnf
    +++ b/etc/my.cnf
