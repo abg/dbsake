@@ -86,6 +86,14 @@ def fetch_source(package, excludes=()):
         yield path, source
 
 
+class ZipFile(zipfile.ZipFile):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+
 class DBSakeBundler(distutils.core.Command):
     """Command to create a standalone dbsake shell script
 
@@ -129,9 +137,9 @@ class DBSakeBundler(distutils.core.Command):
                       stat.S_IXUSR | stat.S_IRUSR | stat.S_IWUSR)
             fileobj.write(SHELL_SCRIPT.encode('utf-8'))
             compress_opt = zipfile.ZIP_DEFLATED
-            with zipfile.ZipFile(file=fileobj,
-                                 mode='w',
-                                 compression=compress_opt) as archive:
+            with ZipFile(file=fileobj,
+                         mode='w',
+                         compression=compress_opt) as archive:
                 for dirpath, _, filenames in os.walk('dbsake'):
                     for name in filenames:
                         if (not name.endswith('.py') and
