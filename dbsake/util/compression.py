@@ -18,6 +18,8 @@ import sys
 import threading
 import time
 
+from dbsake import pycompat
+
 from . import cmd
 from . import fmt
 
@@ -214,10 +216,20 @@ def filetype_to_command(ext):
         '.xz': ('pxz', 'xz')
     }
 
-    if ext in zcmds:
-        return zcmds[ext][0] + ' -dc'
-    else:
+    try:
+        candidates = zcmds[ext]
+    except KeyError:
         return None
+
+    for name in candidates:
+        # resolve "canonical" binpath
+        cbin = pycompat.which(name)
+        if not cbin:
+            continue
+        return cbin + ' -dc'
+
+    raise OSError("Unable to find compression method for extension '%s'" %
+                  (ext,))
 
 
 @contextlib.contextmanager
