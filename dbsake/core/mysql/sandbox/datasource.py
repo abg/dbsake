@@ -56,11 +56,11 @@ def preload(options):
     info("  Preloading sandbox data from %s", datasource)
     try:
         with open(datasource, 'rb') as fileobj:
-            unpack.unpack(fileobj,
-                          options.datadir,
-                          options.include_tables,
-                          options.exclude_tables,
-                          options.report_progress)
+            unpack.unpack(datasource=fileobj,
+                          destination=options.datadir,
+                          include_tables=options.include_tables,
+                          exclude_tables=options.exclude_tables,
+                          report_progress=options.report_progress)
     except unpack.UnpackError:
         error(" - Unsupported data source: %s", datasource)
         raise common.SandboxError("Unable to unpack provided datasource.")
