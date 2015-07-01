@@ -71,8 +71,8 @@ class Key(collections.namedtuple('Key',
         if self.index_type in ('FULLTEXT', 'SPATIAL'):
             # FULLTEXT / SPATIAL may never have an index prefix
             return value
-        elif (part.column.type_code.name in self.maybe_prefix_types
-                and part.length != part.column.length) or \
+        elif (part.column.type_code.name in self.maybe_prefix_types and
+                part.length != part.column.length) or \
              (part.column.type_code.name in self.always_prefix_types):
                 prefix_length = part.length // part.column.charset.maxlen
                 value += '({0})'.format(prefix_length)
