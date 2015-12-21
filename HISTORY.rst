@@ -8,6 +8,9 @@ History
 
 Bugs fixed:
 
+   * unpack command had a bug that failed on uncompressed input; similarly
+     affected the sandbox command when unpacking uncompressed archives via
+     the --data-source / -s option (issue #90)
    * Remove unicode_literals usage in cli to avoid noisy warnings from click
      (Issue #96)
 
