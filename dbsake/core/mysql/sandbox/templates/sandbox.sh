@@ -39,26 +39,25 @@ _mysqld_option() {
 }
 
 sandbox_start() {
-    if sandbox_status > /dev/null
+    if sandbox_status >/dev/null
     then
 	echo "sandbox is already started"
         return 0
     fi
     echo -n "Starting sandbox: "
-    socket=$(_mysqld_option socket mysqld mysqld_safe)
     # close stdin (0) and redirect stdout/stderr to /dev/null
     mysqld_safe_args="--defaults-file=$defaults_file"
     MY_BASEDIR_VERSION=${basedir} \
         nohup $mysqld_safe $mysqld_safe_args "$@" 0<&- &>/dev/null &
     local start_timeout=${START_TIMEOUT}
-    until [[ -S "${socket}" || $start_timeout -le 0 ]]
+    until sandbox_status >/dev/null || [[ $start_timeout -le 0 ]]
     do
       kill -0 $! &>/dev/null || break
       echo -n "."
       sleep 1
       (( start_timeout-- ))
     done
-    [[ -S "${socket}" ]]
+    sandbox_status >/dev/null
     ret=$?
     [[ $ret -eq 0 ]] && echo "[OK]" || echo "[FAILED]"
     return $ret
