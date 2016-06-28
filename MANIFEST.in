@@ -12,3 +12,4 @@ recursive-exclude * *.py[co]
 
 recursive-include docs *.rst conf.py Makefile make.bat
 recursive-include dbsake templates/*
+recursive-include contrib *
