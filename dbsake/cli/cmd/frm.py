@@ -4,8 +4,6 @@ dbsake.cmd.frmdump
 
 Dump schema from MySQL .frm files
 """
-from __future__ import unicode_literals
-
 import sys
 
 import click

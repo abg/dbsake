@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from __future__ import print_function
 
 import codecs
@@ -45,14 +44,13 @@ def test_frm_decode(frm_path, expected_sql):
 
 
 def test_frm_tablename():
-    sample = 'Настройки'
+    sample = u'Настройки'
     expected_encoding = b'@T0@g0@x0@y0@w0@u0@p0@q0@o0'
 
     result = tablename.encode(sample)
 
     assert result == expected_encoding
 
-    print("result => %r" % (result, ))
     orig = tablename.decode(result)
 
     assert orig == sample

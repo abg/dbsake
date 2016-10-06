@@ -4,8 +4,6 @@ dbsake.cli.cmd.mycnf
 
 MySQL option file utilitie
 """
-from __future__ import unicode_literals
-
 import sys
 
 import click

@@ -3,6 +3,14 @@
 History
 =======
 
+2.1.1 (unreleased)
+------------------
+
+Bugs fixed:
+
+   * Remove unicode_literals usage in cli to avoid noisy warnings from click
+     (Issue #96)
+
 2.1.0 (2015-01-28)
 ------------------
 

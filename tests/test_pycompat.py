@@ -1,8 +1,6 @@
 """
 Test dbsake.pycompat
 """
-from __future__ import unicode_literals
-
 import errno
 import os
 import shutil

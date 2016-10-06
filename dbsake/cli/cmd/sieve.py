@@ -4,8 +4,6 @@ dbsake.cmd.sieve
 
 Advanced filtering of mysqldump backup files
 """
-from __future__ import unicode_literals
-
 import errno
 import signal
 import sys

@@ -1,8 +1,6 @@
 """
 Test dbsake sandbox
 """
-from __future__ import unicode_literals
-
 from click.testing import CliRunner
 
 from dbsake.cli.cmd import fs as fs_cli

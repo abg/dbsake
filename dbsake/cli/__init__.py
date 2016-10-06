@@ -4,8 +4,6 @@ dbsake.cli
 
 Main dbsake cli entrypoint
 """
-from __future__ import unicode_literals
-
 import logging
 import sys
 

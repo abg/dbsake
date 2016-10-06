@@ -5,8 +5,6 @@ dbsake.cmd.fs
 Commands for interacting with the local filesystem
 
 """
-from __future__ import unicode_literals
-
 import sys
 
 import click
