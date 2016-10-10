@@ -1,8 +1,6 @@
 """
 Test dbsake cli
 """
-from __future__ import unicode_literals
-
 from click.testing import CliRunner
 
 import dbsake

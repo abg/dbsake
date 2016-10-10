@@ -6,7 +6,6 @@ Archive unpack cli frontend
 
 """
 from __future__ import print_function
-from __future__ import unicode_literals
 
 import sys
 

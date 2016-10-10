@@ -4,8 +4,6 @@ dbsake.cmd.sandbox
 
 Command interface to create isolated MySQL "sandbox" instances
 """
-from __future__ import unicode_literals
-
 import os
 import sys
 

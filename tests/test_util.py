@@ -2,8 +2,6 @@
 Test dbsake.util.compression
 
 """
-from __future__ import unicode_literals
-
 from dbsake.util import compression
 
 
