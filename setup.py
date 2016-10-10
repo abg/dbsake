@@ -2,13 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import codecs
-import pkgutil
 
-
-try:
-    from setuptools import setup, Command
-except ImportError:
-    from distutils.core import setup, Command
+from setuptools import setup, Command, find_packages
 
 import dbsake
 from dbsake.distutils_ext import DBSakeBundler
@@ -26,11 +21,6 @@ class PyTest(Command):
         import sys,subprocess
         errno = subprocess.call([sys.executable, 'runtests.py'])
         raise SystemExit(errno)
-
-
-def find_packages(path, prefix):
-    walk = pkgutil.walk_packages(path, prefix + '.')
-    return [prefix] + [name for _, name, ispkg in walk if ispkg]
 
 
 def load_requirements(path):
@@ -63,7 +53,7 @@ setup(
     author='Andrew Garner',
     author_email='andrew.garner@rackspace.com',
     url='https://github.com/abg/dbsake',
-    packages=find_packages(dbsake.__path__, dbsake.__name__),
+    packages=find_packages(),
     package_dir={'dbsake':
                  'dbsake'},
     include_package_data=True,
