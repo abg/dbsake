@@ -10,8 +10,34 @@ sequence is useful for decoding certain values.
 
 import collections
 
-Charset = collections.namedtuple('Charset',
-                                 'id name collation maxlen is_default')
+_mysql_to_py_charset = {
+    'armscii8': NotImplementedError,
+    'binary':   'ascii',
+    'dec8':     NotImplementedError,
+    'eucjpms':  NotImplementedError,
+    'geostd8':  NotImplementedError,
+    'hp8':      NotImplementedError,
+    'keybcs2':  NotImplementedError,
+    'koi8r':    'koi8-r',
+    'koi8u':    'koi8-u',
+    'macce':    'maccentraleurope',
+    'swe7':     NotImplementedError,
+    'ucs2':     'utf-16-be',
+    'utf8mb4':  'utf-8',
+    'utf16le':  'utf-16-le',
+    'utf16':    'utf-16-be',
+    'utf32':    'utf-32-be',
+}
+
+class Charset(collections.namedtuple('Charset',
+                                     'id name collation maxlen is_default')):
+    def pycharset(self):
+        charset = _mysql_to_py_charset.get(self.name, self.name)
+        if charset is NotImplementedError:
+            raise NotImplementedError("Unsupported character set '%s'" %
+                                      (self.name,))
+        return charset
+
 
 CHARSETS = {
     32: Charset(id=32,
