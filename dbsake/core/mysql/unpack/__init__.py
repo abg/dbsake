@@ -118,7 +118,6 @@ def unpack(datasource,
     name_filter = inclusion_exclusion_filter(include_tables, exclude_tables)
 
     with compression.decompressed(datasource, report_progress) as stream:
-        stream = io.open(stream.fileno(), 'rb', closefd=False)
         for entry in load_unpacker(stream):
             if entry.name is not None and name_filter(entry.name):
                 debug("# Skipping: %s" % entry.path)

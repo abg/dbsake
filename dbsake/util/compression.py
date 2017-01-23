@@ -173,7 +173,10 @@ class ProxyStream(threading.Thread):
             if exc.errno != errno.EPIPE:
                 raise
         finally:
-            self.wr.close()
+            try:
+                self.wr.close()
+            except IOError:
+                pass
 
 
 def detect_filetype(fileobj):
@@ -271,9 +274,8 @@ def decompressed(stream, report_progress=False, sizehint=None, filetype=None):
     else:
         widget = None
 
-    if filetype is not None:
-        with ProxyStream(stream, widget) as fileobj:
-            with cmd.piped_stdout(command, stdin=fileobj) as output:
-                yield output
-    else:
-        yield stream
+    with pycompat.ExitStack() as es:
+        stream = es.enter_context(ProxyStream(stream, widget))
+        if filetype is not None:
+            stream = es.enter_context(cmd.piped_stdout(command, stdin=stream))
+        yield io.open(stream.fileno(), 'rb', closefd=False)
