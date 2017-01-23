@@ -11,6 +11,7 @@ Bugs fixed:
    * unpack command had a bug that failed on uncompressed input; similarly
      affected the sandbox command when unpacking uncompressed archives via
      the --data-source / -s option (issue #90)
+   * upgrade-mycnf now handles paths with spaces (issue #94)
    * Remove unicode_literals usage in cli to avoid noisy warnings from click
      (Issue #96)
 
