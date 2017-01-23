@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import getpass
 import logging
 import os
 import time
@@ -60,7 +61,7 @@ def create(**options):
     common.generate_defaults(sbopts,
                              mysql_user=sbopts.mysql_user,
                              password=sbopts.password,
-                             system_user=os.environ['USER'],
+                             system_user=getpass.getuser(),
                              distribution=dist,
                              basedir=dist.basedir,
                              datadir=sbopts.datadir,
