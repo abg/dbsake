@@ -194,20 +194,21 @@ def distribution_from_system(options):
     envpath = os.pathsep.join(['/usr/libexec',
                                '/usr/sbin',
                                os.environ['PATH']])
-    mysqld = pycompat.which('mysqld', path=envpath)
-    mysql = pycompat.which('mysql', path=envpath)
-    mysqld_safe = pycompat.which('mysqld_safe', path=envpath)
+    binpaths = {}
+    binpaths['mysqld'] = pycompat.which('mysqld', path=envpath)
+    binpaths['mysql'] = pycompat.which('mysql', path=envpath)
+    binpaths['mysqld_safe'] = pycompat.which('mysqld_safe', path=envpath)
 
-    if None in (mysqld, mysql, mysqld_safe):
-        raise common.SandboxError("Unable to find MySQL binaries")
-    debug("    # Found mysqld: %s", mysqld)
-    debug("    # Found mysqld_safe: %s", mysqld_safe)
-    debug("    # Found mysql: %s", mysql)
-    version = mysqld_version(mysqld)
+    version = mysqld_version(binpaths['mysqld'])
+    if version < (5, 7) or 'MariaDB' in version.comment:
+        binpaths['mysql_install_db'] = pycompat.which('mysql_install_db',
+                                                      path=envpath)
+        binpaths['resolveip'] = pycompat.which('resolveip', path=envpath)
+        binpaths['my_print_defaults'] = pycompat.which('my_print_defaults',
+                                                       path=envpath)
+
     debug("    # MySQL server version: %s", version)
-    # XXX: we might be able to look this up from mysqld --help --verbose,
-    #      but I really want to avoid that.  This shold cover 99% of local
-    #      cases and I think it's fine to abort if this doesn't exist
+
     basedir = '/usr'
     debug("    # MySQL --basedir %s", basedir)
     # sharedir is absolutely required as we need it to bootstrap mysql
@@ -218,17 +219,11 @@ def distribution_from_system(options):
     if 'Percona Server' in version.comment:
         share_search_path = ['share/percona-server'] + share_search_path
     sharedir = first_subdir(basedir, *share_search_path)
+
     if not sharedir:
         raise common.SandboxError("MySQL share directory not found (%s)" %
                                   ','.join(os.path.join(os.sep, 'usr', path)
                                            for path in share_search_path))
-
-    for script in ('fill_help_tables.sql',
-                   'mysql_system_tables_data.sql',
-                   'mysql_system_tables.sql'):
-        if not exists(join(sharedir, script)):
-            raise common.SandboxError("MySQL bootstrap SQL '%s' not found." %
-                                      os.path.join(sharedir, script))
 
     debug("    # MySQL share found in %s", sharedir)
     # Note: plugindir may be None, if using mysql < 5.1
@@ -240,17 +235,29 @@ def distribution_from_system(options):
     # then return an appropriate MySQLDistribution instance
     bindir = os.path.join(options.basedir, 'bin')
     pycompat.makedirs(bindir, 0o0770, exist_ok=True)
-    for name in [mysqld]:
-        shutil.copy2(name, bindir)
+    missing_cmd = False
+    for name, path in binpaths.items():
+        if path is None:
+            missing_cmd = True
+            error("!! Binary for '%s' not found", name)
+            continue
+        info("# Found %s -> %s", name, path)
+        shutil.copy2(path, bindir)
+
+    if missing_cmd:
+        raise common.SandboxError("Unable to locate one or more required "
+                                  "binaries")
+    shutil.copytree(sharedir, os.path.join(options.basedir, 'share'))
+
     debug("    # Copied minimal MySQL commands to %s", bindir)
     return MySQLDistribution(
         version=version,
-        mysqld=os.path.join(bindir, os.path.basename(mysqld)),
-        mysqld_safe=mysqld_safe,
-        mysql=mysql,
-        basedir=basedir,
-        sharedir=sharedir,
-        libexecdir=bindir,
+        mysqld=os.path.join(bindir, 'mysqld'),
+        mysqld_safe=os.path.join(bindir, 'mysqld_safe'),
+        mysql=os.path.join(bindir, 'mysql'),
+        basedir=options.basedir,
+        sharedir=os.path.join(options.basedir, 'share'),
+        libexecdir=os.path.join(options.basedir, 'bin'),
         plugindir=plugindir
     )
 
@@ -299,6 +306,8 @@ def unpack_tarball_distribution(stream, destdir, report_progress):
                               'docs/ChangeLog'):
                     tarinfo.name = os.path.join('docs.mysql',
                                                 os.path.basename(name))
+                elif name in ('my-default.cnf',):
+                    tarinfo.name = name
                 else:
                     debug("    # Filtering: %s", name)
                     continue
@@ -407,7 +416,13 @@ class MySQLCDNInfo(collections.namedtuple("MySQLCDNInfo", "name locations")):
                 'Downloads/MySQL-5.7',
                 'archives/get/file',
             )
-        )
+        ),
+        '8.0': dict(
+            name='mysql-{version}-linux-glibc2.12-{arch}.tar.gz',
+            locations=(
+                'Downloads/MySQL-8.0',
+            )
+        ),
     }
 
     prefix = 'http://cdn.mysql.com'

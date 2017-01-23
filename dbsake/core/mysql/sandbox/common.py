@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import codecs
 import collections
+import contextlib
 import errno
 import fcntl
 import glob
@@ -295,35 +296,46 @@ def mysql_install_db(options, distribution, **kwargs):
         yield line
 
 
-def bootstrap(options, distribution, additional_options=()):
+def bootstrap(options, distribution, defaults_file, additional_options=()):
+    needs_bootstrap=True
     start = time.time()
-    defaults_file = os.path.join(options.basedir, 'my.sandbox.cnf')
     logfile = os.path.join(options.basedir, 'bootstrap.log')
     info("    - Logging bootstrap output to %s", logfile)
 
-    bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1}",
-                                     distribution.mysqld, defaults_file)
-    additional_options = ('--bootstrap',
-                          '--default-storage-engine=myisam') + \
-        additional_options
-    additional = ' '.join(map(cmd.shell_quote, additional_options))
-    if additional:
-        bootstrap_cmd += ' ' + additional
+    env = { 'TMPDIR': options.basedir + '/tmp' }
 
-    bootstrap_sql = os.path.join(options.basedir, 'bootstrap.sql')
-    with codecs.open(bootstrap_sql, 'wb', 'utf8') as fileobj:
-        os.fchmod(fileobj.fileno(), 0o0660)
-        for line in mysql_install_db(options, distribution):
-            print(line, file=fileobj)
-    info("    - Generated bootstrap SQL")
-    with open(logfile, 'wb') as stderr:
-        with open(bootstrap_sql, 'rb') as fileobj:
+    init_file = generate_init_file(options.basedir, options, distribution)
+    ret = 0
+
+    if needs_bootstrap:
+        with open(logfile, 'wb') as stderr:
+            requires_init = True
+
+            if 'MariaDB' in distribution.version.comment or \
+                distribution.version < (5, 7, 6):
+                my_install_db = os.path.join(distribution.libexecdir, 'mysql_install_db')
+                bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1}",
+                                         my_install_db, defaults_file)
+            else:
+                bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1} "
+                                             "--initialize-insecure "
+                                             "--init-file={2}",
+                                             distribution.mysqld,
+                                             defaults_file,
+                                             init_file)
+                requires_init = False
+
             info("    - Running %s", bootstrap_cmd)
-            returncode = cmd.run(bootstrap_cmd,
-                                 stdin=fileobj,
-                                 stdout=stderr,
-                                 stderr=stderr)
-    if returncode != 0:
+            ret = cmd.run(bootstrap_cmd,
+                          stdout=stderr,
+                          stderr=stderr,
+                          env=env,
+                          cwd=options.basedir)
+    if ret == 0 and requires_init:
+        sandbox_sh = os.path.join(options.basedir, 'sandbox.sh')
+        ret = apply_init_file(sandbox_sh, init_file)
+
+    if ret != 0:
         raise SandboxError("Bootstrapping failed. Details in %s" % stderr.name)
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
 
@@ -334,25 +346,35 @@ def initial_mysql_user(options):
     sbpass = options.password
     start = time.time()
 
-    with tempfile.NamedTemporaryFile(dir=sbdir) as fileobj:
+def generate_init_file(path, options, distribution):
+    with tempfile.NamedTemporaryFile(dir=path, delete=False) as fileobj:
         os.fchmod(fileobj.fileno(), 0o0660)
         fileobj = codecs.getwriter('utf-8')(fileobj)
         template = template_loader.get_template('init_file.sql')
-        sql = template.render(user=sbuser, password=sbpass, host='localhost')
+        print("Okay trying to render init_file.sql template...")
+        sql = template.render(user=options.mysql_user,
+                              password=options.password,
+                              host='localhost',
+                              dist=distribution)
         print(sql, file=fileobj)
         fileobj.flush()
         logging.info("    - Generated init-file: %s", fileobj.name)
-        with open(os.devnull, 'rb') as devnull:
-            sandbox_sh = "%s/sandbox.sh" % (sbdir,)
-            start_cmd = "%s start --init-file=%s" % (sandbox_sh, fileobj.name)
-            stop_cmd = "%s stop" % (sandbox_sh,)
-            logging.info("    - Running: %s", start_cmd)
-            status = cmd.run(start_cmd, stdout=devnull, stderr=devnull)
-            if status != 0:
-                logging.error("Failed to initialize sandbox. "
-                              "Check %s for details",
-                              os.path.join(sbdir, "data", "mysqld.log"))
-            logging.info("    - Running: %s", stop_cmd)
-            cmd.run(stop_cmd, stdout=devnull, stderr=devnull)
+        return fileobj.name
+
+
+def apply_init_file(sbinit, path):
+    start = time.time()
+    with open(os.devnull, 'rb') as devnull:
+        start_cmd = "%s start --init-file=%s" % (sbinit, path)
+        stop_cmd = "%s stop" % (sbinit,)
+        logging.info("    - Running: %s", start_cmd)
+        status = cmd.run(start_cmd, stdout=devnull, stderr=devnull)
+        if status != 0:
+            logging.error("Failed to initialize sandbox. "
+                          "Check %s for details",
+                          os.path.join("data", "mysqld.log"))
+        logging.info("    - Running: %s", stop_cmd)
+        status = cmd.run(stop_cmd, stdout=devnull, stderr=devnull)
     logging.info("    * Initialized MySQL user in %.2f seconds",
                  time.time() - start)
+    return status

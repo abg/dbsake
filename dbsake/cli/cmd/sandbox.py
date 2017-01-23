@@ -4,6 +4,7 @@ dbsake.cmd.sandbox
 
 Command interface to create isolated MySQL "sandbox" instances
 """
+import getpass
 import os
 import sys
 
@@ -55,7 +56,7 @@ from dbsake.cli import dbsake
               help="overwrite existing sandbox directory")
 @click.option('-u', '--mysql-user',
               metavar='<user>',
-              default='root',
+              default=getpass.getuser(),
               help="MySQL user to add to the sandbox instance")
 @click.option('-p', '--password',
               default=False,

@@ -13,10 +13,15 @@ password                            = "{{password|escape_string}}"
 socket                              = {{socket}}
 {% endif %}
 
+[mysql_install_db]
+basedir                             = {{basedir}}
+
 [mysqld]
 {% if basedir %}
 basedir                             = {{basedir}}
 {% endif %}
+lc-messages-dir                     = {{ basedir }}/share
+character-sets-dir                  = {{ basedir }}/share/charsets
 user                                = {{system_user}}
 datadir                             = {{datadir}}
 pid-file                            = {{datadir}}/mysql.pid
@@ -25,6 +30,11 @@ socket                              = {{socket}}
 skip-name-resolve
 sql-mode                            = NO_ENGINE_SUBSTITUTION
 #event-scheduler                    = 1
+
+## Plugins
+{% if mysql_version >= (5, 5, 10) or 'MariaDB' in mysql_version.comment and mysql_version >= (5, 2) %}
+plugin-load                         = auth_socket.so
+{% endif %}
 
 ## Cache
 thread-cache-size                   = 0
@@ -124,6 +134,5 @@ long-query-time                     = 2
 {% endif %}
 
 [mysqld_safe]
-ledir                               = {{distribution.libexecdir}}
 log-error                           = {{datadir}}/mysqld.log
 open-files-limit                    = {{open_files_limit|default(65535)}}

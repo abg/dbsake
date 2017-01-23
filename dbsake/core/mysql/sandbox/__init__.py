@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import getpass
 import logging
 import os
 import time
@@ -60,7 +61,7 @@ def create(**options):
     common.generate_defaults(sbopts,
                              mysql_user=sbopts.mysql_user,
                              password=sbopts.password,
-                             system_user=os.environ['USER'],
+                             system_user=getpass.getuser(),
                              distribution=dist,
                              basedir=dist.basedir,
                              datadir=sbopts.datadir,
@@ -68,14 +69,16 @@ def create(**options):
                              tmpdir=os.path.join(sbdir, 'tmp'),
                              mysql_version=dist.version,
                              port=dist.version.as_int())
-    info("  Bootstrapping sandbox instance")
-    common.bootstrap(sbopts, dist)
+
     info("  Creating sandbox.sh initscript")
+    defaults_file = os.path.join(sbdir, 'my.sandbox.cnf')
     common.generate_initscript(sbdir,
                                distribution=dist,
                                datadir=sbopts.datadir,
-                               defaults_file=os.path.join(sbdir,
-                                                          'my.sandbox.cnf'))
+                               defaults_file=defaults_file)
+
+    info("  Bootstrapping sandbox instance")
+    common.bootstrap(sbopts, dist, defaults_file)
 
     info("  Initializing database user")
     common.initial_mysql_user(sbopts)
