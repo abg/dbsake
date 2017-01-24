@@ -6,6 +6,7 @@ Parse binary .frm files
 """
 from __future__ import unicode_literals
 
+import binascii
 import collections
 import errno
 import itertools
@@ -135,13 +136,13 @@ class Table(collections.namedtuple('Table',
         if extrasize:
             if extrainfo.tell() < extrasize:
                 connection = extrainfo.bytes_prefix16()
-                connection = connection.decode(charset.name)
+                connection = connection.decode('utf-8')
             if extrainfo.tell() < extrasize:
                 engine = extrainfo.bytes_prefix16()
-                engine = engine.decode(charset.name)
+                engine = engine.decode('utf-8')
             if extrainfo.tell() < extrasize:
                 partition_info = extrainfo.bytes_prefix32()
-                partition_info = partition_info.decode(charset.name)
+                partition_info = partition_info.decode('utf-8')
             extrainfo.skip(2)  # skip null + autopartition flag
 
         if not engine:
@@ -243,7 +244,7 @@ def unpack_column_attributes(*args, **kwargs):
 
 
 def unpack_column_names(names):
-    return tuple(name.decode('utf8') for name in names[1:-2].split(b'\xff'))
+    return tuple(name.decode('utf-8') for name in names[1:-2].split(b'\xff'))
 
 
 def unpack_column_labels(labels):
@@ -253,7 +254,7 @@ def unpack_column_labels(labels):
     Returns a tuple of tuples
     """
     return tuple(
-        tuple(name.decode('utf8') for name in group[1:-1].split(b'\xff'))
+        tuple(name for name in group[1:-1].split(b'\xff'))
         for group in labels[:-1].split(b'\x00')
     )
 
@@ -313,6 +314,13 @@ def unpack_columns(packed_columns, table):
         charset = charsets.lookup(charset_id)
         context.update(subtype_code=subtype_code, charset=charset)
 
+        if context.labels:
+            if charset.name in ('ucs2', 'utf16', 'utf16le', 'utf32'):
+                context.labels = tuple(binascii.unhexlify(val)
+                                       for val in context.labels)
+
+            context.update(labels=tuple(value.decode(charset.pycharset())
+                                        for value in context.labels))
         with defaults.offset(defaults_offset):
             default = mysqltypes.unpack_default(defaults, context)
         comment = comments.read(comment_length).decode('utf-8')

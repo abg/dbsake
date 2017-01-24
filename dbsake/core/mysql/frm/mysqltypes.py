@@ -119,7 +119,7 @@ def format_type_double(context):
 # String types
 def _format_charset(context):
     value = ''
-    if context.table.charset != context.charset:
+    if context.table.charset != context.charset and context.charset.name != 'binary':
         value += ' CHARACTER SET {0}'.format(context.charset.name)
 
     if not context.charset.is_default:
@@ -128,12 +128,20 @@ def _format_charset(context):
 
 
 def format_type_string(context):
-    value = 'char({0})'.format(context.length // context.charset.maxlen)
+    if context.charset.name == 'binary':
+        name = 'binary'
+    else:
+        name = 'char'
+    value = '{0}({1})'.format(name, context.length // context.charset.maxlen)
     return value + _format_charset(context)
 
 
 def format_type_varchar(context):
-    value = 'varchar({0})'.format(context.length // context.charset.maxlen)
+    if context.charset.name == 'binary':
+        name = 'varbinary'
+    else:
+        name = 'varchar'
+    value = '{0}({1})'.format(name, context.length // context.charset.maxlen)
     return value + _format_charset(context)
 
 # var_string should be identical to varchar here
@@ -704,7 +712,12 @@ def unpack_type_varchar(defaults, context):
         length = defaults.uint8()
     else:
         length = defaults.uint16()
-    return "'%s'" % defaults.read(length).decode(context.charset.name)
+    data = defaults.read(length)
+
+    if context.charset.name == 'binary':
+        data = data .replace(b"\x00", b"\\0")
+        return "'%s'" % data .decode('ascii', 'replace').rstrip(' ')
+    return "'%s'" % data.decode(context.charset.pycharset())
 
 
 # This is the 4.1 varchar type, but with trailing whitespace
@@ -715,14 +728,17 @@ def unpack_type_varchar(defaults, context):
 def unpack_type_var_string(defaults, context):
     """Unpack a MySQL 4.1 VARCHAR(N) default value"""
     data = defaults.read(context.length)
-    return "'%s'" % data.decode(context.charset.name).rstrip(' ')
+    return "'%s'" % data.decode(context.charset.pycharset()).rstrip(' ')
 
 
 def unpack_type_string(defaults, context):
     """Unpack a CHAR(N) fixed length string"""
     # Trailing spaces are always stripped for CHAR fields
     bytestr = defaults.read(context.length)
-    return "'%s'" % bytestr.decode(context.charset.name).rstrip(' ')
+    if context.charset.name == 'binary':
+        bytestr = bytestr.replace(b"\x00", b"\\0")
+        return "'%s'" % bytestr.decode('ascii', 'replace').rstrip(' ')
+    return "'%s'" % bytestr.decode(context.charset.pycharset()).rstrip(' ')
 
 
 # MySQL BIT(m) type
