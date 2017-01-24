@@ -244,3 +244,30 @@ class HaRowType(enum.Enum):
     COMPRESSED = 3
     REDUNDANT = 4
     COMPACT = 5
+    UNKNOWN_6 = 6
+    TOKUDB_UNCOMPRESSED = 7
+    TOKUDB_ZLIB = 8
+    TOKUDB_SNAPPY = 9
+    TOKUDB_QUICKLZ = 10
+    TOKUDB_LZMA = 11
+    TOKUDB_FAST = 12
+    TOKUDB_SMALL = 13
+    TOKUDB_DEFAULT = 14
+    UNKNOWN_15 = 15
+    UNKNOWN_16 = 16
+    UNKNOWN_17 = 17
+    UNKNOWN_18 = 18
+
+    @property
+    def name(self):
+        orig_name = super(HaRowType, self).name
+
+        if orig_name == 'TOKUDB_DEFAULT':
+            return 'TOKUDB_ZLIB'
+        elif orig_name == 'TOKUDB_FAST':
+            return 'TOKUDB_QUICKLZ'
+        elif orig_name == 'TOKUDB_SMALL':
+            return 'TOKUDB_LZMA'
+        else:
+            return orig_name
+
