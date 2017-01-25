@@ -4,6 +4,7 @@ dbsake.cli.cmd.mycnf
 
 MySQL option file utilitie
 """
+import os
 import sys
 
 import click
@@ -13,7 +14,7 @@ from dbsake.cli import dbsake
 
 @dbsake.command('upgrade-mycnf', options_metavar='[options]')
 @click.option('-c', '--config',
-              type=click.Path(dir_okay=False, resolve_path=True),
+              type=click.Path(dir_okay=False, resolve_path=False),
               default='/etc/my.cnf',
               metavar='<path>',
               help="my.cnf file to parse")
@@ -27,6 +28,12 @@ from dbsake.cli import dbsake
 def upgrade_mycnf(config, target, patch):
     """Upgrade a MySQL option file"""
     from dbsake.core.mysql import mycnf
+
+    config = os.path.expanduser(config)
+
+    if not os.path.exists(config):
+        click.echo("Unreadable config '%s'" % (config,), err=True)
+        sys.exit(os.EX_CONFIG)
 
     result = mycnf.upgrade(config, target, patch)
     click.echo(result)

@@ -8,6 +8,17 @@ History
 
 Bugs fixed:
 
+   * sandbox generated sandbox.sh script would previously wait for the
+     mysqld socket to appear as part of the "start" action, which was
+     problematic for Galera based binaries.  sandbox.sh start now waits
+     for the pid-file to appear via the "sandbox.sh status" action.
+     (issue #88)
+   * frmdump failed to decode tables specified with utf8mb4, binary or other
+     less common encodings.  (issues #97, #102)
+   * unpack command had a bug that failed on uncompressed input; similarly
+     affected the sandbox command when unpacking uncompressed archives via
+     the --data-source / -s option (issue #90)
+   * upgrade-mycnf now handles paths with spaces (issue #94)
    * Remove unicode_literals usage in cli to avoid noisy warnings from click
      (Issue #96)
 
