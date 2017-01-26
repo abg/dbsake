@@ -25,13 +25,15 @@ from dbsake import pycompat
 from dbsake.util import cmd
 from dbsake.util import template
 
+debug = logging.debug
 info = logging.info
 warn = logging.warn
-debug = logging.debug
+error = logging.error
 
 
 class SandboxError(Exception):
     """Base sandbox exception"""
+
 
 SandboxOptions = collections.namedtuple('SandboxOptions',
                                         ['basedir', 'datadir',
@@ -162,6 +164,7 @@ def prepare_sandbox_paths(sbopts):
             raise SandboxError("%s" % exc)
     info("    * Prepared sandbox in %.2f seconds", time.time() - start)
 
+
 # create a jinja2 environment we can load templates from
 template_loader = template.create_environment(__name__.rpartition('.')[0])
 
@@ -255,103 +258,84 @@ def generate_defaults(options, **kwargs):
     return defaults_file
 
 
-def mysql_install_db(options, distribution, **kwargs):
-    join = os.path.join
-
-    def cat(path):
-        with codecs.open(path, 'r', 'utf8') as fileobj:
-            return fileobj.read()
-
-    sharedir = distribution.sharedir
-    mysql_system_tables = cat(join(sharedir, 'mysql_system_tables.sql'))
-    mysql_system_tables_data = cat(join(sharedir,
-                                        'mysql_system_tables_data.sql'))
-    try:
-        # MariaDB uses a separate mysql_performance_tables.sql file
-        p_s_sql_path = join(sharedir, 'mysql_performance_tables.sql')
-        mysql_p_s_tables = cat(p_s_sql_path)
-    except IOError as exc:
-        if exc.errno != errno.ENOENT:
-            raise
-        mysql_p_s_tables = ''
-
-    fill_help_tables = cat(join(sharedir, 'fill_help_tables.sql'))
-
-    # If the ./mysql/ system database does not exist under the datadir
-    # we run the bootstrap initialization logic
-    # This will instruct the template to ensure a `test` database exists
-    # and the basic mysql_secure_installation process is run.
-    bootstrap_data = not os.path.exists(os.path.join(options.datadir, 'mysql'))
-
-    template = template_loader.get_template('bootstrap.sql')
-    sql = template.render(distribution=distribution,
-                          mysql_system_tables=mysql_system_tables,
-                          mysql_system_tables_data=mysql_system_tables_data,
-                          mysql_performance_tables=mysql_p_s_tables,
-                          fill_help_tables=fill_help_tables,
-                          bootstrap_data=bootstrap_data,
-                          password=options.password,
-                          **kwargs)
-    for line in sql.splitlines():
-        yield line
-
-
 def bootstrap(options, distribution, defaults_file, additional_options=()):
-    needs_bootstrap=True
+    if os.listdir(options.datadir):
+        info("    - Skipping bootstrap - %s is not empty.", options.datadir)
+        return True  # may need user initialization step
+
     start = time.time()
+
+    version = distribution.version
+
     logfile = os.path.join(options.basedir, 'bootstrap.log')
-    info("    - Logging bootstrap output to %s", logfile)
-
-    env = { 'TMPDIR': options.basedir + '/tmp' }
-
-    init_file = generate_init_file(options.basedir, options, distribution)
-    ret = 0
-
-    if needs_bootstrap:
-        with open(logfile, 'wb') as stderr:
-            requires_init = True
-
-            if 'MariaDB' in distribution.version.comment or \
-                distribution.version < (5, 7, 6):
-                my_install_db = os.path.join(distribution.libexecdir, 'mysql_install_db')
-                bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1}",
-                                         my_install_db, defaults_file)
-            else:
-                bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1} "
-                                             "--initialize-insecure "
-                                             "--init-file={2}",
-                                             distribution.mysqld,
-                                             defaults_file,
-                                             init_file)
-                requires_init = False
-
-            info("    - Running %s", bootstrap_cmd)
-            ret = cmd.run(bootstrap_cmd,
-                          stdout=stderr,
-                          stderr=stderr,
-                          env=env,
-                          cwd=options.basedir)
-    if ret == 0 and requires_init:
-        sandbox_sh = os.path.join(options.basedir, 'sandbox.sh')
-        ret = apply_init_file(sandbox_sh, init_file)
+    with open(logfile, 'ab') as logf:
+        info("    - Logging bootstrap output to %s", logfile)
+        if 'MariaDB' in version.comment or version < (5, 7, 6):
+            needs_init = True
+            ret = bootstrap_with_mysql_install_db(distribution,
+                                                  options,
+                                                  defaults_file,
+                                                  logf)
+        else:
+            needs_init = False
+            ret = bootstrap_with_mysqld_initialize(distribution,
+                                                   options,
+                                                   defaults_file,
+                                                   logf)
 
     if ret != 0:
-        raise SandboxError("Bootstrapping failed. Details in %s" % stderr.name)
+        raise SandboxError("Bootstrapping failed.")
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
 
+    return needs_init
 
-def initial_mysql_user(options):
-    sbdir = options.basedir
-    sbuser = options.mysql_user
-    sbpass = options.password
-    start = time.time()
 
-def generate_init_file(path, options, distribution):
-    with tempfile.NamedTemporaryFile(dir=path, delete=False) as fileobj:
-        os.fchmod(fileobj.fileno(), 0o0660)
+def bootstrap_with_mysql_install_db(distribution,
+                                    options,
+                                    defaults_file,
+                                    logfile):
+    my_install_db = os.path.join(distribution.libexecdir, 'mysql_install_db')
+    bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1}",
+                                     my_install_db, defaults_file)
+
+    info("    - Running %s", bootstrap_cmd)
+    return cmd.run(bootstrap_cmd,
+                   stdout=logfile,
+                   stderr=logfile,
+                   cwd=options.basedir)
+
+
+def bootstrap_with_mysqld_initialize(distribution,
+                                     options,
+                                     defaults_file,
+                                     logfile):
+    with generate_init_file(options, distribution) as init_file:
+        bootstrap_cmd = cmd.shell_format("{0} --defaults-file={1} "
+                                         "--initialize-insecure "
+                                         "--init-file={2}",
+                                         distribution.mysqld,
+                                         defaults_file,
+                                         init_file)
+
+        info("    - Running %s", bootstrap_cmd)
+        ret = cmd.run(bootstrap_cmd,
+                      stdout=logfile,
+                      stderr=logfile,
+                      cwd=options.basedir)
+        return ret
+
+
+def initialize_mysql_users(distribution, options):
+    with generate_init_file(options, distribution) as init_file:
+        apply_init_file(os.path.join(options.basedir, 'sandbox.sh'), init_file)
+
+
+@contextlib.contextmanager
+def generate_init_file(options, distribution):
+    with tempfile.NamedTemporaryFile(dir=options.basedir, delete=False) as fileobj:
+        os.fchmod(fileobj.fileno(), 0o0600)
         fileobj = codecs.getwriter('utf-8')(fileobj)
         template = template_loader.get_template('init_file.sql')
-        print("Okay trying to render init_file.sql template...")
         sql = template.render(user=options.mysql_user,
                               password=options.password,
                               host='localhost',
@@ -359,7 +343,7 @@ def generate_init_file(path, options, distribution):
         print(sql, file=fileobj)
         fileobj.flush()
         logging.info("    - Generated init-file: %s", fileobj.name)
-        return fileobj.name
+        yield fileobj.name
 
 
 def apply_init_file(sbinit, path):
@@ -367,13 +351,12 @@ def apply_init_file(sbinit, path):
     with open(os.devnull, 'rb') as devnull:
         start_cmd = "%s start --init-file=%s" % (sbinit, path)
         stop_cmd = "%s stop" % (sbinit,)
-        logging.info("    - Running: %s", start_cmd)
+        info("    - Running: %s", start_cmd)
         status = cmd.run(start_cmd, stdout=devnull, stderr=devnull)
         if status != 0:
-            logging.error("Failed to initialize sandbox. "
-                          "Check %s for details",
-                          os.path.join("data", "mysqld.log"))
-        logging.info("    - Running: %s", stop_cmd)
+            error("Failed to initialize sandbox. Check %s for details",
+                  os.path.join("data", "mysqld.log"))
+        info("    - Running: %s", stop_cmd)
         status = cmd.run(stop_cmd, stdout=devnull, stderr=devnull)
     logging.info("    * Initialized MySQL user in %.2f seconds",
                  time.time() - start)

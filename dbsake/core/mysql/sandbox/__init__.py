@@ -78,10 +78,11 @@ def create(**options):
                                defaults_file=defaults_file)
 
     info("  Bootstrapping sandbox instance")
-    common.bootstrap(sbopts, dist, defaults_file)
+    need_user_init = common.bootstrap(sbopts, dist, defaults_file)
 
-    info("  Initializing database user")
-    common.initial_mysql_user(sbopts)
+    if need_user_init:
+        info("  Initializing database user")
+        common.initialize_mysql_users(dist, sbopts)
 
     info("Sandbox created in %.2f seconds", time.time() - start)
     info("")

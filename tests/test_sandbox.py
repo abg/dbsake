@@ -19,7 +19,7 @@ def test_sandbox_system():
 
 
 @pytest.mark.skipif(os.environ.get('TRAVIS', 'false') == 'true',
-                    reason="Skipping sandbox CDN tests on travis-ci")
+                    reason="Skipping slow sandbox tests under travis-ci")
 def test_sandbox_50():
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -49,23 +49,30 @@ def test_sandbox_50():
                                auto_envvar_prefix='DBSAKE', obj={})
         assert result.exit_code == 0
 
-'''
+@pytest.mark.skipif(os.environ.get('TRAVIS', 'false') == 'true',
+                    reason="Skipping slow sandbox tests under travis-ci")
 def test_sandbox_51():
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(sandbox_cli,
                                ['-d', 'mysql_system', '-m', '5.1.72'],
                                auto_envvar_prefix='DBSAKE', obj={})
-    assert_equals(result.exit_code, 0)
+    assert result.exit_code == 0
 
+
+@pytest.mark.skipif(os.environ.get('TRAVIS', 'false') == 'true',
+                    reason="Skipping slow sandbox tests under travis-ci")
 def test_sandbox_55():
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(sandbox_cli,
                                ['-d', 'mysql_system', '-m', '5.5.38'],
                                auto_envvar_prefix='DBSAKE', obj={})
-    assert_equals(result.exit_code, 0)
+    assert result.exit_code == 0
 
+
+@pytest.mark.skipif(os.environ.get('TRAVIS', 'false') == 'true',
+                    reason="Skipping slow sandbox tests under travis-ci")
 def test_sandbox_56():
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -74,11 +81,24 @@ def test_sandbox_56():
                                auto_envvar_prefix='DBSAKE', obj={})
     assert result.exit_code == 0
 
+
+@pytest.mark.skipif(os.environ.get('TRAVIS', 'false') == 'true',
+                    reason="Skipping slow sandbox tests under travis-ci")
 def test_sandbox_57():
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(sandbox_cli,
-                               ['-d', 'mysql_system', '-m', '5.7.4-m14'],
+                               ['-d', 'mysql_system', '-m', '5.7.17'],
                                auto_envvar_prefix='DBSAKE', obj={})
-    assert_equals(result.exit_code, 0)
-'''
+    assert result.exit_code == 0
+
+
+@pytest.mark.skipif(os.environ.get('TRAVIS', 'false') == 'true',
+                    reason="Skipping slow sandbox tests under travis-ci")
+def test_sandbox_80():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(sandbox_cli,
+                               ['-d', 'mysql_system', '-m', '8.0.0-dmr'],
+                               auto_envvar_prefix='DBSAKE', obj={})
+    assert result.exit_code == 0

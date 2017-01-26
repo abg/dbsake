@@ -213,8 +213,6 @@ def distribution_from_system(options):
     debug("    # MySQL --basedir %s", basedir)
     # sharedir is absolutely required as we need it to bootstrap mysql
     # and mysql will fail to start withtout it
-    join = os.path.join
-    exists = os.path.exists
     share_search_path = ['share/mysql']
     if 'Percona Server' in version.comment:
         share_search_path = ['share/percona-server'] + share_search_path
@@ -302,11 +300,11 @@ def unpack_tarball_distribution(stream, destdir, report_progress):
                     tarinfo.name = name
                 elif name0 == 'scripts':
                     tarinfo.name = os.path.join('bin', os.path.basename(name))
-                elif name in ('COPYING', 'README', 'INSTALL-BINARY',
+                elif name0 in ('COPYING', 'README', 'INSTALL-BINARY',
                               'docs/ChangeLog'):
                     tarinfo.name = os.path.join('docs.mysql',
                                                 os.path.basename(name))
-                elif name in ('my-default.cnf',):
+                elif name0 == 'support-files':
                     tarinfo.name = name
                 else:
                     debug("    # Filtering: %s", name)
@@ -414,13 +412,14 @@ class MySQLCDNInfo(collections.namedtuple("MySQLCDNInfo", "name locations")):
             name='mysql-{version}-linux-glibc2.5-{arch}.tar.gz',
             locations=(
                 'Downloads/MySQL-5.7',
-                'archives/get/file',
+                'archives/mysql-5.7',
             )
         ),
         '8.0': dict(
             name='mysql-{version}-linux-glibc2.12-{arch}.tar.gz',
             locations=(
                 'Downloads/MySQL-8.0',
+                'archives/mysql-8.0',
             )
         ),
     }

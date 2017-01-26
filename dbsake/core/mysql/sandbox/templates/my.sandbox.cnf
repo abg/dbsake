@@ -20,8 +20,6 @@ basedir                             = {{basedir}}
 {% if basedir %}
 basedir                             = {{basedir}}
 {% endif %}
-lc-messages-dir                     = {{ basedir }}/share
-character-sets-dir                  = {{ basedir }}/share/charsets
 user                                = {{system_user}}
 datadir                             = {{datadir}}
 pid-file                            = {{datadir}}/mysql.pid

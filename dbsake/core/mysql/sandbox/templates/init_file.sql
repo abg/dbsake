@@ -1,9 +1,15 @@
 -- Initialize the requested database user
 
-{% if 'MariaDB' in dist.version.comment and dist.version >= (5, 2) %}
-GRANT ALL PRIVILEGES ON *.* TO '{{ user|escape_string }}'@'{{ host|escape_string }}' IDENTIFIED VIA unix_socket;
-{% elif dist.version >= (5, 5, 10) %}
-GRANT ALL PRIVILEGES ON *.* to '{{ user|escape_string }}'@'{{ host|escape_string }}' IDENTIFIED WITH auth_socket;
+{% if dist.version < (5, 7, 6) or 'MariaDB' in dist.version.comment %}
+-- Lock out non-local root users by default
+UPDATE mysql.user SET Password = '*THISISNOTAVALIDPASSWORDTHATCANBEUSEDHERE' Where User = 'root' AND Host <> 'localhost';
 {% else %}
-GRANT ALL PRIVILEGES ON *.* TO '{{ user|escape_string }}'@'{{ host|escape_string }}' IDENTIFIED BY '{{ password|escape_string }}';
+-- Lock out non-local root users by default
+UPDATE mysql.user SET account_locked = 'Y'  Where User = 'root' AND Host <> 'localhost';
+{% endif %}
+
+GRANT ALL PRIVILEGES ON *.* TO '{{ user|escape_string }}'@'{{ host|escape_string }}' IDENTIFIED BY '{{ password|escape_string }}' WITH GRANT OPTION;
+{% if user != "root" %}
+-- Reset root@localhost, if we are adding a non-standard user
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY '{{ password|escape_string }}' WITH GRANT OPTION;
 {% endif %}
