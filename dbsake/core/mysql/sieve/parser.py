@@ -35,6 +35,7 @@ def extract_identifier(value):
         raise SieveParseError(value)
     return m.group('ident')
 
+
 # map line prefixes to identifier names
 DISCRIMINATORS = [
     (b'-- MySQL dump', 'header'),

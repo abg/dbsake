@@ -49,6 +49,7 @@ def test_sandbox_50():
                                auto_envvar_prefix='DBSAKE', obj={})
         assert result.exit_code == 0
 
+
 '''
 def test_sandbox_51():
     runner = CliRunner()

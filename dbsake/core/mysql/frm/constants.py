@@ -270,4 +270,3 @@ class HaRowType(enum.Enum):
             return 'TOKUDB_LZMA'
         else:
             return orig_name
-

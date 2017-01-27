@@ -43,6 +43,8 @@ def _show(self, file=None):
     if self.ctx is not None:
         click.echo(self.ctx.get_help() + '\n', file=file)
     click.echo('Error: %s' % self.format_message(), file=file)
+
+
 click.UsageError.show = _show
 
 

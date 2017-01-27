@@ -29,6 +29,7 @@ _mysql_to_py_charset = {
     'utf32':    'utf-32-be',
 }
 
+
 class Charset(collections.namedtuple('Charset',
                                      'id name collation maxlen is_default')):
     def pycharset(self):

@@ -818,6 +818,7 @@ def filename_to_tablename(path):
                 yield name.decode('utf-8')
     return ''.join(assemble_parts(path))
 
+
 # tablename_to_filename
 
 # /*
