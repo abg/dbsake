@@ -152,6 +152,7 @@ class DirectoryWriter(SimpleWriter):
             for line in section.iterable:
                 fileobj.write(line)
 
+
 stream_writer = SimpleWriter
 directory_writer = DirectoryWriter
 

@@ -24,6 +24,7 @@ def extract_create_table(section):
                 break
     return b''.join(result)
 
+
 KEY_CRE = re.compile(br'\s*(?:UNIQUE )?KEY (?P<name>`.+`) \((?P<columns>.+)\)'
                      br'(?: USING (?:BTREE|HASH))?,?$')
 
@@ -62,6 +63,7 @@ def parse_columns(value):
                         quotechar='`',
                         skipinitialspace=True)
     return tuple(column.encode('utf8') for row in reader for column in row)
+
 
 IDENT_CRE = re.compile(br'CREATE TABLE .*`(?P<name>.+)` \($')
 

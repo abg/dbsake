@@ -32,6 +32,7 @@ debug = logging.debug
 class SandboxError(Exception):
     """Base sandbox exception"""
 
+
 SandboxOptions = collections.namedtuple('SandboxOptions',
                                         ['basedir', 'datadir',
                                          'distribution', 'datasource',
@@ -160,6 +161,7 @@ def prepare_sandbox_paths(sbopts):
         except OSError as exc:
             raise SandboxError("%s" % exc)
     info("    * Prepared sandbox in %.2f seconds", time.time() - start)
+
 
 # create a jinja2 environment we can load templates from
 template_loader = template.create_environment(__name__.rpartition('.')[0])

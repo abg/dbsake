@@ -17,5 +17,6 @@ def main():
     import dbsake.cli
     sys.exit(dbsake.cli.main())
 
+
 if __name__ == '__main__':
     sys.exit(main())

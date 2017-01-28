@@ -82,6 +82,7 @@ def format_type_newdecimal(context):
 
     return "decimal({0},{1})".format(precision, scale)
 
+
 # old <5.0 decimal format is formatted the same way
 # scale and precision are taken from pack length
 # and pack flags accordingly
@@ -119,7 +120,8 @@ def format_type_double(context):
 # String types
 def _format_charset(context):
     value = ''
-    if context.table.charset != context.charset and context.charset.name != 'binary':
+    if context.table.charset != context.charset and \
+            context.charset.name != 'binary':
         value += ' CHARACTER SET {0}'.format(context.charset.name)
 
     if not context.charset.is_default:
@@ -143,6 +145,7 @@ def format_type_varchar(context):
         name = 'varchar'
     value = '{0}({1})'.format(name, context.length // context.charset.maxlen)
     return value + _format_charset(context)
+
 
 # var_string should be identical to varchar here
 # but is an older datatype from MySQL 4.1
@@ -202,6 +205,8 @@ def format_type_time2(context):
         return 'time({0})'.format(scale)
     else:
         return 'time'
+
+
 format_type_time = format_type_time2
 
 
@@ -211,6 +216,8 @@ def format_type_timestamp2(context):
         return 'timestamp({0})'.format(scale)
     else:
         return 'timestamp'
+
+
 format_type_timestamp = format_type_timestamp2
 
 
@@ -220,6 +227,8 @@ def format_type_year(context):
 
 def format_type_newdate(context):
     return 'date'
+
+
 format_type_date = format_type_newdate
 
 
@@ -229,6 +238,8 @@ def format_type_datetime2(context):
         return 'datetime({0})'.format(scale)
     else:
         return 'datetime'
+
+
 format_type_datetime = format_type_datetime2
 
 
@@ -476,6 +487,7 @@ def _sec_part_shift(value, digits):
 
 def _sec_part_unshift(value, digits):
     return value * 10**(TIME_SECOND_PART_DIGITS - digits)
+
 
 TIME_HIRES_BYTES = [3, 4, 4, 5, 5, 5, 6]
 
@@ -795,6 +807,8 @@ def unpack_type_set(defaults, context):
 # MySQL BLOB/TEXT types
 def unpack_type_long_blob(defaults, context):
     raise NotImplementedError  # pragma: no cover
+
+
 unpack_type_tiny_blob = unpack_type_long_blob
 unpack_type_medium_blob = unpack_type_long_blob
 unpack_type_blob = unpack_type_long_blob

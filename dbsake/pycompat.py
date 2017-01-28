@@ -20,8 +20,8 @@ if PY3:
     string_types = str,
     text_type = str
 else:
-    string_types = basestring,
-    text_type = unicode
+    string_types = basestring,  # noqa
+    text_type = unicode  # noqa
 
 
 def _get_gid(name):

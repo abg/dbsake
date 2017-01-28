@@ -75,6 +75,7 @@ def resolve_option(item):
 
     return candidates[0]
 
+
 SV_CRE = re.compile(r'(?P<sv>set[-_]variable\s*=\s*)(?P<value>.*)')
 
 
@@ -87,6 +88,7 @@ def sanitize(line, lineno):
                      line.rstrip(), value.rstrip(), lineno)
         return value
     return line
+
 
 KV_CRE = re.compile(r'\s*(?P<key>[^=\s]+?)\s*(?:=\s*(?P<value>.*))?$')
 

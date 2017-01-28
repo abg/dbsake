@@ -13,6 +13,7 @@ from dbsake.cli.cmd.unpack import _unpack
 
 from dbsake.util import cmd
 
+
 def test_help():
     runner = CliRunner()
     result = runner.invoke(dbsake.cli.dbsake, ['help', 'unpack'], obj={})
@@ -57,5 +58,3 @@ def test_unpack_xb_uncompressed_pipe():
         with cmd.piped_stdout(cat_cmd) as stdin:
             result = runner.invoke(_unpack, ["-"], obj={}, input=stdin)
     assert result.exit_code == 0
-
-
