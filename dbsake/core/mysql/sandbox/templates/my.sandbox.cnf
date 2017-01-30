@@ -124,6 +124,5 @@ long-query-time                     = 2
 {% endif %}
 
 [mysqld_safe]
-ledir                               = {{distribution.libexecdir}}
 log-error                           = {{datadir}}/mysqld.log
 open-files-limit                    = {{open_files_limit|default(65535)}}
