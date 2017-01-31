@@ -43,6 +43,17 @@ def test_frm_decode(frm_path, expected_sql):
     assert derived_sql == expected_sql
 
 
+def test_frmdump_recursive():
+    runner = CliRunner()
+    frm_path = os.path.join(os.path.dirname(__file__), 'test_data')
+    expected_frm_count = len([name for name in os.listdir(frm_path)
+                              if name.endswith('.frm')])
+    result = runner.invoke(frmdump, ['--recursive', frm_path], obj={})
+    computed_frm_count = result.output.count('\nCREATE ')
+    assert result.exit_code == 0
+    assert computed_frm_count == expected_frm_count
+
+
 def test_frm_tablename():
     sample = u'Настройки'
     expected_encoding = b'@T0@g0@x0@y0@w0@u0@p0@q0@o0'

@@ -6,6 +6,11 @@ History
 2.1.1 (unreleased)
 ------------------
 
+New features
+
+   * Add frmdump --recursive option to dump all \*.frm files found in the target directory
+     (issue #60)
+
 Bugs fixed:
 
    * sandbox generated sandbox.sh script would previously wait for the
