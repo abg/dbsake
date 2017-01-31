@@ -12,26 +12,26 @@ Percona XtraBackup or other LVM based backup utilities.
 Usage
 .....
 
-.. code-block:: bash
+::
 
-   Usage: dbsake unpack [options] <path>
-   
-     Unpack a MySQL backup archive.
-   
-     This command will unpack tar or Percona XtraBackup xbstream archives with
-     support for filtering and extracting only a subset of tables.
-   
-   Options:
-     -l, --list-contents             List the contents of the archive, but don't
-                                     extract.
-     --progress / --no-progress      Enable/disable progress bar when unpacking.
-     -C, --directory <path>          Directory to output to (default: $PWD)
-     -t, --table <db.table>          Only extract table datafiles matching
-                                     specified database.table glob patterns.
-     -T, --exclude-table <db.table>  Exclude table data files matching specified
-                                     databsae.table glob patterns.
-     -?, --help                      Show this message and exit.
-
+ Usage: dbsake unpack [options] [path]
+ 
+   Unpack a MySQL backup archive.
+ 
+   This command will unpack tar or Percona XtraBackup xbstream archives with
+   support for filtering and extracting only a subset of tables.
+ 
+ Options:
+   -l, --list-contents             List the contents of the archive, but don't
+                                   extract.
+   --progress / --no-progress      Enable/disable progress bar when unpacking.
+   -C, --directory <path>          Directory to output to (default: $PWD)
+   -t, --table <db.table>          Only extract table datafiles matching
+                                   specified database.table glob patterns.
+   -T, --exclude-table <db.table>  Exclude table data files matching specified
+                                   databsae.table glob patterns.
+   -?, --help                      Show this message and exit.
+ 
 Example
 .......
 
@@ -82,7 +82,7 @@ Options
    option. To exclude the mysql schema, a specified
    --exclude-table option should be used.
 
-.. option:: -T, --table <glob>
+.. option:: -T, --exclude-table <glob>
 
    Restricted extracted table data files to those who
    do NOT match a database.tablename glob.  This matching
@@ -96,7 +96,7 @@ Options
    (if any are specified) and does not match any exclude
    options.
 
-.. option:: [path]
+.. option:: path
 
    Path to the archive to process. This defaults to stdin
    but the unpack command will refuse to process input

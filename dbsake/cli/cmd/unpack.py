@@ -33,7 +33,7 @@ from dbsake.cli import dbsake
               default=[],
               help="Exclude table data files matching specified " +
                    "databsae.table glob patterns.")
-@click.argument('archive', metavar="<path>",
+@click.argument('archive', metavar="[path]",
                 default="-",
                 type=click.File('rb'))
 def _unpack(archive,
