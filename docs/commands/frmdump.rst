@@ -18,15 +18,15 @@ Usage
 
 .. code-block:: bash
 
-   Usage: dbsake.sh frmdump [options] [path[, path...]]
-   
-     Dump schema from MySQL frm files.
-   
-   Options:
-     -t, --type-codes
-     -R, --replace
-     -?, --help        Show this message and exit.
+   Usage: dbsake frmdump [options] [path...]
 
+     Dump schema from MySQL frm files.
+
+   Options:
+     -t, --type-codes  Show mysql type codes in comments on each column
+     -r, --recursive   Recursively search directories for .frm files.
+     -R, --replace     Output views with CREATE OR REPLACE
+     -?, --help        Show this message and exit.
 
 Example
 .......
@@ -74,6 +74,11 @@ Options
    Add comment to base tables noting the underlying mysql type code
    as MYSQL_TYPE_<name>.
 
+.. option:: -r, --recursive
+
+   If any directory path is specified on the commandline, recursively
+   search that directory and dump any files ending in .frm
+
 .. option:: path [path...]
 
    Specify the .frm files to generate a CREATE TABLE command from.
@@ -96,3 +101,6 @@ Options
 
 .. versionadded:: 1.0.2
    The :option:`frmdump --replace` option
+
+.. versionadded:: 2.1.1
+   The :option:`frmdump --recursive` option
