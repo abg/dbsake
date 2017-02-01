@@ -2,11 +2,15 @@
     酒 dbsake
 =================
 
-.. image:: https://travis-ci.org/abg/dbsake.png
+.. image:: https://travis-ci.org/abg/dbsake.svg
    :target: https://travis-ci.org/abg/dbsake
 
-.. image:: https://coveralls.io/repos/abg/dbsake/badge.png
+.. image:: https://coveralls.io/repos/abg/dbsake/badge.svg
    :target: https://coveralls.io/r/abg/dbsake
+
+.. image:: https://readthedocs.org/projects/dbsake/badge/
+   :target: https://dbsake.readthedocs.io/en/latest/
+   :alt: Documentation Status
 
 dbsake - a (s)wiss-(a)rmy-(k)nif(e) for MySQL
 
