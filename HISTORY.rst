@@ -3,7 +3,7 @@
 History
 =======
 
-2.1.1 (unreleased)
+2.1.1 (2017-02-07)
 ------------------
 
 New features
@@ -13,14 +13,14 @@ New features
 
 Bugs fixed:
 
+   * frmdump now handles tokudb row_format from .frm files created by Percona Server 
+     (issue #80)
+
    * sandbox generated sandbox.sh script would previously wait for the
      mysqld socket to appear as part of the "start" action, which was
      problematic for Galera based binaries.  sandbox.sh start now waits
      for the pid-file to appear via the "sandbox.sh status" action.
      (issue #88)
-
-   * frmdump failed to decode tables specified with utf8mb4, binary or other
-     less common encodings.  (issues #97, #102)
 
    * unpack command had a bug that failed on uncompressed input; similarly
      affected the sandbox command when unpacking uncompressed archives via
@@ -28,11 +28,19 @@ Bugs fixed:
 
    * upgrade-mycnf now handles paths with spaces (issue #94)
 
+   * python-setuptools is now required for install (issue #95)
+
    * Remove unicode_literals usage in cli to avoid noisy warnings from click
      (Issue #96)
 
+   * contrib/ is now included in the source package (PR#98 from azlev)
+
+   * frmdump failed to decode tables specified with utf8mb4, binary or other
+     less common encodings.  (issues #97, #102)
+
    * starting a sandbox failed on recent versions of MySQL due to the mysqld_safe
      ledir option now being prohibited in config files. (issue #103)
+
 
 2.1.0 (2015-01-28)
 ------------------
