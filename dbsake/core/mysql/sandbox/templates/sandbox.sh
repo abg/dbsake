@@ -46,7 +46,7 @@ sandbox_start() {
     fi
     echo -n "Starting sandbox: "
     # close stdin (0) and redirect stdout/stderr to /dev/null
-    mysqld_safe_args="--defaults-file=$defaults_file --ledir='{{ distribution.libexecdir }}'"
+    mysqld_safe_args="--defaults-file=$defaults_file --ledir={{ distribution.libexecdir }}"
     MY_BASEDIR_VERSION=${basedir} \
         nohup $mysqld_safe $mysqld_safe_args "$@" 0<&- &>/dev/null &
     local start_timeout=${START_TIMEOUT}

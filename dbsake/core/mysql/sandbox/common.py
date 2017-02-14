@@ -330,7 +330,7 @@ def bootstrap(options, distribution, additional_options=()):
     info("    * Bootstrapped sandbox in %.2f seconds", time.time() - start)
 
 
-def initial_mysql_user(options):
+def initialize_mysql_user(options):
     sbdir = options.basedir
     sbuser = options.mysql_user
     sbpass = options.password
@@ -349,12 +349,16 @@ def initial_mysql_user(options):
             start_cmd = "%s start --init-file=%s" % (sandbox_sh, fileobj.name)
             stop_cmd = "%s stop" % (sandbox_sh,)
             logging.info("    - Running: %s", start_cmd)
-            status = cmd.run(start_cmd, stdout=devnull, stderr=devnull)
-            if status != 0:
-                logging.error("Failed to initialize sandbox. "
+            start_status = cmd.run(start_cmd, stdout=devnull, stderr=devnull)
+            if start_status != 0:
+                logging.error("    !! Failed to initialize sandbox. "
                               "Check %s for details",
                               os.path.join(sbdir, "data", "mysqld.log"))
             logging.info("    - Running: %s", stop_cmd)
-            cmd.run(stop_cmd, stdout=devnull, stderr=devnull)
+            stop_status = cmd.run(stop_cmd, stdout=devnull, stderr=devnull)
+            status = start_status or stop_status
+
+    if status != 0:
+        raise SandboxError("Sandbox user initialization failed")
     logging.info("    * Initialized MySQL user in %.2f seconds",
                  time.time() - start)

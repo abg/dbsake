@@ -4,6 +4,7 @@ dbsake.cmd.sandbox
 
 Command interface to create isolated MySQL "sandbox" instances
 """
+import logging
 import os
 import sys
 
@@ -118,5 +119,5 @@ def sandbox_cli(sandbox_directory,
                        innobackupex_options=innobackupex_options,
                        report_progress=report_progress)
     except sandbox.SandboxError as exc:
-        click.echo("%s" % exc, file=sys.stderr)
+        logging.error("%s", exc)
         sys.exit(os.EX_SOFTWARE)
