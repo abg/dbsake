@@ -30,7 +30,7 @@ lint:
 	flake8 dbsake tests
 
 test:
-	py.test --cov dbsake tests
+	py.test -v --cov dbsake tests
 
 test-all:
 	tox
