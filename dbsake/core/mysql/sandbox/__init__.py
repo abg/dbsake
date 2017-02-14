@@ -79,7 +79,7 @@ def create(**options):
                                                           'my.sandbox.cnf'))
 
     info("  Initializing database user")
-    common.initial_mysql_user(sbopts)
+    common.initialize_mysql_user(sbopts)
 
     info("Sandbox created in %.2f seconds", time.time() - start)
     info("")
