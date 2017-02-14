@@ -3,6 +3,14 @@
 History
 =======
 
+2.1.2 (unreleased)
+------------------
+
+Bugs fixed:
+
+   * dbsake 2.1.1 sandbox command was broken due to incorrectly quoting the --ledir argument
+     when generating sandbox.sh (issue #120)
+
 2.1.1 (2017-02-07)
 ------------------
 
