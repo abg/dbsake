@@ -2,7 +2,7 @@
     酒 dbsake
 =================
 
-.. image:: https://travis-ci.org/abg/dbsake.svg
+.. image:: https://travis-ci.org/abg/dbsake.svg?branch=master
    :target: https://travis-ci.org/abg/dbsake
 
 .. image:: https://coveralls.io/repos/abg/dbsake/badge.svg
