@@ -29,7 +29,13 @@ CREATE DATABASE IF NOT EXISTS `test`;
 -- dbsake: cleanup system users start --
 DELETE FROM `user` WHERE Host NOT IN ('localhost', '127.0.0.1', '::1');
 DELETE FROM `user` WHERE User = '';
+{# MySQL 5.7.6 removed the mysql.user (Password) column
+   MySQL 5.7.2 requires plugin to be populated #}
+{% if distribution.version.tag != "MariaDB" and distribution.version >= (5, 7) %}
+UPDATE `user` SET plugin = 'mysql_native_password', authentication_string = CONCAT('*', UPPER(SHA1(UNHEX(SHA1('{{password|escape_string}}'))))) WHERE user = 'root';
+{% else %}
 UPDATE `user` SET PASSWORD = PASSWORD('{{password|escape_string}}') WHERE User = 'root';
+{% endif %}
 DELETE FROM `db` WHERE (Db = 'test' OR Db = 'test\_%') AND User = '';
 -- dbsake: cleanup system users end --
 {% endif %}

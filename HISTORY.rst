@@ -3,6 +3,13 @@
 History
 =======
 
+2.1.3 (unreleased)
+------------------
+
+Bugs fixed
+
+  * sandbox now handles MySQL 5.7 instance bootstrapping (PR #128)
+
 2.1.2 (2017-02-15)
 ------------------
 
