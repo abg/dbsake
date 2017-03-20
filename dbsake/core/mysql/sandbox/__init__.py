@@ -55,8 +55,10 @@ def create(**options):
     # And generating defaults cannot be done until we have an
     # innodb-log-file-size
     datasource.preload(sbopts)
+
     info("  Deploying MySQL distribution")
     dist = distribution.deploy(sbopts)
+
     info("  Generating my.sandbox.cnf")
     common.generate_defaults(sbopts,
                              mysql_user=sbopts.mysql_user,
@@ -69,14 +71,16 @@ def create(**options):
                              tmpdir=os.path.join(sbdir, 'tmp'),
                              mysql_version=dist.version,
                              port=dist.version.as_int())
-    info("  Bootstrapping sandbox instance")
-    common.bootstrap(sbopts, dist)
+
     info("  Creating sandbox.sh initscript")
     common.generate_initscript(sbdir,
                                distribution=dist,
                                datadir=sbopts.datadir,
                                defaults_file=os.path.join(sbdir,
                                                           'my.sandbox.cnf'))
+
+    info("  Bootstrapping sandbox instance")
+    common.bootstrap(sbopts, dist)
 
     info("  Initializing database user")
     common.initialize_mysql_user(sbopts)
