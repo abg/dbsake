@@ -65,7 +65,8 @@ sandbox_start() {
 
 sandbox_status() {
     pidfile=$(_mysqld_option pid-file mysqld mysqld_safe)
-    if [[ -s "${pidfile}" && $(ps ho comm $(cat ${pidfile})) == mysqld ]]
+    if [[ -s "${pidfile}" && \
+          $(basename $(ps -p $(<${pidfile}) -o comm=)) == "mysqld" ]]
     then
         { pid=$(<"${pidfile}"); } 2>/dev/null
     fi
