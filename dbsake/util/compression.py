@@ -226,10 +226,8 @@ def filetype_to_command(ext):
 
     for name in candidates:
         # resolve "canonical" binpath
-        cbin = pycompat.which(name)
-        if not cbin:
-            continue
-        return cbin + ' -dc'
+        if pycompat.which(name):
+            return name
 
     raise OSError("Unable to find compression method for extension '%s'" %
                   (ext,))
@@ -266,6 +264,8 @@ def decompressed(stream, report_progress=False, sizehint=None, filetype=None):
         stream = io.open(stream.fileno(), 'rb', closefd=False)
         filetype = detect_filetype(stream)
     command = filetype_to_command(filetype)
+    if command is not None:
+        command += ' -dc'
     if report_progress and (sizehint or is_seekable(stream)):
         streamsize = sizehint or os.fstat(stream.fileno()).st_size
         widget = progress_bar(streamsize)
