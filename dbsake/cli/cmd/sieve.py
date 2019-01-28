@@ -11,6 +11,7 @@ import sys
 import click
 
 from dbsake.cli import dbsake
+from dbsake.util import compression
 
 
 @dbsake.command('sieve', options_metavar='[options]')
@@ -31,7 +32,7 @@ from dbsake.cli import dbsake
               help="Specify input file to process instead of stdin")
 @click.option('-z', '--compress-command',
               metavar='<name>',
-              default='gzip -1',
+              default=compression.filetype_to_command('.gz'),
               help="Specify compression command when --format=directory")
 @click.option('-t', '--table',
               metavar='<glob>',
