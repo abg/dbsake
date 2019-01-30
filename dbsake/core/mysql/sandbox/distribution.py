@@ -402,7 +402,7 @@ class MySQLCDNInfo(collections.namedtuple("MySQLCDNInfo", "name locations")):
             )
         ),
         '5.7': dict(
-            name='mysql-{version}-linux-glibc2.5-{arch}.tar.gz',
+            name='mysql-{version}-linux-glibc2.12-{arch}.tar.gz',
             locations=(
                 'Downloads/MySQL-5.7',
                 'archives/get/file',
