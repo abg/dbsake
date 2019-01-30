@@ -3,12 +3,14 @@
 History
 =======
 
-2.1.3 (unreleased)
+2.2.0 (2019-01-29)
 ------------------
 
 Bugs fixed
 
   * sandbox now handles MySQL 5.7 instance bootstrapping (PR #128)
+  * sieve will now use pigz if available when --format=directory is specified (issue #130)
+  * python2.6 is no longer tested
 
 2.1.2 (2017-02-15)
 ------------------
